@@ -1,9 +1,14 @@
-from setuptools import setup, Extension
-from torch.utils import cpp_extension
+from setuptools import setup
+from torch.utils.cpp_extension import BuildExtension, CppExtension
+from glob import glob
 
-setup(name='torch_ort',
-      ext_modules=[cpp_extension.CppExtension('torch_ort', ['ORTBackend.cpp'])],
-      cmdclass={'build_ext': cpp_extension.BuildExtension})
-
-
-
+setup(
+    name='torch_ort',
+    ext_modules=[
+        CppExtension(
+            name='torch_ort',
+            sources=glob('*.cpp'))
+    ],
+    cmdclass={
+        'build_ext': BuildExtension
+    })
