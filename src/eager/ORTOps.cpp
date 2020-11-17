@@ -10,6 +10,7 @@ namespace detail {
 ORTTensor reshape_copy(
   const ORTTensor& input,
   std::vector<int64_t> shape) {
+
   // TODO: actual reshape on buffer
   ORTTensor output{infer_size(shape, input.numel())};
   return output;
