@@ -10,7 +10,7 @@ def build_ort(ort_path, build_dir, debug=False):
         os.mkdir(build_dir)
     args = ['python', os.path.join(ort_path, 'tools', 'ci_build', 'build.py'),
             '--build_dir', build_dir, '--config', 'Debug' if debug else 'Release',
-            '--skip_submodule_sync', '--build', '--update']    
+            '--skip_submodule_sync', '--build', '--update', '--parallel']    
     subprocess.run(args)
 
 build_ort('onnxruntime', 'ort_build');
