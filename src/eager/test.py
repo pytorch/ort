@@ -2,6 +2,7 @@ import torch
 import torch_ort
 
 device = torch.device("ort")
-x = torch.empty(5, 3, device = device)
-print(x.size())
-print(x)
+x = torch.empty(2, 3, device = device)
+y = torch.empty(2, 3, device = device)
+z = y + x
+print(z.size())

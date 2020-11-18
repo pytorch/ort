@@ -24,8 +24,19 @@ OrtValue reshape_copy(
   ORT_LOG << "Invoke ORT reshape kernel";
   auto status = GetORTInvoker().Invoke("Reshape", {input, shape_tensor}, result, nullptr);
   if (!status.IsOK())
-    throw std::runtime_error("ORT return failed status: " + status.ErrorMessage());
+    throw std::runtime_error("ORT return failure status: " + status.ErrorMessage());
   ORT_LOG << "Invoke ORT reshape kernel successfully";
+  return result[0];
+}
+
+OrtValue add(const OrtValue& A,
+             const OrtValue& B){
+  std::vector<OrtValue> result(1);
+  ORT_LOG << "Invoke ORT Add kernel";
+  auto status = GetORTInvoker().Invoke("Add", {A, B}, result, nullptr);
+  if (!status.IsOK())
+    throw std::runtime_error("ORT return failure status: " + status.ErrorMessage());
+  ORT_LOG << "Invoke ORT Add kernel successfully";
   return result[0];
 }
 

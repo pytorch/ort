@@ -82,12 +82,23 @@ Tensor view(const Tensor& self, IntArrayRef size) {
     self.options());
 }
 
+Tensor add(const Tensor& A, const Tensor& B, c10::Scalar alpha=1) {
+  ORT_LOG << "torch.add";
+  //todo: handle alpha
+  return new_with_orttensor_ort(
+    ort::detail::add(
+      orttensor_from_ort(A),
+      orttensor_from_ort(B)),
+    A.options());
+}
+
 TORCH_LIBRARY_IMPL(aten, ORT, m) {
   ORT_LOG << "ATen init";
 
   m.impl_UNBOXED("empty.memory_format", empty_override);
   m.impl("reshape", TORCH_FN(reshape));
   m.impl("view", TORCH_FN(view));
+  m.impl("aten::add.Tensor", TORCH_FN(add));
 }
 
 } // namespace aten
