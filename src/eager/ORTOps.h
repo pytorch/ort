@@ -1,15 +1,19 @@
 #pragma once
 
-#include "ORTTensor.h"
+#include "core/framework/ml_value.h"
+#include "core/framework/tensor.h"
 
 namespace at {
 namespace native {
 namespace ort {
 namespace detail {
 
-ORTTensor reshape_copy(
-  const ORTTensor& input,
+OrtValue reshape_copy(
+  const OrtValue& input,
   std::vector<int64_t> shape);
+
+OrtValue add(const OrtValue& A,
+             const OrtValue& B);
 
 } // namespace detail
 } // namespace ort

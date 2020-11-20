@@ -1,7 +1,6 @@
 #include <torch/extension.h>
 
 #include "ORTUtil.h"
-#include "ORTTensor.h"
 #include "ORTTensorImpl.h"
 #include "ORTOps.h"
 
@@ -10,14 +9,18 @@ namespace native {
 namespace ort {
 namespace aten {
 
-using at::native::ort::detail::ORTTensor;
-using ORTTensorImpl = ORTOpaqueTensorImpl<ORTTensor>;
+using ORTTensor = OrtValue;
+using ORTTensorImpl = ORTOpaqueTensorImpl<OrtValue>;
+
+using namespace at::native::ort::detail;
 
 Tensor new_with_orttensor_ort(
-  ORTTensor&& ot,
+  OrtValue&& ot,
   const TensorOptions& options) {
-  auto sizes = ot.sizes();
-  auto strides = ot.strides();
+  const onnxruntime::Tensor& tensor = ot.Get<onnxruntime::Tensor>();
+  auto &sizes = tensor.Shape().GetDims();
+  //TODO: optimize it later
+  auto strides = GetStride(sizes, tensor.DataType()->Size());
   return at::detail::make_tensor<ORTTensorImpl>(
     DispatchKeySet(DispatchKey::ORT),
     options.dtype(),
@@ -27,13 +30,13 @@ Tensor new_with_orttensor_ort(
     std::vector<int64_t>(strides.begin(), strides.end()));
 }
 
-const ORTTensor& orttensor_from_ort(const Tensor& tensor) {
+const OrtValue& orttensor_from_ort(const Tensor& tensor) {
   // FIXME: assert tensor is from ORT
   auto impl = static_cast<ORTTensorImpl*>(tensor.unsafeGetTensorImpl());
   return impl->unsafe_opaque_handle();
 }
 
-ORTTensor& orttensor_from_ort(Tensor& tensor) {
+OrtValue& orttensor_from_ort(Tensor& tensor) {
   // FIXME: assert tensor is from ORT
   auto impl = static_cast<ORTTensorImpl*>(tensor.unsafeGetTensorImpl());
   return impl->unsafe_opaque_handle();
@@ -46,8 +49,12 @@ Tensor empty_override(
   // TODO: validate options and memory format
 
   ORT_LOG << "torch.empty";
-
-  ORTTensor ot{size.vec()};
+  ORT_LOG << "Warning: hardcode to float type now";
+  // TODO: figure out how to get the correct element type.
+  OrtValue ot;
+  CreateMLValue<float>(GetORTInvoker().GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
+                       size.vec(), {}, &ot);
+  
   return new_with_orttensor_ort(
     std::move(ot),
     at::device(at::kORT).dtype(options.dtype()));
@@ -75,12 +82,23 @@ Tensor view(const Tensor& self, IntArrayRef size) {
     self.options());
 }
 
+Tensor add(const Tensor& A, const Tensor& B, c10::Scalar alpha=1) {
+  ORT_LOG << "torch.add";
+  //todo: handle alpha
+  return new_with_orttensor_ort(
+    ort::detail::add(
+      orttensor_from_ort(A),
+      orttensor_from_ort(B)),
+    A.options());
+}
+
 TORCH_LIBRARY_IMPL(aten, ORT, m) {
   ORT_LOG << "ATen init";
 
   m.impl_UNBOXED("empty.memory_format", empty_override);
   m.impl("reshape", TORCH_FN(reshape));
   m.impl("view", TORCH_FN(view));
+  m.impl("aten::add.Tensor", TORCH_FN(add));
 }
 
 } // namespace aten
