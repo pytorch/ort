@@ -7,6 +7,8 @@
 #include "core/framework/tensor.h"
 #include "core/eager/ort_kernel_invoker.h"
 
+#include "core/session/onnxruntime_cxx_api.h"
+
 namespace at {
 namespace native {
 namespace ort {
@@ -40,6 +42,22 @@ void CreateMLValue(onnxruntime::AllocatorPtr alloc, const std::vector<int64_t>& 
     CopyVectorToTensor(value, *p_tensor);
   }
 
+  p_mlvalue->Init(p_tensor.release(),
+                  onnxruntime::DataTypeImpl::GetType<onnxruntime::Tensor>(),
+                  onnxruntime::DataTypeImpl::GetType<onnxruntime::Tensor>()->GetDeleteFunc());
+}
+
+template <typename T>
+void CreateMLValue(void* data_ptr, const std::vector<int64_t>& dims, OrtValue* p_mlvalue) {
+  onnxruntime::TensorShape shape(dims);
+  auto element_type = onnxruntime::DataTypeImpl::GetType<T>();
+  OrtMemoryInfo *cpu_info;
+  Ort::GetApi().CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &cpu_info);
+  std::unique_ptr<onnxruntime::Tensor> p_tensor = onnxruntime::make_unique<onnxruntime::Tensor>(element_type,
+                                                                      shape,
+                                                                      data_ptr,
+                                                                      *cpu_info);
+  
   p_mlvalue->Init(p_tensor.release(),
                   onnxruntime::DataTypeImpl::GetType<onnxruntime::Tensor>(),
                   onnxruntime::DataTypeImpl::GetType<onnxruntime::Tensor>()->GetDeleteFunc());

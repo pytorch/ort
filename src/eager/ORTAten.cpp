@@ -4,6 +4,7 @@
 #include "ORTTensorImpl.h"
 #include "ORTOps.h"
 
+
 namespace at {
 namespace native {
 namespace ort {
@@ -92,6 +93,56 @@ Tensor add(const Tensor& A, const Tensor& B, c10::Scalar alpha=1) {
     A.options());
 }
 
+namespace{
+  inline bool is_device_supported(DeviceType type){
+    return type == at::kORT || type == at::kCPU;
+  }
+
+  ORTTensor ort_tensor_from_at_tensor(Tensor& tensor){
+    assert(tensor.device().type() == at:kCPU);
+    tensor.data_ptr();
+    //todo: figure out the correct type
+    OrtValue ot;
+    CreateMLValue<float>(tensor.data_ptr(), tensor.sizes().vec(), &ot);
+    return ot;
+  }
+
+  ORTTensor ort_tensor_from_at_tensor(const Tensor& tensor){
+    assert(tensor.device().type() == at:kCPU);
+    tensor.data_ptr();
+    //todo: figure out the correct type
+    OrtValue ot;
+    CreateMLValue<float>(tensor.data_ptr(), tensor.sizes().vec(), &ot);
+    return ot;
+  }
+}
+
+Tensor& copy_tensor(Tensor & self, const Tensor & src, bool non_blocking){
+  if (self.is_sparse() || src.is_sparse()){
+    throw std::runtime_error("ORT copy: sparse not supported");
+  }
+  if (self.is_quantized() || src.is_quantized()){
+    throw std::runtime_error("ORT copy: quantized not supported");
+  }
+
+  if (!is_device_supported(src.device().type()) || !is_device_supported(self.device().type())){
+    throw std::runtime_error("ORT copy: device not supported");
+  }
+  //TODO: more flexible way to dispatch the copy implementation
+  if (self.device().type() == at::kORT && src.device().type() == at::kCPU){
+    ort::detail::copy(
+      ort_tensor_from_at_tensor(src),
+      orttensor_from_ort(self));
+  } else if (self.device().type() == at::kCPU && src.device().type() == at::kORT){
+    ORTTensor ort_self = ort_tensor_from_at_tensor(self);
+    ort::detail::copy(
+      orttensor_from_ort(src),
+      ort_self);
+  }
+
+  return self;
+}
+
 TORCH_LIBRARY_IMPL(aten, ORT, m) {
   ORT_LOG << "ATen init";
 
@@ -99,6 +150,7 @@ TORCH_LIBRARY_IMPL(aten, ORT, m) {
   m.impl("reshape", TORCH_FN(reshape));
   m.impl("view", TORCH_FN(view));
   m.impl("aten::add.Tensor", TORCH_FN(add));
+  m.impl("copy_", TORCH_FN(copy_tensor));
 }
 
 } // namespace aten

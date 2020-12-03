@@ -40,6 +40,17 @@ OrtValue add(const OrtValue& A,
   return result[0];
 }
 
+void copy(const OrtValue& src, OrtValue& dst){
+  ORT_LOG << "Invoke ORT Copy ";
+  auto& ort_ep = GetORTInvoker().GetCurrentExecutionProvider();
+  
+  const auto& src_tensor = src.Get<onnxruntime::Tensor>();
+  auto* dst_tensor = dst.GetMutable<onnxruntime::Tensor>();
+  if (!dst_tensor)
+    throw std::runtime_error("ORT copy: dst is not a tensor");
+  ort_ep.GetDataTransfer()->CopyTensor(src_tensor, *dst_tensor);
+}
+
 } // namespace detail
 } // namespace ort
 } // namespace native
