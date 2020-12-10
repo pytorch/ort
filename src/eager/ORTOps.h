@@ -15,6 +15,8 @@ OrtValue reshape_copy(
 OrtValue add(const OrtValue& A,
              const OrtValue& B);
 
+void copy(const OrtValue& src, OrtValue& dst);
+
 } // namespace detail
 } // namespace ort
 } // namespace native
