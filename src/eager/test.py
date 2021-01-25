@@ -1,7 +1,11 @@
 import torch
 import torch_ort
 
-device = torch.device("ort")
+#todo: move it to torch_ort as util function
+def get_ort_device(devkind, index = 0):
+    return torch.device("ort", torch_ort.get_ort_device(devkind, index))
+
+device = get_ort_device("Apollo")
 x = torch.empty(2, 3, device = device)
 y = torch.empty(2, 3, device = device)
 z = y + x

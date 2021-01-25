@@ -6,15 +6,18 @@
 #include "core/framework/ml_value.h"
 #include "core/framework/tensor.h"
 #include "core/eager/ort_kernel_invoker.h"
+#include <torch/extension.h>
 
 #include "core/session/onnxruntime_cxx_api.h"
+#include "ort_backends.h"
 
 namespace at {
 namespace native {
 namespace ort {
 namespace detail {
 
-onnxruntime::ORTInvoker& GetORTInvoker();
+ORTBackendsManager& GetORTBackends();
+onnxruntime::ORTInvoker& GetORTInvoker(Device device);
 
 template <typename T>
 inline void CopyVectorToTensor(const std::vector<T>& value, onnxruntime::Tensor& tensor) {

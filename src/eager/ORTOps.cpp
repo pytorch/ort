@@ -10,6 +10,7 @@ namespace ort {
 namespace detail {
 
 OrtValue reshape_copy(
+  onnxruntime::ORTInvoker& invoker,
   const OrtValue& input,
   std::vector<int64_t> shape) {
   
@@ -18,31 +19,33 @@ OrtValue reshape_copy(
   auto new_shape = infer_size(shape, input_tensor.Shape().Size());
   OrtValue shape_tensor;
   //todo: avoid the copy on this small shape vector;
-  CreateMLValue<int64_t>(GetORTInvoker().GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
+  CreateMLValue<int64_t>(invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
                        {new_shape.size(),}, new_shape, &shape_tensor);
   std::vector<OrtValue> result(1);
   ORT_LOG << "Invoke ORT reshape kernel";
-  auto status = GetORTInvoker().Invoke("Reshape", {input, shape_tensor}, result, nullptr);
+  auto status = invoker.Invoke("Reshape", {input, shape_tensor}, result, nullptr);
   if (!status.IsOK())
     throw std::runtime_error("ORT return failure status: " + status.ErrorMessage());
   ORT_LOG << "Invoke ORT reshape kernel successfully";
   return result[0];
 }
 
-OrtValue add(const OrtValue& A,
+OrtValue add(onnxruntime::ORTInvoker& invoker,
+             const OrtValue& A,
              const OrtValue& B){
   std::vector<OrtValue> result(1);
   ORT_LOG << "Invoke ORT Add kernel";
-  auto status = GetORTInvoker().Invoke("Add", {A, B}, result, nullptr);
+  auto status = invoker.Invoke("Add", {A, B}, result, nullptr);
   if (!status.IsOK())
     throw std::runtime_error("ORT return failure status: " + status.ErrorMessage());
   ORT_LOG << "Invoke ORT Add kernel successfully";
   return result[0];
 }
 
-void copy(const OrtValue& src, OrtValue& dst){
+void copy(onnxruntime::ORTInvoker& invoker, 
+          const OrtValue& src, OrtValue& dst){
   ORT_LOG << "Invoke ORT Copy ";
-  auto& ort_ep = GetORTInvoker().GetCurrentExecutionProvider();
+  auto& ort_ep = invoker.GetCurrentExecutionProvider();
   
   const auto& src_tensor = src.Get<onnxruntime::Tensor>();
   auto* dst_tensor = dst.GetMutable<onnxruntime::Tensor>();

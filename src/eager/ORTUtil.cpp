@@ -2,6 +2,7 @@
 
 #include "core/eager/ort_kernel_invoker.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
+#include "ort_backends.h"
 
 namespace at {
 namespace native {
@@ -10,9 +11,13 @@ namespace detail {
 
 using namespace onnxruntime;
 
-onnxruntime::ORTInvoker& GetORTInvoker(){
-  static onnxruntime::ORTInvoker kernel_invoker(std::move(onnxruntime::make_unique<CPUExecutionProvider>(CPUExecutionProviderInfo(false))));
-  return kernel_invoker;
+ORTBackendsManager& GetORTBackends(){
+  static ORTBackendsManager backends;
+  return backends;
+}
+
+onnxruntime::ORTInvoker& GetORTInvoker(Device device){
+  return GetORTBackends().GetInvoker(device);
 }
 
 std::vector<int64_t> GetStride(const std::vector<int64_t>& shape, int64_t element_size){

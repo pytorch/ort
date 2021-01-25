@@ -51,9 +51,12 @@ Tensor empty_override(
 
   ORT_LOG << "torch.empty";
   ORT_LOG << "Warning: hardcode to float type now";
+  ORT_LOG << "Device is: " << options.device();
+  ORT_LOG << "Device id is: " << options.device().index();
   // TODO: figure out how to get the correct element type.
   OrtValue ot;
-  CreateMLValue<float>(GetORTInvoker().GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
+  auto& invoker = GetORTInvoker(options.device());
+  CreateMLValue<float>(invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
                        size.vec(), {}, &ot);
   
   return new_with_orttensor_ort(
@@ -66,6 +69,7 @@ Tensor reshape(at::Tensor const& self, IntArrayRef shape) {
 
   return new_with_orttensor_ort(
     ort::detail::reshape_copy(
+      GetORTInvoker(self.device()),
       orttensor_from_ort(self),
       shape.vec()),
     self.options());
@@ -76,6 +80,7 @@ Tensor view(const Tensor& self, IntArrayRef size) {
 
   return new_with_orttensor_ort(
     ort::detail::reshape_copy(
+      GetORTInvoker(self.device()),
       orttensor_from_ort(self),
       at::infer_size(
         size,
@@ -88,6 +93,7 @@ Tensor add(const Tensor& A, const Tensor& B, c10::Scalar alpha=1) {
   //todo: handle alpha
   return new_with_orttensor_ort(
     ort::detail::add(
+      GetORTInvoker(A.device()),
       orttensor_from_ort(A),
       orttensor_from_ort(B)),
     A.options());
@@ -131,11 +137,13 @@ Tensor& copy_tensor(Tensor & self, const Tensor & src, bool non_blocking){
   //TODO: more flexible way to dispatch the copy implementation
   if (self.device().type() == at::kORT && src.device().type() == at::kCPU){
     ort::detail::copy(
+      GetORTInvoker(self.device()),
       ort_tensor_from_at_tensor(src),
       orttensor_from_ort(self));
   } else if (self.device().type() == at::kCPU && src.device().type() == at::kORT){
     ORTTensor ort_self = ort_tensor_from_at_tensor(self);
     ort::detail::copy(
+      GetORTInvoker(src.device()),
       orttensor_from_ort(src),
       ort_self);
   }
