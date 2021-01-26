@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import sys
+import io
 from typing import TextIO
 from enum import Enum
 from opgen.lexer import TokenKind, Token
@@ -12,6 +13,11 @@ class Node(object):
 
   def write(self, writer: TextIO):
     raise NotImplementedError(self.write)
+
+  def __str__(self):
+    writer = io.StringIO()
+    self.write(writer)
+    return writer.getvalue()
 
 #region Syntax List
 
@@ -163,11 +169,7 @@ class TupleMemberType(Type):
     self.element_name = element_name
 
   def write(self, writer: TextIO):
-    if self.element_type:
-      self.element_type.write(writer)
-    if self.element_name:
-      writer.write(" ")
-      writer.write(self.element_name.value)
+    self.element_type.write(writer)
 
 class TupleType(Type):
   def __init__(self, elements: SyntaxList):
