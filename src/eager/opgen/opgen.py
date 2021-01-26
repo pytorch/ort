@@ -35,15 +35,18 @@ with opgen.parser.cpp_create_from_file(regdecs_path) as parser:
       for trivia in cpp_func.semicolon.trailing_trivia:
         if trivia.kind == opgen.lexer.TokenKind.SINGLE_LINE_COMMENT:
           metadata = json.loads(trivia.value.lstrip("//"))
-          schema_parser = opgen.parser.torch_create_from_string(
-            metadata["schema"])
+          schema = metadata["schema"]
+          schema_parser = opgen.parser.torch_create_from_string(schema)
           torch_func = schema_parser.parse_function()
+          torch_func.torch_schema = schema
           torch_func.torch_dispatch = metadata["dispatch"] == "True"
           torch_func.torch_default = metadata["default"] == "True"
     if not torch_func:
       continue
 
     cpp_func.ort_name = "ort_" + torch_func.identifier.value.replace("::", "_")
+
+    writer.write(f"// {torch_func.torch_schema}\n")
 
     # Write the C++ signature for our ORT implementation
     writer.write("static ")
@@ -54,6 +57,10 @@ with opgen.parser.cpp_create_from_file(regdecs_path) as parser:
     for param_list_member in cpp_func.parameters:
       param_list_member.write(writer)
     writer.write(")\n{\n")
+
+    writer.write("    //  Return: ")
+    torch_func.return_type.write(writer)
+    writer.write("\n")
 
     # Do something for each parameter; cpp_func and torch_func should have
     # 1:1 parameters, but the metadata on the torch_func is richer than

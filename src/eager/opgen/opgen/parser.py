@@ -202,7 +202,8 @@ class TorchParser(ParserBase):
       raise UnexpectedTokenError("expression", self._peek_token())
 
   def parse_type(self) -> Type:
-    return self._parse_type_and_alias()[0]
+    inner_type, alias_info = self._parse_type_and_alias()
+    return AliasInfoType(inner_type, alias_info) if alias_info else inner_type
 
   def _parse_type_and_alias(self) -> (Type, AliasInfo):
     parsed_type: Type = None

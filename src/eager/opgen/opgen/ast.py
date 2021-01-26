@@ -156,13 +156,23 @@ class TemplateType(Type):
 class TupleMemberType(Type):
   def __init__(self, element_type: Type, element_name: Token):
     super().__init__()
-    self.element_type = element_name
-    self.element_name = element_type
+    self.element_type = element_type
+    self.element_name = element_name
+
+  def write(self, writer: TextIO):
+    if self.element_type:
+      self.element_type.write(writer)
+    if self.element_name:
+      writer.write(" ")
+      writer.write(self.element_name.value)
 
 class TupleType(Type):
   def __init__(self, elements: SyntaxList):
     super().__init__()
     self.elements = elements
+
+  def write(self, writer: TextIO):
+    self.elements.write(writer)
 
 class AliasInfo(Node):
   before_set: [str]
@@ -177,6 +187,25 @@ class AliasInfo(Node):
     self.contained_types = []
     self.tokens = []
     self.is_writable = False
+
+  def write(self, writer: TextIO):
+    writer.write("(")
+    writer.write("|".join(self.before_set))
+    if self.is_writable:
+      writer.write("!")
+    writer.write(" -> ")
+    writer.write("|".join(self.after_set))
+    writer.write(")")
+
+class AliasInfoType(Type):
+  def __init__(self, inner_type: Type, alias_info: AliasInfo):
+    super().__init__()
+    self.inner_type = inner_type
+    self.alias_info = alias_info
+
+  def write(self, writer: TextIO):
+    self.inner_type.write(writer)
+    self.alias_info.write(writer)
 
 class KWArgsSentinalType(Type):
   def __init__(self, token: Token):
