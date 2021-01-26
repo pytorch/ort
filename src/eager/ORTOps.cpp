@@ -20,7 +20,7 @@ OrtValue reshape_copy(
   OrtValue shape_tensor;
   //todo: avoid the copy on this small shape vector;
   CreateMLValue<int64_t>(invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
-                       {new_shape.size(),}, new_shape, &shape_tensor);
+                       {(int64_t)new_shape.size(),}, new_shape, &shape_tensor);
   std::vector<OrtValue> result(1);
   ORT_LOG << "Invoke ORT reshape kernel";
   auto status = invoker.Invoke("Reshape", {input, shape_tensor}, result, nullptr);

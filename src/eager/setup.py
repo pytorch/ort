@@ -13,7 +13,7 @@ def build_ort(ort_path, build_dir, debug=False):
             '--skip_submodule_sync', '--build', '--update', '--parallel']    
     subprocess.run(args)
 
-build_ort('onnxruntime', 'ort_build');
+build_ort('onnxruntime', 'ort_build')
 
 current_path = os.path.abspath(os.getcwd())
 ort_build_root = os.path.join(current_path, 'ort_build', 'Release')
