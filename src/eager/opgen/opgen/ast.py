@@ -113,25 +113,28 @@ class ReferenceType(Type):
     self.inner_type.write(writer)
     writer.write(self.reference_token.value)
 
-class OptionalType(Type):
-  def __init__(self, base_type: Type, token: Token):
+class ModifiedType(Type):
+  def __init__(self, base_type: Type):
     super().__init__()
     self.base_type = base_type
+
+class OptionalType(ModifiedType):
+  def __init__(self, base_type: Type, token: Token):
+    super().__init__(base_type)
     self.token = token
 
   def write(self, writer: TextIO):
     self.base_type.write(writer)
     writer.write(self.token.value)
 
-class ArrayType(Type):
+class ArrayType(ModifiedType):
   def __init__(
     self,
     base_type: Type,
     open_token: Token,
     length_token: Token,
     close_token: Token):
-    super().__init__()
-    self.base_type = base_type
+    super().__init__(base_type)
     self.open_token = open_token
     self.length_token = length_token
     self.close_token = close_token
