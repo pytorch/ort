@@ -37,6 +37,9 @@ class ParserBase(object):
     if self._own_lexer:
       self._lexer.__exit__(exc_type, exc_val, exc_tb)
 
+  def set_source_location(self, origin: SourceLocation):
+    self._lexer.set_source_location(origin)
+
   def _peek_token(
     self,
     kind: TokenKind = None,

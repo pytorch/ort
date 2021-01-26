@@ -199,6 +199,9 @@ class Lexer(object):
           else self._current_token_location.increment_column()
     return c
 
+  def set_source_location(self, origin: SourceLocation):
+    self._current_token_location = origin
+
   def lex(self) -> Token:
     """
     Lex a single semantic token from the source, gathering into it

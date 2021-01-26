@@ -37,6 +37,7 @@ with opgen.parser.cpp_create_from_file(regdecs_path) as parser:
           metadata = json.loads(trivia.value.lstrip("//"))
           schema = metadata["schema"]
           schema_parser = opgen.parser.torch_create_from_string(schema)
+          schema_parser.set_source_location(cpp_func.semicolon.location)
           torch_func = schema_parser.parse_function()
           torch_func.torch_schema = schema
           torch_func.torch_dispatch = metadata["dispatch"] == "True"
