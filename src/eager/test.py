@@ -13,3 +13,13 @@ z2 = x.cpu() + y.cpu()
 print(z.size())
 print(z.cpu())
 print(z2)
+
+s = x - y
+print(s.cpu())
+
+m = x * y
+print(m.cpu())
+
+r = torch.relu(x)
+print(r.cpu())
+

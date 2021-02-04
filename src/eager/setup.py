@@ -13,6 +13,14 @@ def build_ort(ort_path, build_dir, debug=False):
             '--skip_submodule_sync', '--build', '--update', '--parallel']    
     subprocess.run(args)
 
+def gen_ort_aten_ops():
+    gen_cpp_name = "gen.cpp"
+    if os.path.exists(gen_cpp_name):
+        os.remove(gen_cpp_name)
+    args = ['python', os.path.join(os.path.dirname(__file__), 'opgen', 'opgen.py'),
+             gen_cpp_name]
+    subprocess.run(args)
+
 build_ort('onnxruntime', 'ort_build')
 
 current_path = os.path.abspath(os.getcwd())
@@ -47,6 +55,8 @@ external_libs = [ort_build_root + '/external/nsync/libnsync_cpp.a',
               ort_build_root + '/external/protobuf/cmake/libprotobuf.a',
               ort_build_root + '/external/re2/libre2.a',]
 ort_static_libs.extend(external_libs)
+
+gen_ort_aten_ops()
 
 setup(
     name='torch_ort',

@@ -46,6 +46,12 @@ class SyntaxList(Node):
 
   def __iter__(self):
     return self.members.__iter__()
+  
+  def __getitem__(self, key):
+    return self.members.__getitem__(key)
+  
+  def __len__(self):
+    return len(self.members)
 
   def append(self, member: Node, trailing_separator: Token):
     self.members.append(SyntaxListMember(member, trailing_separator))

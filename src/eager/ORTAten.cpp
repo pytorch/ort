@@ -3,6 +3,7 @@
 #include "ORTUtil.h"
 #include "ORTTensorImpl.h"
 #include "ORTOps.h"
+#include "ORTAtenHelper.h"
 
 
 namespace at {
@@ -15,38 +16,9 @@ using ORTTensorImpl = ORTOpaqueTensorImpl<OrtValue>;
 
 using namespace at::native::ort::detail;
 
-Tensor new_with_orttensor_ort(
-  OrtValue&& ot,
-  const TensorOptions& options) {
-  const onnxruntime::Tensor& tensor = ot.Get<onnxruntime::Tensor>();
-  auto &sizes = tensor.Shape().GetDims();
-  //TODO: optimize it later
-  auto strides = GetStride(sizes, tensor.DataType()->Size());
-  return at::detail::make_tensor<ORTTensorImpl>(
-    DispatchKeySet(DispatchKey::ORT),
-    options.dtype(),
-    at::Device(at::kORT),
-    std::move(ot),
-    std::vector<int64_t>(sizes.begin(), sizes.end()),
-    std::vector<int64_t>(strides.begin(), strides.end()));
-}
-
-const OrtValue& orttensor_from_ort(const Tensor& tensor) {
-  // FIXME: assert tensor is from ORT
-  auto impl = static_cast<ORTTensorImpl*>(tensor.unsafeGetTensorImpl());
-  return impl->unsafe_opaque_handle();
-}
-
-OrtValue& orttensor_from_ort(Tensor& tensor) {
-  // FIXME: assert tensor is from ORT
-  auto impl = static_cast<ORTTensorImpl*>(tensor.unsafeGetTensorImpl());
-  return impl->unsafe_opaque_handle();
-}
-
-Tensor empty_override(
-  IntArrayRef size,
-  const TensorOptions& options,
-  c10::optional<c10::MemoryFormat> memory_format) {
+Tensor ort_aten_empty_memory_format(IntArrayRef size, 
+  const TensorOptions& options, 
+  c10::optional<MemoryFormat> memory_format) {
   // TODO: validate options and memory format
 
   ORT_LOG << "torch.empty";
@@ -64,7 +36,7 @@ Tensor empty_override(
     at::device(at::kORT).dtype(options.dtype()));
 }
 
-Tensor reshape(at::Tensor const& self, IntArrayRef shape) {
+Tensor ort_aten_reshape(at::Tensor const& self, IntArrayRef shape) {
   ORT_LOG << "torch.reshape";
 
   return new_with_orttensor_ort(
@@ -75,7 +47,7 @@ Tensor reshape(at::Tensor const& self, IntArrayRef shape) {
     self.options());
 }
 
-Tensor view(const Tensor& self, IntArrayRef size) {
+Tensor ort_aten_view(const Tensor& self, IntArrayRef size) {
   ORT_LOG << "torch.view";
 
   return new_with_orttensor_ort(
@@ -123,7 +95,7 @@ namespace{
   }
 }
 
-Tensor& copy_tensor(Tensor & self, const Tensor & src, bool non_blocking){
+Tensor& ort_aten_copy_(Tensor & self, const Tensor & src, bool non_blocking){
   if (self.is_sparse() || src.is_sparse()){
     throw std::runtime_error("ORT copy: sparse not supported");
   }
@@ -149,16 +121,6 @@ Tensor& copy_tensor(Tensor & self, const Tensor & src, bool non_blocking){
   }
 
   return self;
-}
-
-TORCH_LIBRARY_IMPL(aten, ORT, m) {
-  ORT_LOG << "ATen init";
-
-  m.impl_UNBOXED("empty.memory_format", empty_override);
-  m.impl("reshape", TORCH_FN(reshape));
-  m.impl("view", TORCH_FN(view));
-  m.impl("aten::add.Tensor", TORCH_FN(add));
-  m.impl("copy_", TORCH_FN(copy_tensor));
 }
 
 } // namespace aten
