@@ -11,7 +11,7 @@ def build_ort(ort_path, build_dir, debug=False):
     args = ['python', os.path.join(ort_path, 'tools', 'ci_build', 'build.py'),
             '--build_dir', build_dir, '--config', 'Debug' if debug else 'Release',
             '--skip_submodule_sync', '--build', '--update', '--parallel']    
-    subprocess.run(args)
+    subprocess.check_call(args)
 
 def gen_ort_aten_ops():
     gen_cpp_name = "gen.cpp"
@@ -19,7 +19,7 @@ def gen_ort_aten_ops():
         os.remove(gen_cpp_name)
     args = ['python', os.path.join(os.path.dirname(__file__), 'opgen', 'opgen.py'),
              gen_cpp_name]
-    subprocess.run(args)
+    subprocess.check_call(args)
 
 build_ort('onnxruntime', 'ort_build')
 
@@ -47,7 +47,7 @@ ort_libs = [
                    'libonnxruntime_flatbuffers',
                    'libonnxruntime_common', 
                    ] 
-ort_static_libs = ['{}/{}.a'.format(ort_build_root, l) for l in ort_libs]
+ort_static_libs = [f'{ort_build_root}/{l}.a' for l in ort_libs]
 
 external_libs = [ort_build_root + '/external/nsync/libnsync_cpp.a',
               ort_build_root + '/external/onnx/libonnx.a',
