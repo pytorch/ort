@@ -3,37 +3,44 @@ from torch.utils.cpp_extension import BuildExtension, CppExtension
 from glob import glob
 
 import os
+import platform
 import subprocess
+import sys
 
-def build_ort(ort_path, build_dir, debug=False):
+python_exe = sys.executable
+build_config = 'Release'
+
+def build_ort(ort_path, build_dir):
     if not os.path.exists(build_dir):
         os.mkdir(build_dir)
-    args = ['python', os.path.join(ort_path, 'tools', 'ci_build', 'build.py'),
-            '--build_dir', build_dir, '--config', 'Debug' if debug else 'Release',
-            '--skip_submodule_sync', '--build', '--update', '--parallel']    
+    args = [python_exe, os.path.join(ort_path, 'tools', 'ci_build', 'build.py'),
+            '--build_dir', build_dir, '--config', build_config,
+            '--skip_submodule_sync', '--build', '--update', '--parallel']
+    if platform.system() == 'Darwin':
+        args += ['--cmake_generator', 'Ninja']
     subprocess.check_call(args)
 
 def gen_ort_aten_ops():
     gen_cpp_name = "gen.cpp"
     if os.path.exists(gen_cpp_name):
         os.remove(gen_cpp_name)
-    args = ['python', os.path.join(os.path.dirname(__file__), 'opgen', 'opgen.py'),
+    args = [python_exe, os.path.join(os.path.dirname(__file__), 'opgen', 'opgen.py'),
              gen_cpp_name]
     subprocess.check_call(args)
 
 build_ort('onnxruntime', 'ort_build')
 
 current_path = os.path.abspath(os.getcwd())
-ort_build_root = os.path.join(current_path, 'ort_build', 'Release')
+ort_build_root = os.path.join(current_path, 'ort_build', build_config)
 ort_lib_dir=[ort_build_root]
 ort_include_dir=[os.path.join(current_path, 'onnxruntime', 'include', 'onnxruntime'),
                  os.path.join(current_path, 'onnxruntime', 'onnxruntime'),
-                 os.path.join(current_path, 'ort_build', 'Release'),
+                 os.path.join(current_path, 'ort_build', build_config),
                  os.path.join(current_path, 'onnxruntime', 'cmake', 'external', 'onnx'),
                  os.path.join(current_path, 'onnxruntime', 'cmake', 'external', 'SafeInt'),
                  os.path.join(current_path, 'onnxruntime', 'cmake', 'external', 'protobuf', 'src'),
                  os.path.join(current_path, 'onnxruntime', 'cmake', 'external', 'nsync', 'public'),
-                 os.path.join(current_path, 'ort_build', 'Release', 'external', 'onnx')]
+                 os.path.join(current_path, 'ort_build', build_config, 'external', 'onnx')]
 
 ort_libs = [
                    'libonnxruntime_eager',
@@ -49,10 +56,12 @@ ort_libs = [
                    ] 
 ort_static_libs = [f'{ort_build_root}/{l}.a' for l in ort_libs]
 
+protobuf_lib = 'libprotobuf.a' if build_config == 'Release' else 'libprotobufd.a'
+
 external_libs = [ort_build_root + '/external/nsync/libnsync_cpp.a',
               ort_build_root + '/external/onnx/libonnx.a',
               ort_build_root + '/external/onnx/libonnx_proto.a',
-              ort_build_root + '/external/protobuf/cmake/libprotobuf.a',
+              ort_build_root + f'/external/protobuf/cmake/{protobuf_lib}',
               ort_build_root + '/external/re2/libre2.a',]
 ort_static_libs.extend(external_libs)
 
