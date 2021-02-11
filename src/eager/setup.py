@@ -10,6 +10,9 @@ import sys
 python_exe = sys.executable
 build_config = 'Release'
 
+def is_debug_build():
+    return build_config != 'Release'
+
 def build_ort(ort_path, build_dir):
     if not os.path.exists(build_dir):
         os.mkdir(build_dir)
@@ -56,7 +59,7 @@ ort_libs = [
                    ] 
 ort_static_libs = [f'{ort_build_root}/{l}.a' for l in ort_libs]
 
-protobuf_lib = 'libprotobuf.a' if build_config == 'Release' else 'libprotobufd.a'
+protobuf_lib = 'libprotobufd.a' if is_debug_build() else 'libprotobuf.a'
 
 external_libs = [ort_build_root + '/external/nsync/libnsync_cpp.a',
               ort_build_root + '/external/onnx/libonnx.a',
@@ -67,13 +70,24 @@ ort_static_libs.extend(external_libs)
 
 gen_ort_aten_ops()
 
+extra_compile_args = [
+    '-DONNX_ML',
+    '-DONNX_NAMESPACE=onnx',
+    f'-DONNX_BUILD_CONFIG="{build_config}"'
+]
+
+if is_debug_build():
+    extra_compile_args += [
+        '-DONNX_DEBUG'
+    ]
+
 setup(
     name='torch_ort',
     ext_modules=[
         CppExtension(
             name='torch_ort',
             sources=glob('*.cpp'),
-            extra_compile_args=['-DONNX_ML', '-DONNX_NAMESPACE=onnx'],
+            extra_compile_args=extra_compile_args,
             include_dirs=ort_include_dir,
             library_dirs=ort_lib_dir,
             extra_objects=ort_static_libs)
