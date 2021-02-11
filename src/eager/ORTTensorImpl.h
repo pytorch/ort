@@ -1,45 +1,55 @@
 #pragma once
 
-#include <ATen/OpaqueTensorImpl.h>
-#include <ATen/WrapDimUtils.h>
+#include <c10/core/TensorImpl.h>
 
-namespace at {
+#include "core/framework/ml_value.h"
+#include "core/framework/tensor.h"
 
-template <typename OpaqueHandle>
-struct ORTOpaqueTensorImpl : public OpaqueTensorImpl<OpaqueHandle> {
-  ORTOpaqueTensorImpl(
-    at::DispatchKeySet key_set,
-    const caffe2::TypeMeta& data_type,
-    c10::Device device,
-    OpaqueHandle opaque_handle,
-    c10::IntArrayRef sizes,
-    c10::IntArrayRef strides)
-    : OpaqueTensorImpl<OpaqueHandle>(
-      key_set,
-      data_type,
-      device,
-      opaque_handle,
-      sizes),
-      strides_(strides.vec()) {  
+namespace torch_ort {
+namespace eager {
+
+class ORTTensorImpl final : public c10::TensorImpl {
+ public:
+  explicit ORTTensorImpl(OrtValue tensor, const at::TensorOptions& options)
+    : c10::TensorImpl(
+        c10::DispatchKeySet{c10::DispatchKey::ORT},
+        options.dtype(),
+        options.device()) {
+    set_tensor(tensor);
   }
 
-  IntArrayRef strides() const override {
-    return strides_;
+  OrtValue& tensor() {
+    return tensor_;
   }
 
-  bool is_contiguous(
-    c10::MemoryFormat memory_format
-      = c10::MemoryFormat::Contiguous) const override {
-    return true;
+  void set_tensor(OrtValue tensor) {
+    tensor_ = std::move(tensor);
   }
 
-  int64_t stride(int64_t d) const override {
-    d = at::maybe_wrap_dim(d, this->dim(), false);
-    return strides_[d];
-  }
+  c10::intrusive_ptr<TensorImpl> shallow_copy_and_detach(
+    const c10::VariableVersion& version_counter,
+    bool allow_tensor_metadata_change) const override;
 
-private:
-  SmallVector<int64_t, 5> strides_;
+  void shallow_copy_from(const c10::intrusive_ptr<TensorImpl>& impl) override;
+
+  at::IntArrayRef sizes() const override;
+
+  int64_t dim() const override;
+
+  int64_t numel() const override;
+
+  bool is_contiguous(at::MemoryFormat memory_format) const override;
+
+  int64_t size(int64_t d) const override;
+
+  const at::Storage& storage() const override;
+
+  bool has_storage() const override;
+
+ private:
+  void cacheSizeMetadata();
+  OrtValue tensor_;
 };
 
-} // namespace at
+} // namespace eager
+} // namespace torch_ort

@@ -20,7 +20,7 @@ onnxruntime::ORTInvoker& GetORTInvoker(Device device){
   return GetORTBackends().GetInvoker(device);
 }
 
-std::vector<int64_t> GetStride(const std::vector<int64_t>& shape, int64_t element_size){
+std::vector<int64_t> GetStrides(const std::vector<int64_t>& shape, int64_t element_size){
   std::vector<int64_t> strides;
   if (shape.empty())
     return strides;

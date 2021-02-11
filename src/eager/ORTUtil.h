@@ -66,7 +66,7 @@ void CreateMLValue(void* data_ptr, const std::vector<int64_t>& dims, OrtValue* p
                   onnxruntime::DataTypeImpl::GetType<onnxruntime::Tensor>()->GetDeleteFunc());
 }
 
-std::vector<int64_t> GetStride(const std::vector<int64_t>& shape, int64_t element_size);
+std::vector<int64_t> GetStrides(const std::vector<int64_t>& shape, int64_t element_size);
 
 } // namespace detail
 } // namespace ort
