@@ -60,17 +60,6 @@ Tensor ort_aten_view(const Tensor& self, IntArrayRef size) {
     self.options());
 }
 
-Tensor add(const Tensor& A, const Tensor& B, c10::Scalar alpha=1) {
-  ORT_LOG << "torch.add";
-  //todo: handle alpha
-  return new_with_orttensor_ort(
-    ort::detail::add(
-      GetORTInvoker(A.device()),
-      orttensor_from_ort(A),
-      orttensor_from_ort(B)),
-    A.options());
-}
-
 namespace{
   inline bool is_device_supported(DeviceType type){
     return type == at::kORT || type == at::kCPU;
