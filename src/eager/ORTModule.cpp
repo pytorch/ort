@@ -4,11 +4,8 @@
 
 #include <memory>
 
-
-namespace at {
-namespace native {
-namespace ort {
-namespace detail {
+namespace torch_ort {
+namespace eager {
 
 PYBIND11_MODULE(torch_ort, m) {
   ORT_LOG << "pybind11 module init";
@@ -26,7 +23,5 @@ PYBIND11_MODULE(torch_ort, m) {
         });
 }
 
-} // namespace detail
-} // namespace ort
-} // namespace native
-} // namespace at
+} // namespace eager
+} // namespace torch_ort

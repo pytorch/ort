@@ -3,10 +3,8 @@
 #include "core/eager/ort_kernel_invoker.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 
-namespace at {
-namespace native {
-namespace ort {
-namespace detail {
+namespace torch_ort {
+namespace eager {
 
 using namespace onnxruntime;
 
@@ -21,7 +19,7 @@ ORTBackendsManager::ORTBackendsManager(){
   ort_device_indices_.insert({{ORTDeviceKind::kApollo, 0}, backends_.size() - 1});
 }
 
-onnxruntime::ORTInvoker& ORTBackendsManager::GetInvoker(const Device device){
+onnxruntime::ORTInvoker& ORTBackendsManager::GetInvoker(const at::Device device){
   size_t index = device.index() < 0 ? 0 : device.index();
   assert(device.type() == DeviceType::ORT && index < backends_.size());
   return *backends_[index];
@@ -34,8 +32,5 @@ int ORTBackendsManager::GetPytorchDeviceIndex(ORTDeviceKind devkind, int index){
   return it->second;
 }
 
-
-} // namespace detail
-} // namespace ort
-} // namespace native
-} // namespace at
+} // namespace eager
+} // namespace torch_ort

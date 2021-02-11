@@ -2,14 +2,10 @@
 #include "ORTTensorImpl.h"
 #include "ORTUtil.h"
 
-namespace at {
-namespace native {
-namespace ort {
-namespace aten {
+namespace torch_ort {
+namespace eager {
 
-using namespace at::native::ort::detail;
-using ORTTensorImpl = ORTOpaqueTensorImpl<OrtValue>;
-
+at::Tensor new_with_orttensor_ort(
   OrtValue&& ot,
   const at::TensorOptions& options) {
   return at::Tensor(c10::make_intrusive<ORTTensorImpl>(
@@ -17,20 +13,17 @@ using ORTTensorImpl = ORTOpaqueTensorImpl<OrtValue>;
     options));
 }
 
-const OrtValue& orttensor_from_ort(const Tensor& tensor) {
+const OrtValue& orttensor_from_ort(const at::Tensor& tensor) {
   // FIXME: assert tensor is from ORT
   auto impl = static_cast<ORTTensorImpl*>(tensor.unsafeGetTensorImpl());
   return impl->tensor();
 }
 
-OrtValue& orttensor_from_ort(Tensor& tensor) {
+OrtValue& orttensor_from_ort(at::Tensor& tensor) {
   // FIXME: assert tensor is from ORT
   auto impl = static_cast<ORTTensorImpl*>(tensor.unsafeGetTensorImpl());
   return impl->tensor();
 }
 
-
-}
-}
-}
-}
+} // namespace eager
+} // namespace torch_ort

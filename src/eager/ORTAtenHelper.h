@@ -4,19 +4,14 @@
 #include "core/framework/ml_value.h"
 #include "core/framework/tensor.h"
 
+namespace torch_ort {
+namespace eager {
 
-namespace at {
-namespace native {
-namespace ort {
-namespace aten {
+at::Tensor new_with_orttensor_ort(OrtValue&& ot, const at::TensorOptions& options);
 
-Tensor new_with_orttensor_ort(OrtValue&& ot, const TensorOptions& options);
+const OrtValue& orttensor_from_ort(const at::Tensor& tensor);
 
-const OrtValue& orttensor_from_ort(const Tensor& tensor);
+OrtValue& orttensor_from_ort(at::Tensor& tensor);
 
-OrtValue& orttensor_from_ort(Tensor& tensor);
-
-}
-}
-}
-}
+} // namespace eager
+} // namespace torch_ort

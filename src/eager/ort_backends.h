@@ -8,10 +8,8 @@
 
 #include "core/session/onnxruntime_cxx_api.h"
 
-namespace at {
-namespace native {
-namespace ort {
-namespace detail {
+namespace torch_ort {
+namespace eager {
 
 class ORTBackendsManager{
 public:
@@ -21,7 +19,7 @@ public:
     kApollo = 1
   };
   ORTBackendsManager();
-  onnxruntime::ORTInvoker& GetInvoker(const Device device);
+  onnxruntime::ORTInvoker& GetInvoker(const at::Device device);
   int GetPytorchDeviceIndex(ORTDeviceKind devkind, int index);
 
 private:
@@ -30,7 +28,5 @@ private:
 
 };
 
-} // namespace detail
-} // namespace ort
-} // namespace native
-} // namespace at
+} // namespace eager
+} // namespace torch_ort

@@ -11,13 +11,11 @@
 #include "core/session/onnxruntime_cxx_api.h"
 #include "ort_backends.h"
 
-namespace at {
-namespace native {
-namespace ort {
-namespace detail {
+namespace torch_ort {
+namespace eager {
 
 ORTBackendsManager& GetORTBackends();
-onnxruntime::ORTInvoker& GetORTInvoker(Device device);
+onnxruntime::ORTInvoker& GetORTInvoker(at::Device device);
 
 template <typename T>
 inline void CopyVectorToTensor(const std::vector<T>& value, onnxruntime::Tensor& tensor) {
@@ -68,7 +66,5 @@ void CreateMLValue(void* data_ptr, const std::vector<int64_t>& dims, OrtValue* p
 
 std::vector<int64_t> GetStrides(const std::vector<int64_t>& shape, int64_t element_size);
 
-} // namespace detail
-} // namespace ort
-} // namespace native
-} // namespace at
+} // namespace eager
+} // namespace torch_ort

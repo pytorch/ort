@@ -4,10 +4,8 @@
 #include "ORTOps.h"
 #include "ORTUtil.h"
 
-namespace at {
-namespace native {
-namespace ort {
-namespace detail {
+namespace torch_ort {
+namespace eager {
 
 OrtValue reshape_copy(
   onnxruntime::ORTInvoker& invoker,
@@ -16,7 +14,7 @@ OrtValue reshape_copy(
   
   // TODO: actual reshape on buffer
   const onnxruntime::Tensor& input_tensor = input.Get<onnxruntime::Tensor>();
-  auto new_shape = infer_size(shape, input_tensor.Shape().Size());
+  auto new_shape = at::infer_size(shape, input_tensor.Shape().Size());
   OrtValue shape_tensor;
   //todo: avoid the copy on this small shape vector;
   CreateMLValue<int64_t>(invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
@@ -54,7 +52,5 @@ void copy(onnxruntime::ORTInvoker& invoker,
   ort_ep.GetDataTransfer()->CopyTensor(src_tensor, *dst_tensor);
 }
 
-} // namespace detail
-} // namespace ort
-} // namespace native
-} // namespace at
+} // namespace eager
+} // namespace torch_ort

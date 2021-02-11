@@ -4,10 +4,8 @@
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "ort_backends.h"
 
-namespace at {
-namespace native {
-namespace ort {
-namespace detail {
+namespace torch_ort {
+namespace eager {
 
 using namespace onnxruntime;
 
@@ -16,7 +14,7 @@ ORTBackendsManager& GetORTBackends(){
   return backends;
 }
 
-onnxruntime::ORTInvoker& GetORTInvoker(Device device){
+onnxruntime::ORTInvoker& GetORTInvoker(at::Device device){
   return GetORTBackends().GetInvoker(device);
 }
 
@@ -33,7 +31,5 @@ std::vector<int64_t> GetStrides(const std::vector<int64_t>& shape, int64_t eleme
   return strides;
 }
 
-} // namespace detail
-} // namespace ort
-} // namespace native
-} // namespace at
+} // namespace eager
+} // namespace torch_ort

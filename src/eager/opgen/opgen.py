@@ -33,19 +33,15 @@ def generate_includes(writer):
   writer.write('#include "ORTAtenHelper.h" \n')
 
 def begin_namespace(writer):
-  writer.write('namespace at { \n')
-  writer.write('namespace native { \n')
-  writer.write('namespace ort { \n')
-  writer.write('namespace aten { \n')
+  writer.write('namespace torch_ort { \n')
+  writer.write('namespace eager { \n')
 
 def using_stmts(writer):
-  writer.write('using namespace at::native::ort::detail; \n')
+  writer.write('using namespace at;\n')
 
 def end_namespace(writer):
-  writer.write('}\n')
-  writer.write('}\n')
-  writer.write('}\n')
-  writer.write('}\n')
+  writer.write('} // namespace eager\n')
+  writer.write('} // namespace torch_ort\n')
 
 def load_config(path):
   result = {}
