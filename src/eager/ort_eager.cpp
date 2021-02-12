@@ -1,8 +1,7 @@
 #include <torch/extension.h>
 
-#include "ORTUtil.h"
-
-#include <memory>
+#include "ort_backends.h"
+#include "ort_util.h"
 
 namespace torch_ort {
 namespace eager {

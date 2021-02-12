@@ -24,7 +24,7 @@ def build_ort(ort_path, build_dir):
     subprocess.check_call(args)
 
 def gen_ort_aten_ops():
-    gen_cpp_name = "ORTAten.g.cpp"
+    gen_cpp_name = "ort_aten.g.cpp"
     if os.path.exists(gen_cpp_name):
         os.remove(gen_cpp_name)
     args = [python_exe, os.path.join(os.path.dirname(__file__), 'opgen', 'opgen.py'),

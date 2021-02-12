@@ -1,8 +1,5 @@
-#include <ATen/InferSize.h>
-
-#include <torch/extension.h>
-#include "ORTOps.h"
-#include "ORTUtil.h"
+#include "ort_ops.h"
+#include "ort_util.h"
 
 namespace torch_ort {
 namespace eager {

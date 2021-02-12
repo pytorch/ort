@@ -1,21 +1,14 @@
 #pragma once
 
+#include <core/session/onnxruntime_cxx_api.h>
+
+#include "ort_backends.h"
+
 // FIXME: no idea how to increase logging level for INFO, DEBUG, etc
 #define ORT_LOG LOG(WARNING) << "[ORT] "
 
-#include "core/framework/ml_value.h"
-#include "core/framework/tensor.h"
-#include "core/eager/ort_kernel_invoker.h"
-#include <torch/extension.h>
-
-#include "core/session/onnxruntime_cxx_api.h"
-#include "ort_backends.h"
-
 namespace torch_ort {
 namespace eager {
-
-ORTBackendsManager& GetORTBackends();
-onnxruntime::ORTInvoker& GetORTInvoker(at::Device device);
 
 template <typename T>
 inline void CopyVectorToTensor(const std::vector<T>& value, onnxruntime::Tensor& tensor) {

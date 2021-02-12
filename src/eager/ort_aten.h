@@ -1,8 +1,10 @@
 #pragma once
 
 #include <torch/extension.h>
-#include "core/framework/ml_value.h"
-#include "core/framework/tensor.h"
+#include <core/framework/ml_value.h>
+
+#include "ort_util.h"
+#include "ort_ops.h"
 
 namespace torch_ort {
 namespace eager {

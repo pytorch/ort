@@ -27,10 +27,8 @@ onnx_ops_config_path = os.path.realpath(os.path.join(
 
 def generate_includes(writer):
   writer.write('#include <torch/extension.h> \n')
-  writer.write('#include "ORTUtil.h" \n')
-  writer.write('#include "ORTTensorImpl.h" \n')
-  writer.write('#include "ORTOps.h" \n')
-  writer.write('#include "ORTAtenHelper.h" \n')
+  writer.write('#include "ort_tensor.h" \n')
+  writer.write('#include "ort_aten.h" \n')
 
 def begin_namespace(writer):
   writer.write('namespace torch_ort { \n')

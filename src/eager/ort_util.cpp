@@ -1,22 +1,12 @@
-#include "ORTUtil.h"
+#include <core/providers/cpu/cpu_execution_provider.h>
 
-#include "core/eager/ort_kernel_invoker.h"
-#include "core/providers/cpu/cpu_execution_provider.h"
+#include "ort_util.h"
 #include "ort_backends.h"
 
 namespace torch_ort {
 namespace eager {
 
 using namespace onnxruntime;
-
-ORTBackendsManager& GetORTBackends(){
-  static ORTBackendsManager backends;
-  return backends;
-}
-
-onnxruntime::ORTInvoker& GetORTInvoker(at::Device device){
-  return GetORTBackends().GetInvoker(device);
-}
 
 std::vector<int64_t> GetStrides(const std::vector<int64_t>& shape, int64_t element_size){
   std::vector<int64_t> strides;

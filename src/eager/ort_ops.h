@@ -1,8 +1,7 @@
 #pragma once
 
-#include "core/framework/ml_value.h"
-#include "core/framework/tensor.h"
-#include "core/eager/ort_kernel_invoker.h"
+#include <core/framework/ml_value.h>
+#include <core/eager/ort_kernel_invoker.h>
 
 namespace torch_ort {
 namespace eager {

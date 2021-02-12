@@ -1,12 +1,8 @@
 #pragma once
 
-
-#include "core/framework/ml_value.h"
-#include "core/framework/tensor.h"
-#include "core/eager/ort_kernel_invoker.h"
 #include <torch/extension.h>
-
-#include "core/session/onnxruntime_cxx_api.h"
+#include <core/framework/ml_value.h>
+#include <core/eager/ort_kernel_invoker.h>
 
 namespace torch_ort {
 namespace eager {
@@ -27,6 +23,9 @@ private:
   std::map<std::pair<ORTDeviceKind, int>, size_t> ort_device_indices_;
 
 };
+
+ORTBackendsManager& GetORTBackends();
+onnxruntime::ORTInvoker& GetORTInvoker(at::Device device);
 
 } // namespace eager
 } // namespace torch_ort

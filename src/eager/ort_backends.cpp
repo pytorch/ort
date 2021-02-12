@@ -1,7 +1,6 @@
-#include "ort_backends.h"
+#include <core/providers/cpu/cpu_execution_provider.h>
 
-#include "core/eager/ort_kernel_invoker.h"
-#include "core/providers/cpu/cpu_execution_provider.h"
+#include "ort_backends.h"
 
 namespace torch_ort {
 namespace eager {
@@ -30,6 +29,15 @@ int ORTBackendsManager::GetPytorchDeviceIndex(ORTDeviceKind devkind, int index){
   if (it == ort_device_indices_.end())
     return -1;
   return it->second;
+}
+
+ORTBackendsManager& GetORTBackends(){
+  static ORTBackendsManager backends;
+  return backends;
+}
+
+onnxruntime::ORTInvoker& GetORTInvoker(at::Device device){
+  return GetORTBackends().GetInvoker(device);
 }
 
 } // namespace eager
