@@ -6,20 +6,22 @@
 namespace torch_ort {
 namespace eager {
 
-PYBIND11_MODULE(torch_ort, m) {
+PYBIND11_MODULE(torch_ort, torch_ort_module) {
   ORT_LOG << "pybind11 module init";
-  m.def("get_ort_device", 
-        [](const std::string& devkind, int index){
-          auto& ort_backends = GetORTBackends();
-          ORTBackendsManager::ORTDeviceKind ort_dev_kind;
-          if (devkind == "CPU")
-            ort_dev_kind = ORTBackendsManager::ORTDeviceKind::kCPU;
-          else if (devkind == "Apollo")
-            ort_dev_kind = ORTBackendsManager::ORTDeviceKind::kApollo;
-          else
-            throw std::runtime_error("Not supported device");
-          return ort_backends.GetPytorchDeviceIndex(ort_dev_kind, index);
-        });
+
+  auto device_module = torch_ort_module.def_submodule("device");
+  for (auto const& entry : GetORTBackendsManager().GetBackendKinds()) {
+    device_module.def(
+      entry.second.c_str(),
+      [entry](int index) {
+        return py::cast<py::object>(
+          THPDevice_New(
+            ORTBackendsManager::MakePyTorchDevice(
+              entry.first,
+              index)));
+      },
+      py::arg("device_index") = 0);
+  }
 }
 
 } // namespace eager
