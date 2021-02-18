@@ -23,7 +23,7 @@ regdecs_path = os.path.realpath(os.path.join(
 
 onnx_ops_config_path = os.path.realpath(os.path.join(
   os.path.dirname(__file__),
-  'onnx_ops.config'))
+  'ops.json'))
 
 def generate_includes(writer):
   writer.write('#include <torch/extension.h> \n')
@@ -42,14 +42,8 @@ def end_namespace(writer):
   writer.write('} // namespace torch_ort\n')
 
 def load_config(path):
-  result = {}
-  with open(path) as f:
-    s = f.readline()
-    while s:
-      op = json.loads(s)
-      result[op["aten_op"]] = op
-      s = f.readline()
-  return result
+  with open(path) as fp:
+    return json.load(fp)
 
 def gen_onnx_handle(writer, op_config, cpp_func):
   # logging

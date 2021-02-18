@@ -1,0 +1,53 @@
+{
+  "aten::empty.memory_format": {
+    "handle": "Customize",
+    "unbox_registration": true
+  },
+  "aten::reshape": {
+    "handle": "Customize",
+    "unbox_registration": false
+  },
+  "aten::view": {
+    "handle": "Customize",
+    "unbox_registration": false
+  },
+  "aten::copy_": {
+    "handle": "Customize",
+    "unbox_registration": false
+  },
+  "aten::add.Tensor": {
+    "handle": "Generated",
+    "unbox_registration": false,
+    "onnx_op": "Add",
+    "inputs": [
+      0,
+      1
+    ]
+  },
+  "aten::sub.Tensor": {
+    "handle": "Generated",
+    "unbox_registration": false,
+    "onnx_op": "Sub",
+    "inputs": [
+      0,
+      1
+    ]
+  },
+  "aten::mul.Tensor": {
+    "handle": "Generated",
+    "unbox_registration": false,
+    "onnx_op": "Mul",
+    "inputs": [
+      0,
+      1
+    ]
+  },
+  "aten::relu": {
+    "handle": "Generated",
+    "unbox_registration": false,
+    "onnx_op": "Relu",
+    "inputs": [
+      0
+    ]
+  }
+}
