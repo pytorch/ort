@@ -7,6 +7,7 @@ import os
 import sys
 from typing import TextIO
 import json
+import yaml
 import opgen.lexer
 import opgen.parser
 from opgen.ast import *
@@ -23,7 +24,7 @@ regdecs_path = os.path.realpath(os.path.join(
 
 onnx_ops_config_path = os.path.realpath(os.path.join(
   os.path.dirname(__file__),
-  'ops.json'))
+  'ops.yml'))
 
 def generate_includes(writer):
   writer.write('#include <torch/extension.h> \n')
@@ -43,7 +44,7 @@ def end_namespace(writer):
 
 def load_config(path):
   with open(path) as fp:
-    return json.load(fp)
+    return yaml.load(fp, Loader=yaml.SafeLoader)
 
 def gen_onnx_handle(writer, op_config, cpp_func):
   # logging
@@ -56,7 +57,7 @@ def gen_onnx_handle(writer, op_config, cpp_func):
   # prepare inputs
   i = 0
   inputs = []
-  for index in op_config["inputs"]:
+  for index in op_config["params"]:
     writer.write('auto& input_%d = orttensor_from_ort(%s); \n' % 
                  (i, cpp_func.parameters[index].member.identifier.value))
     inputs.append('input_%d' % i)
@@ -137,7 +138,7 @@ with opgen.parser.cpp_create_from_file(regdecs_path) as parser:
 
     writer.write(f"// {torch_func.torch_schema}\n")
 
-    if op_config["handle"] == "Customize":
+    if "signature_only" in op_config and op_config["signature_only"]:
       # write the extern func declaration:
       writer.write("extern ")
       write_func_signature(writer, cpp_func)
@@ -147,7 +148,6 @@ with opgen.parser.cpp_create_from_file(regdecs_path) as parser:
       writer.write("static ")
       write_func_signature(writer, cpp_func)
       writer.write("\n{\n")
-
 
       writer.write("    //  Return: ")
       torch_func.return_type.write(writer)
@@ -161,10 +161,8 @@ with opgen.parser.cpp_create_from_file(regdecs_path) as parser:
         param_list_member.member.write(writer)
         writer.write("\n")
 
-      if op_config["handle"] == "Generated":
-        gen_onnx_handle(writer, op_config, cpp_func)
-      else:
-        writer.write('throw std::runtime_error("Not Implemented");')
+      gen_onnx_handle(writer, op_config, cpp_func)
+
       # Finalize the ORT implementation
       writer.write("}\n\n")
 
@@ -178,7 +176,7 @@ with opgen.parser.cpp_create_from_file(regdecs_path) as parser:
       continue
     op_config = op_configs[torch_func.identifier.value]
 
-    if op_config["unbox_registration"]:
+    if "unboxed" in op_config and op_config["unboxed"]:
       writer.write(f"    m.impl_UNBOXED(\"{torch_func.identifier.value}\", ({cpp_func.ort_name}));\n")
     else:
       writer.write(f"    m.impl(\"{torch_func.identifier.value}\", TORCH_FN({cpp_func.ort_name}));\n")
