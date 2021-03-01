@@ -22,7 +22,7 @@ class Node(object):
 #region Syntax List
 
 class SyntaxListMember(Node):
-  def __init__(self, member: Node, trailing_separator: Token):
+  def __init__(self, member: Node, trailing_separator: Token = None):
     super().__init__()
     self.member = member
     self.trailing_separator = trailing_separator
@@ -86,7 +86,17 @@ class ArrayExpression(Expression):
 
 #region Types
 
-class Type(Node): pass
+class Type(Node):
+  def _desugar_self(self) -> "Type":
+    return self
+
+  def desugar(self) -> "Type":
+    desugared = self
+    while True:
+      _desugared = desugared._desugar_self()
+      if _desugared == desugared:
+        return desugared
+      desugared = _desugared
 
 class ExpressionType(Type):
   def __init__(self, expression: Expression):
@@ -115,6 +125,9 @@ class ConstType(Type):
     writer.write(" ")
     self.inner_type.write(writer)
 
+  def _desugar_self(self) -> Type:
+    return self.inner_type
+
 class ReferenceType(Type):
   def __init__(self, inner_type: Type, reference_token: Token):
     super().__init__()
@@ -125,10 +138,16 @@ class ReferenceType(Type):
     self.inner_type.write(writer)
     writer.write(self.reference_token.value)
 
+  def _desugar_self(self) -> Type:
+    return self.inner_type
+
 class ModifiedType(Type):
   def __init__(self, base_type: Type):
     super().__init__()
     self.base_type = base_type
+
+  def _desugar_self(self) -> Type:
+    return self.base_type
 
 class OptionalType(ModifiedType):
   def __init__(self, base_type: Type, token: Token):
@@ -177,6 +196,9 @@ class TupleMemberType(Type):
   def write(self, writer: TextIO):
     self.element_type.write(writer)
 
+  def _desugar_self(self) -> Type:
+    return self.element_name
+
 class TupleType(Type):
   def __init__(self, elements: SyntaxList):
     super().__init__()
@@ -218,7 +240,7 @@ class AliasInfoType(Type):
     self.inner_type.write(writer)
     self.alias_info.write(writer)
 
-class KWArgsSentinalType(Type):
+class KWArgsSentinelType(Type):
   def __init__(self, token: Token):
     super().__init__()
     self.token = token

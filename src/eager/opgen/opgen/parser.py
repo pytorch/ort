@@ -160,6 +160,8 @@ class CPPParser(ParserBase):
           TokenKind.COMMA,
           TokenKind.GREATER_THAN,
           self._parse_template_type_argument))
+      elif identifier.value == "TensorOptions":
+        parsed_type = TensorOptionsType(identifier)
       else:
         parsed_type = ConcreteType(identifier)
     else:
@@ -219,7 +221,7 @@ class TorchParser(ParserBase):
     alias_info: AliasInfo = None
 
     if self._peek_token(TokenKind.MUL):
-      return (KWArgsSentinalType(self._read_token()), None)
+      return (KWArgsSentinelType(self._read_token()), None)
 
     if self._peek_token(TokenKind.OPEN_PAREN):
       def parse_tuple_element():

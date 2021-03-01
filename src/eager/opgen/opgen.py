@@ -5,12 +5,48 @@
 
 import os
 import sys
-from typing import TextIO
 import json
-import yaml
+
+from typing import TextIO
+
 import opgen.lexer
 import opgen.parser
+import opgen.writer
 from opgen.ast import *
+
+class OpMap:
+  def __init__(self, torch_identifier: str,
+    ort_identifier: str = None,
+    signature_only: bool = False,
+    unboxed: bool = False,
+    params: [str] = None):
+    self.torch_identifier = torch_identifier
+    self.ort_identifier = ort_identifier
+    self.signature_only = signature_only
+    self.unboxed = unboxed
+    self.params = params
+
+op_maps = [
+  OpMap(
+    'aten::empty.memory_format',
+    signature_only = True,
+    unboxed = True),
+  OpMap(
+    'aten::copy_',
+    signature_only = True),
+  OpMap(
+    'aten::reshape',
+    signature_only = True),
+  OpMap(
+    'aten::view',
+    signature_only = True),
+  OpMap('aten::add.Tensor', 'Add'),
+  OpMap('aten::mul.Tensor', 'Mul'),
+  OpMap('aten::relu', 'Relu'),
+  OpMap('aten::sub.Tensor', 'Sub')
+]
+
+op_maps = { op_map.torch_identifier: op_map for op_map in op_maps }
 
 regdecs_path = os.path.realpath(os.path.join(
   os.path.dirname(__file__),
@@ -22,166 +58,234 @@ regdecs_path = os.path.realpath(os.path.join(
   'ATen',
   'RegistrationDeclarations.h'))
 
-onnx_ops_config_path = os.path.realpath(os.path.join(
-  os.path.dirname(__file__),
-  'ops.yml'))
-
-def generate_includes(writer):
-  writer.write('#include <torch/extension.h> \n')
-  writer.write('#include "ort_tensor.h" \n')
-  writer.write('#include "ort_aten.h" \n')
-
-def begin_namespace(writer):
-  writer.write('namespace torch_ort { \n')
-  writer.write('namespace eager { \n')
-
-def using_stmts(writer):
-  writer.write('using namespace at;\n')
-
-def end_namespace(writer):
-  writer.write('} // namespace eager\n')
-  writer.write('} // namespace torch_ort\n')
-
-def load_config(path):
-  with open(path) as fp:
-    return yaml.load(fp, Loader=yaml.SafeLoader)
-
-def gen_onnx_handle(writer, op_config, cpp_func):
-  # logging
-  writer.write('ORT_LOG << "%s"; \n' % cpp_func.ort_name)
-  # get ort kernel invoker
-  assert(len(cpp_func.parameters) > 0)
-  writer.write("auto& invoker = GetORTInvoker(")
-  writer.write(cpp_func.parameters[0].member.identifier.value)
-  writer.write('.device()); \n')
-  # prepare inputs
-  i = 0
-  inputs = []
-  for index in op_config["params"]:
-    writer.write('auto& input_%d = orttensor_from_ort(%s); \n' % 
-                 (i, cpp_func.parameters[index].member.identifier.value))
-    inputs.append('input_%d' % i)
-    i += 1
-  
-
-  # prepare ort outputs:
-  ort_output_name = 'results'
-  # todo: how to handle multiple result
-  writer.write('std::vector<OrtValue> %s(1); \n' % ort_output_name)
-  # invoke ort kernel
-  # todo: handle attributes
-  writer.write('auto status = invoker.Invoke("%s", {%s}, %s, nullptr);\n' % 
-                (op_config["onnx_op"], ','.join(inputs), ort_output_name))
-  # status check
-  writer.write('if (!status.IsOK()) \n')
-  writer.write('  throw std::runtime_error("ORT return failure status: " + status.ErrorMessage()); \n')
-  # logging
-  writer.write('ORT_LOG << "Invoke ORT %s kernel successfully";\n' % op_config['onnx_op'])
-  # construct result
-  ort_value_name = 'ort_result'
-  writer.write('OrtValue %s = %s[0]; \n' % (ort_value_name, ort_output_name))
-  # todo: handle mutliple result
-  # todo: return type check
-  writer.write('return new_with_orttensor_ort(std::move(%s), %s.options()); \n' %
-               (ort_value_name, cpp_func.parameters[0].member.identifier.value))
-
-def write_func_signature(writer, cpp_func):
-  cpp_func.return_type.write(writer)
-  writer.write(" ")
-  writer.write(cpp_func.ort_name)
-  writer.write("(")
-  for param_list_member in cpp_func.parameters:
-    param_list_member.write(writer)
-  writer.write(")")
-
-if len(sys.argv) == 2:
-  writer = open(sys.argv[1], 'wt')
-else:
-  writer = sys.stdout
-
-with opgen.parser.cpp_create_from_file(regdecs_path) as parser:
-  op_configs = load_config(onnx_ops_config_path)
-
-  generate_includes(writer)
-  begin_namespace(writer)
-  using_stmts(writer)
-  generated_funcs = []
-
+def parse_function_decls(parser: opgen.parser.CPPParser):
   # Parse the C++ declarations
   tu = parser.parse_translation_unit()
 
+  # Parse the Torch schema from the JSON comment that follows each C++ decl
+  # and link associated Torch and C++ decls (functions, parameters, returns)
   for cpp_func in tu:
-    # Parse the Torch schema from the JSON comment that follows the C++ decl
-    torch_func = None
     if cpp_func.semicolon and cpp_func.semicolon.trailing_trivia:
       for trivia in cpp_func.semicolon.trailing_trivia:
         if trivia.kind == opgen.lexer.TokenKind.SINGLE_LINE_COMMENT:
-          metadata = json.loads(trivia.value.lstrip("//"))
-          schema = metadata["schema"]
+          metadata = json.loads(trivia.value.lstrip('//'))
+          schema = metadata['schema']
+
           schema_parser = opgen.parser.torch_create_from_string(schema)
           schema_parser.set_source_location(cpp_func.semicolon.location)
           torch_func = schema_parser.parse_function()
+
           torch_func.torch_schema = schema
-          torch_func.torch_dispatch = metadata["dispatch"] == "True"
-          torch_func.torch_default = metadata["default"] == "True"
-    if not torch_func:
+          torch_func.torch_dispatch = metadata['dispatch'] == 'True'
+          torch_func.torch_default = metadata['default'] == 'True'
+
+          cpp_func.torch_func = torch_func
+
+          if cpp_func.return_type:
+            cpp_func.return_type.torch_type = torch_func.return_type
+
+          # Synthesize KWArgsSentinelType in the C++ declaration if we have one
+          for i, torch_param in enumerate([p.member for p in torch_func.parameters]):
+            if isinstance(torch_param.parameter_type, KWArgsSentinelType):
+              cpp_func.parameters.members.insert(i, SyntaxListMember(
+                torch_param,
+                Token(None, TokenKind.COMMA, ',')))
+              break
+
+          # Link Torch parameters to their C++ counterparts, special casing
+          # TensorOptions parameters
+          for i, cpp_param in enumerate([p.member for p in cpp_func.parameters]):
+            if not getattr(cpp_param, 'torch_param', None):
+              cpp_param.torch_param = []
+
+            torch_param_range = 1
+            if isinstance(cpp_param.parameter_type.desugar(), TensorOptionsType):
+              torch_param_range = 4
+
+            for j in range(torch_param_range):
+              torch_param = torch_func.parameters[i + j].member
+              cpp_param.torch_param.append(torch_param.parameter_type.desugar())
+
+          yield cpp_func, torch_func
+          break
+
+def write_func_signature(writer, cpp_func):
+  cpp_func.return_type.write(writer)
+  writer.write(' ')
+  writer.write(cpp_func.ort_name)
+  writer.write('(')
+  writer.push_indent()
+  for param_list_member in cpp_func.parameters:
+    writer.writeline()
+    if isinstance(param_list_member.member.parameter_type, KWArgsSentinelType):
+      writer.write('// ')
+    param_list_member.write(writer)
+  writer.pop_indent()
+  writer.write(')')
+
+def write_func_body(writer, op_map, cpp_func):
+  writer.writeline(f'ORT_LOG << "{cpp_func.ort_name}";')
+  writer.writeline()
+
+  assert(len(cpp_func.parameters) > 0)
+
+  have_invoker = False
+
+  # Prepare ORT kernel input parameters
+  inputs = []
+  for param in cpp_func.parameters:
+    if isinstance(param.member.parameter_type, KWArgsSentinelType):
+      break
+
+    torch_param_name = param.member.identifier.value
+    ort_param_name = f'ort_in_{torch_param_name}'
+    inputs.append(ort_param_name)
+
+    if not have_invoker:
+      writer.write('auto& invoker = GetORTInvoker(')
+      writer.write(torch_param_name)
+      writer.writeline('.device());')
+      writer.writeline()
+      have_invoker = True
+
+    writer.write('auto& ')
+    writer.write(ort_param_name)
+    writer.write(' = orttensor_from_ort(')
+    writer.write(torch_param_name)
+    writer.writeline(');')
+
+  writer.writeline()
+
+  # Prepare ORT results; TODO: handle multiple results
+  ort_output_name = 'ort_out'
+  writer.writeline(f'std::vector<OrtValue> {ort_output_name}(1);')
+  writer.writeline()
+
+  # Invoke ORT kernel; TODO: handle attributes
+  writer.writeline('auto status = invoker.Invoke(')
+  writer.push_indent()
+  writer.writeline(f'"{op_map.ort_identifier}", {{')
+  writer.push_indent()
+  for i, n in enumerate(inputs):
+    if i > 0:
+      writer.writeline(', ')
+    writer.write(n)
+  writer.pop_indent()
+  writer.writeline()
+  writer.writeline(f'}}, {ort_output_name}, nullptr);')
+  writer.pop_indent()
+  writer.writeline()
+
+  # Assert Invocation
+  writer.writeline('if (!status.IsOK())')
+  writer.push_indent()
+  writer.writeline('throw std::runtime_error(')
+  writer.push_indent()
+  writer.writeline('"ORT return failure status:" + status.ErrorMessage());')
+  writer.pop_indent()
+  writer.pop_indent()
+  writer.writeline()
+
+  writer.writeline(f'ORT_LOG << "Invoked ORT {op_map.ort_identifier}";')
+  writer.writeline()
+
+  ort_value_name = 'ort_result'
+  # TODO: pick the right "out" Torch parameter; do not assume the first one
+  ort_out_param_name = cpp_func.parameters[0].member.identifier.value
+  writer.writeline(f'OrtValue {ort_value_name} = {ort_output_name}[0];')
+
+  # TODO: Handle mutliple results
+  # TODO: Assert return type
+  writer.writeline('return new_with_orttensor_ort(')
+  writer.push_indent()
+  writer.writeline(f'std::move({ort_value_name}),')
+  writer.writeline(f'{ort_out_param_name}.options());')
+  writer.pop_indent()
+
+with opgen.parser.cpp_create_from_file(regdecs_path) as parser, \
+  opgen.writer.SourceWriter(
+    open(sys.argv[1], 'wt') \
+      if len(sys.argv) == 2 \
+      else sys.stdout) as writer:
+
+  # File preamble
+  writer.writeline('// AUTO-GENERATED CODE! - DO NOT EDIT!')
+  writer.writeline(f'// $ python {" ".join(sys.argv)}')
+  writer.writeline()
+  writer.writeline('#include <torch/extension.h>')
+  writer.writeline()
+  writer.writeline('#include "ort_tensor.h"')
+  writer.writeline('#include "ort_aten.h"')
+  writer.writeline()
+  writer.push_namespace('torch_ort')
+  writer.push_namespace('eager')
+  writer.writeline()
+  writer.push_indent()
+  writer.writeline('using namespace at;')
+  writer.writeline()
+
+  generated_funcs = []
+
+  # Generate the ops we care about
+  for cpp_func, torch_func in parse_function_decls(parser):
+    if torch_func.identifier.value not in op_maps:
       continue
-    
-    if torch_func.identifier.value not in op_configs:
-      continue
 
-    op_config = op_configs[torch_func.identifier.value]
+    op_map = op_maps[torch_func.identifier.value]
 
-    cpp_func.ort_name = "ort_" + torch_func.identifier.value.replace("::", "_").replace(".", "_")
-    if 'ort_aten_rename' in cpp_func.ort_name:
-      continue
+    cpp_func.ort_name = 'ort_' + torch_func.identifier.value \
+      .replace('::', '_') \
+      .replace('.', '_')
 
-    writer.write(f"// {torch_func.torch_schema}\n")
+    writer.writeline(f'// {torch_func.torch_schema}')
 
-    if "signature_only" in op_config and op_config["signature_only"]:
+    if op_map.signature_only:
       # write the extern func declaration:
-      writer.write("extern ")
+      writer.write('extern ')
       write_func_signature(writer, cpp_func)
-      writer.write(";\n")
+      writer.writeline(';')
     else:
       # Write the C++ signature for our ORT implementation
-      writer.write("static ")
+      writer.write('static ')
       write_func_signature(writer, cpp_func)
-      writer.write("\n{\n")
+      writer.writeline(' {')
+      writer.push_indent()
 
-      writer.write("    //  Return: ")
-      torch_func.return_type.write(writer)
-      writer.write("\n")
-
-      # Do something for each parameter; cpp_func and torch_func should have
-      # 1:1 parameters, but the metadata on the torch_func is richer than
-      # the cpp_func version.
-      for i, param_list_member in enumerate(torch_func.parameters):
-        writer.write(f"    // Param {i}: ")
-        param_list_member.member.write(writer)
-        writer.write("\n")
-
-      gen_onnx_handle(writer, op_config, cpp_func)
+      write_func_body(writer, op_map, cpp_func)
 
       # Finalize the ORT implementation
-      writer.write("}\n\n")
+      writer.pop_indent()
+      writer.writeline('}')
+
+    writer.writeline()
 
     generated_funcs.append((cpp_func, torch_func))
 
   # Generate registrations
-  writer.write("TORCH_LIBRARY_IMPL(aten, ORT, m) {\n")
-  writer.write("    ORT_LOG << \"ATen init\";\n")
+  writer.writeline('TORCH_LIBRARY_IMPL(aten, ORT, m) {')
+  writer.push_indent()
+  writer.writeline('ORT_LOG << "ATen init";')
+
   for cpp_func, torch_func in generated_funcs:
-    if torch_func.identifier.value not in op_configs:
+    if torch_func.identifier.value not in op_maps:
       continue
-    op_config = op_configs[torch_func.identifier.value]
 
-    if "unboxed" in op_config and op_config["unboxed"]:
-      writer.write(f"    m.impl_UNBOXED(\"{torch_func.identifier.value}\", ({cpp_func.ort_name}));\n")
+    op_map = op_maps[torch_func.identifier.value]
+
+    if op_map.unboxed:
+      reg_method = 'impl_UNBOXED'
+      fn_wrapper = ''
     else:
-      writer.write(f"    m.impl(\"{torch_func.identifier.value}\", TORCH_FN({cpp_func.ort_name}));\n")
-  writer.write("}\n")
+      reg_method = 'impl'
+      fn_wrapper = 'TORCH_FN'
 
-  end_namespace(writer)
+    writer.write(f'm.{reg_method}("{torch_func.identifier.value}", ')
+    writer.writeline(f'{fn_wrapper}({cpp_func.ort_name}));')
 
-writer.close()
+  writer.pop_indent()
+  writer.writeline('}')
+
+  # Finalize the file
+  writer.pop_indent()
+  writer.pop_namespace()
+  writer.pop_namespace()
