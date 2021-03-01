@@ -19,12 +19,12 @@ class OpMap:
     ort_identifier: str = None,
     signature_only: bool = False,
     unboxed: bool = False,
-    params: [str] = None):
+    ort_params: [str] = None):
     self.torch_identifier = torch_identifier
     self.ort_identifier = ort_identifier
     self.signature_only = signature_only
     self.unboxed = unboxed
-    self.params = params
+    self.ort_params = ort_params
 
 op_maps = [
   OpMap(
@@ -129,6 +129,9 @@ def write_func_signature(writer, cpp_func):
   writer.write(')')
 
 def write_func_body(writer, op_map, cpp_func):
+  def make_ort_param_name(torch_param_name):
+    return f'ort_in_{torch_param_name}'
+
   writer.writeline(f'ORT_LOG << "{cpp_func.ort_name}";')
   writer.writeline()
 
@@ -143,7 +146,7 @@ def write_func_body(writer, op_map, cpp_func):
       break
 
     torch_param_name = param.member.identifier.value
-    ort_param_name = f'ort_in_{torch_param_name}'
+    ort_param_name = make_ort_param_name(torch_param_name)
     inputs.append(ort_param_name)
 
     if not have_invoker:
@@ -158,6 +161,17 @@ def write_func_body(writer, op_map, cpp_func):
     writer.write(' = orttensor_from_ort(')
     writer.write(torch_param_name)
     writer.writeline(');')
+
+  # Some ops (like addmm/gemm) do not have a 1:1 parameter correspondence,
+  # so allow for overriding the parameter list to proxy to the ORT kernel.
+  # This allows for ignoring or reordering Torch parameters.
+  if op_map.ort_params and len(op_map.ort_params) > 0:
+    rearranged_inputs = []
+    for ort_param in op_map.ort_params:
+      for i in inputs:
+        if make_ort_param_name(ort_param) == i:
+          rearranged_inputs.append(i)
+    inputs = rearranged_inputs
 
   writer.writeline()
 
