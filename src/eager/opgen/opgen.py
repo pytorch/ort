@@ -48,7 +48,9 @@ op_maps = [
   OpMap('aten::mul.Tensor', 'Mul'),
   OpMap('aten::relu', 'Relu'),
   OpMap('aten::sub.Tensor', 'Sub'),
-  OpMap('aten::t', 'Transpose')
+  OpMap('aten::t', 'Transpose'),
+  OpMap('aten::addmm', 'Gemm',
+    ort_params = ['mat1', 'mat2', 'self'])
 ]
 
 op_maps = { op_map.torch_identifier: op_map for op_map in op_maps }
