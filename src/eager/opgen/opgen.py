@@ -32,6 +32,10 @@ op_maps = [
     signature_only = True,
     unboxed = True),
   OpMap(
+    'aten::empty_strided',
+    signature_only = True,
+    unboxed = True),
+  OpMap(
     'aten::copy_',
     signature_only = True),
   OpMap(

@@ -31,7 +31,9 @@ OrtValue& orttensor_from_ort(at::Tensor& tensor) {
 
 #pragma endregion
 
-at::Tensor ort_aten_empty_memory_format(at::IntArrayRef size, 
+at::Tensor ort_aten_empty_memory_format(
+  at::IntArrayRef size,
+  // *
   const at::TensorOptions& options, 
   c10::optional<at::MemoryFormat> memory_format) {
   // TODO: validate options and memory format
@@ -53,6 +55,33 @@ at::Tensor ort_aten_empty_memory_format(at::IntArrayRef size,
   return new_with_orttensor_ort(
     std::move(ot),
     options);
+}
+
+at::Tensor ort_aten_empty_strided(
+  at::IntArrayRef size,
+  at::IntArrayRef stride,
+  // *
+  c10::optional<at::ScalarType> dtype_opt,
+  c10::optional<at::Layout> layout_opt,
+  c10::optional<at::Device> device_opt,
+  c10::optional<bool> pin_memory_opt) {
+  ORT_LOG << "aten::empty_strided";
+  // TODO: handle stride
+  // TODO: how to handle type conversion
+  OrtValue ot;
+  assert(device_opt.has_value());
+  // TODO: how to support layout
+  assert(!layout_opt.has_value());
+  at::ScalarType dtype = c10::dtype_or_default(dtype_opt);
+  auto& invoker = GetORTInvoker(*device_opt);
+  CreateMLValue<float>(
+    invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
+    size.vec(),
+    {},
+    &ot);
+  return new_with_orttensor_ort(
+    std::move(ot),
+    at::device(*device_opt).dtype(dtype));
 }
 
 at::Tensor ort_aten_reshape(at::Tensor const& self, at::IntArrayRef shape) {
