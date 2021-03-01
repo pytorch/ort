@@ -40,7 +40,7 @@ onnxruntime::ORTInvoker& ORTBackendsManager::GetInvoker(const at::Device device)
     onnxruntime::make_unique<onnxruntime::ORTInvoker>(
       std::move(ep));
 
-  backends_.insert({device.index(), std::move(invoker)});
+  backends_[device.index()] = std::move(invoker);
   return *backends_[device.index()];
 }
 
