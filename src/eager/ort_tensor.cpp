@@ -10,12 +10,18 @@ namespace eager {
 c10::intrusive_ptr<c10::TensorImpl> ORTTensorImpl::shallow_copy_and_detach(
   const c10::VariableVersion& version_counter,
   bool allow_tensor_metadata_change) const {
-  auto impl = c10::make_intrusive<ORTTensorImpl>(tensor_, nullptr);
+  auto impl = c10::make_intrusive<ORTTensorImpl>(
+    tensor_,
+    at::TensorOptions()
+      .dtype(this->dtype())
+      .device(this->device()));
+
   copy_tensor_metadata(
     this,
     impl.get(),
     version_counter,
     allow_tensor_metadata_change);
+
   return impl;
 }
 
