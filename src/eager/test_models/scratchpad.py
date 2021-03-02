@@ -22,7 +22,7 @@ fenced_ten = torch.tensor(
   [[-1, -1, -1],
    [-1, 10, -1],
    [-1, -1, -1]],
-  device = device)
+  device = device, dtype=torch.float)
 
 print(fenced_ten.numel())
 print(fenced_ten.size())

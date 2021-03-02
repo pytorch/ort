@@ -17,8 +17,11 @@ OrtValue reshape_copy(
   auto new_shape = at::infer_size(shape, input_tensor.Shape().Size());
   OrtValue shape_tensor;
   //todo: avoid the copy on this small shape vector;
-  CreateMLValue<int64_t>(invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
-                       {(int64_t)new_shape.size(),}, new_shape, &shape_tensor);
+  auto element_type = onnxruntime::DataTypeImpl::GetType<int64_t>();
+  CreateMLValue(invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
+                element_type, {(int64_t)new_shape.size(),}, &shape_tensor);
+  auto* ort_shape_tensor = shape_tensor.GetMutable<onnxruntime::Tensor>();
+  CopyVectorToTensor<int64_t>(new_shape, *ort_shape_tensor);
   std::vector<OrtValue> result(1);
   ORT_LOG << "Invoke ORT reshape kernel";
   auto status = invoker.Invoke("Reshape", {input, shape_tensor}, result, nullptr);
