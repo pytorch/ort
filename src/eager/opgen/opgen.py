@@ -134,7 +134,9 @@ def write_func_body(writer, op_map, cpp_func):
   def make_ort_param_name(torch_param_name):
     return f'ort_in_{torch_param_name}'
 
-  writer.writeline(f'ORT_LOG << "{cpp_func.ort_name}";')
+  log_params = ', '.join([p.member.identifier.value for p \
+    in cpp_func.parameters if p.member.identifier])
+  writer.writeline(f'ORT_LOG_FN({log_params});')
   writer.writeline()
 
   assert(len(cpp_func.parameters) > 0)
@@ -207,9 +209,6 @@ def write_func_body(writer, op_map, cpp_func):
   writer.pop_indent()
   writer.writeline()
 
-  writer.writeline(f'ORT_LOG << "Invoked ORT {op_map.ort_identifier}";')
-  writer.writeline()
-
   ort_value_name = 'ort_result'
   # TODO: pick the right "out" Torch parameter; do not assume the first one
   ort_out_param_name = cpp_func.parameters[0].member.identifier.value
@@ -237,6 +236,7 @@ with opgen.parser.cpp_create_from_file(regdecs_path) as parser, \
   writer.writeline()
   writer.writeline('#include "ort_tensor.h"')
   writer.writeline('#include "ort_aten.h"')
+  writer.writeline('#include "ort_log.h"')
   writer.writeline()
   writer.push_namespace('torch_ort')
   writer.push_namespace('eager')
@@ -254,7 +254,10 @@ with opgen.parser.cpp_create_from_file(regdecs_path) as parser, \
 
     op_map = op_maps[torch_func.identifier.value]
 
-    cpp_func.ort_name = 'ort_' + torch_func.identifier.value \
+    cpp_func.ort_name = torch_func.identifier.value
+    if op_map.ort_identifier:
+      cpp_func.ort_name += '_to_ort_' + op_map.ort_identifier
+    cpp_func.ort_name = cpp_func.ort_name \
       .replace('::', '_') \
       .replace('.', '_')
 
@@ -285,7 +288,7 @@ with opgen.parser.cpp_create_from_file(regdecs_path) as parser, \
   # Generate registrations
   writer.writeline('TORCH_LIBRARY_IMPL(aten, ORT, m) {')
   writer.push_indent()
-  writer.writeline('ORT_LOG << "ATen init";')
+  writer.writeline('ORT_LOG_DEBUG << "ATen init";')
 
   for cpp_func, torch_func in generated_funcs:
     if torch_func.identifier.value not in op_maps:

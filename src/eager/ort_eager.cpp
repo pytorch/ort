@@ -4,13 +4,13 @@
 #include <torch/extension.h>
 
 #include "ort_backends.h"
-#include "ort_util.h"
+#include "ort_log.h"
 
 namespace torch_ort {
 namespace eager {
 
 PYBIND11_MODULE(torch_ort, torch_ort_module) {
-  ORT_LOG << "pybind11 module init";
+  ORT_LOG_DEBUG << "pybind11 module init";
 
   auto device_module = torch_ort_module.def_submodule("device");
   for (auto const& entry : GetORTBackendsManager().GetBackendKinds()) {

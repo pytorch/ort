@@ -8,6 +8,7 @@
 
 #include "ort_util.h"
 #include "ort_ops.h"
+#include "ort_log.h"
 
 namespace torch_ort {
 namespace eager {

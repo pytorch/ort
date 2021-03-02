@@ -52,18 +52,14 @@ onnxruntime::MLDataType get_ort_scalar_type_from_aten(at::ScalarType dtype){
 
 #pragma endregion
 
-at::Tensor ort_aten_empty_memory_format(
+at::Tensor aten_empty_memory_format(
   at::IntArrayRef size,
   // *
   const at::TensorOptions& options, 
   c10::optional<at::MemoryFormat> memory_format) {
+  ORT_LOG_FN(size, options, memory_format);
+
   // TODO: validate options and memory format
-
-  ORT_LOG << "torch.empty";
-
-  ORT_LOG << "Warning: hardcode to float type now";
-  ORT_LOG << "Device is: " << options.device();
-  ORT_LOG << "Device id is: " << options.device().index();
   // TODO: figure out how to get the correct element type.
   OrtValue ot;
   auto& invoker = GetORTInvoker(options.device());
@@ -78,7 +74,7 @@ at::Tensor ort_aten_empty_memory_format(
     options);
 }
 
-at::Tensor ort_aten_empty_strided(
+at::Tensor aten_empty_strided(
   at::IntArrayRef size,
   at::IntArrayRef stride,
   // *
@@ -86,7 +82,8 @@ at::Tensor ort_aten_empty_strided(
   c10::optional<at::Layout> layout_opt,
   c10::optional<at::Device> device_opt,
   c10::optional<bool> pin_memory_opt) {
-  ORT_LOG << "aten::empty_strided";
+  ORT_LOG_FN(stride, dtype_opt, layout_opt, device_opt, pin_memory_opt);
+
   // TODO: handle stride
   // TODO: how to handle type conversion
   OrtValue ot;
@@ -105,8 +102,8 @@ at::Tensor ort_aten_empty_strided(
     at::device(*device_opt).dtype(dtype));
 }
 
-at::Tensor ort_aten_reshape(at::Tensor const& self, at::IntArrayRef shape) {
-  ORT_LOG << "torch.reshape";
+at::Tensor aten_reshape(at::Tensor const& self, at::IntArrayRef shape) {
+  ORT_LOG_FN(self, shape);
 
   return new_with_orttensor_ort(
     reshape_copy(
@@ -116,8 +113,8 @@ at::Tensor ort_aten_reshape(at::Tensor const& self, at::IntArrayRef shape) {
     self.options());
 }
 
-at::Tensor ort_aten_view(const at::Tensor& self, at::IntArrayRef size) {
-  ORT_LOG << "torch.view";
+at::Tensor aten_view(const at::Tensor& self, at::IntArrayRef size) {
+  ORT_LOG_FN(self, size);
 
   return new_with_orttensor_ort(
     reshape_copy(
@@ -153,7 +150,9 @@ namespace{
   }
 }
 
-at::Tensor& ort_aten_copy_(at::Tensor & self, const at::Tensor & src, bool non_blocking){
+at::Tensor& aten_copy_(at::Tensor & self, const at::Tensor & src, bool non_blocking){
+  ORT_LOG_FN(self, src, non_blocking);
+
   if (self.is_sparse() || src.is_sparse()){
     throw std::runtime_error("ORT copy: sparse not supported");
   }

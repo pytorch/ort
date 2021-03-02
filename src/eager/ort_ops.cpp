@@ -3,6 +3,7 @@
 
 #include "ort_ops.h"
 #include "ort_util.h"
+#include "ort_log.h"
 
 namespace torch_ort {
 namespace eager {
@@ -23,29 +24,14 @@ OrtValue reshape_copy(
   auto* ort_shape_tensor = shape_tensor.GetMutable<onnxruntime::Tensor>();
   CopyVectorToTensor<int64_t>(new_shape, *ort_shape_tensor);
   std::vector<OrtValue> result(1);
-  ORT_LOG << "Invoke ORT reshape kernel";
   auto status = invoker.Invoke("Reshape", {input, shape_tensor}, result, nullptr);
   if (!status.IsOK())
     throw std::runtime_error("ORT return failure status: " + status.ErrorMessage());
-  ORT_LOG << "Invoke ORT reshape kernel successfully";
-  return result[0];
-}
-
-OrtValue add(onnxruntime::ORTInvoker& invoker,
-             const OrtValue& A,
-             const OrtValue& B){
-  std::vector<OrtValue> result(1);
-  ORT_LOG << "Invoke ORT Add kernel";
-  auto status = invoker.Invoke("Add", {A, B}, result, nullptr);
-  if (!status.IsOK())
-    throw std::runtime_error("ORT return failure status: " + status.ErrorMessage());
-  ORT_LOG << "Invoke ORT Add kernel successfully";
   return result[0];
 }
 
 void copy(onnxruntime::ORTInvoker& invoker, 
           const OrtValue& src, OrtValue& dst){
-  ORT_LOG << "Invoke ORT Copy ";
   auto& ort_ep = invoker.GetCurrentExecutionProvider();
   
   const auto& src_tensor = src.Get<onnxruntime::Tensor>();
