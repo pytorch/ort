@@ -1,1 +1,1 @@
-This is a test Readme.md for pytorch/ort repository.
+This is Readme.md for pytorch/ort repository.
