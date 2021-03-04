@@ -82,6 +82,7 @@ extra_compile_args = [
 
 if is_debug_build():
     extra_compile_args += [
+        '-g',
         '-DONNX_DEBUG'
     ]
 
