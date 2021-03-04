@@ -29,27 +29,6 @@ OrtValue& orttensor_from_ort(at::Tensor& tensor) {
   return impl->tensor();
 }
 
-onnxruntime::MLDataType get_ort_scalar_type_from_aten(at::ScalarType dtype){
-  switch (dtype){
-    case at::kFloat:
-      return onnxruntime::DataTypeImpl::GetType<float>();
-    case at::kDouble:
-      return onnxruntime::DataTypeImpl::GetType<double>();
-    case at::kHalf:
-      return onnxruntime::DataTypeImpl::GetType<onnxruntime::MLFloat16>();
-    case at::kBFloat16:
-      return onnxruntime::DataTypeImpl::GetType<onnxruntime::BFloat16>();
-    case at::kInt:
-      return onnxruntime::DataTypeImpl::GetType<int>();
-    case at::kShort:
-      return onnxruntime::DataTypeImpl::GetType<int16_t>();
-    case at::kLong:
-      return onnxruntime::DataTypeImpl::GetType<int64_t>();
-    default:
-      ORT_THROW("Unsupport aten scalar type: ", dtype);
-  }
-}
-
 #pragma endregion
 
 at::Tensor ort_aten_empty_memory_format(
@@ -67,10 +46,10 @@ at::Tensor ort_aten_empty_memory_format(
   // TODO: figure out how to get the correct element type.
   OrtValue ot;
   auto& invoker = GetORTInvoker(options.device());
-  CreateMLValue(
+  CreateMLValue<float>(
     invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
-    get_ort_scalar_type_from_aten(at::kFloat),
     size.vec(),
+    {},
     &ot);
 
   return new_with_orttensor_ort(
@@ -95,10 +74,10 @@ at::Tensor ort_aten_empty_strided(
   assert(!layout_opt.has_value());
   at::ScalarType dtype = c10::dtype_or_default(dtype_opt);
   auto& invoker = GetORTInvoker(*device_opt);
-  CreateMLValue(
+  CreateMLValue<float>(
     invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
-    get_ort_scalar_type_from_aten(dtype),
     size.vec(),
+    {},
     &ot);
   return new_with_orttensor_ort(
     std::move(ot),
@@ -139,7 +118,7 @@ namespace{
     tensor.data_ptr();
     //todo: figure out the correct type
     OrtValue ot;
-    CreateMLValue(tensor.data_ptr(), get_ort_scalar_type_from_aten(tensor.scalar_type()), tensor.sizes().vec(), &ot);
+    CreateMLValue<float>(tensor.data_ptr(), tensor.sizes().vec(), &ot);
     return ot;
   }
 
@@ -148,7 +127,7 @@ namespace{
     tensor.data_ptr();
     //todo: figure out the correct type
     OrtValue ot;
-    CreateMLValue(tensor.data_ptr(), get_ort_scalar_type_from_aten(tensor.scalar_type()), tensor.sizes().vec(), &ot);
+    CreateMLValue<float>(tensor.data_ptr(), tensor.sizes().vec(), &ot);
     return ot;
   }
 }

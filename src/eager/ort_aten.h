@@ -18,7 +18,5 @@ const OrtValue& orttensor_from_ort(const at::Tensor& tensor);
 
 OrtValue& orttensor_from_ort(at::Tensor& tensor);
 
-onnxruntime::MLDataType get_ort_scalar_type_from_aten(at::ScalarType dtype);
-
 } // namespace eager
 } // namespace torch_ort
