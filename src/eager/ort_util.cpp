@@ -11,6 +11,34 @@ namespace eager {
 
 using namespace onnxruntime;
 
+
+void CreateMLValue(onnxruntime::AllocatorPtr alloc, 
+                   onnxruntime::MLDataType element_type, 
+                   const std::vector<int64_t>& dims, 
+                   OrtValue* p_mlvalue) {
+  onnxruntime::TensorShape shape(dims);
+  std::unique_ptr<onnxruntime::Tensor> p_tensor = onnxruntime::make_unique<onnxruntime::Tensor>(element_type,
+                                                                      shape,
+                                                                      alloc);
+  p_mlvalue->Init(p_tensor.release(),
+                  onnxruntime::DataTypeImpl::GetType<onnxruntime::Tensor>(),
+                  onnxruntime::DataTypeImpl::GetType<onnxruntime::Tensor>()->GetDeleteFunc());
+}
+
+void CreateMLValue(void* data_ptr, onnxruntime::MLDataType element_type, const std::vector<int64_t>& dims, OrtValue* p_mlvalue) {
+  onnxruntime::TensorShape shape(dims);
+  OrtMemoryInfo *cpu_info;
+  Ort::GetApi().CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &cpu_info);
+  std::unique_ptr<onnxruntime::Tensor> p_tensor = onnxruntime::make_unique<onnxruntime::Tensor>(element_type,
+                                                                      shape,
+                                                                      data_ptr,
+                                                                      *cpu_info);
+  
+  p_mlvalue->Init(p_tensor.release(),
+                  onnxruntime::DataTypeImpl::GetType<onnxruntime::Tensor>(),
+                  onnxruntime::DataTypeImpl::GetType<onnxruntime::Tensor>()->GetDeleteFunc());
+}
+
 std::vector<int64_t> GetStrides(const std::vector<int64_t>& shape, int64_t element_size){
   std::vector<int64_t> strides;
   if (shape.empty())
