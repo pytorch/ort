@@ -18,9 +18,7 @@ at::Tensor new_with_orttensor_ort(
 }
 
 const OrtValue& orttensor_from_ort(const at::Tensor& tensor) {
-  // FIXME: assert tensor is from ORT
-  auto impl = static_cast<ORTTensorImpl*>(tensor.unsafeGetTensorImpl());
-  return impl->tensor();
+  return orttensor_from_ort(const_cast<at::Tensor&>(tensor));
 }
 
 OrtValue& orttensor_from_ort(at::Tensor& tensor) {
@@ -141,12 +139,7 @@ namespace{
   }
 
   OrtValue ort_tensor_from_at_tensor(const at::Tensor& tensor){
-    assert(tensor.device().type() == at:kCPU);
-    tensor.data_ptr();
-    //todo: figure out the correct type
-    OrtValue ot;
-    CreateMLValue(tensor.data_ptr(), get_ort_scalar_type_from_aten(tensor.scalar_type()), tensor.sizes().vec(), &ot);
-    return ot;
+    return ort_tensor_from_at_tensor(const_cast<at::Tensor&>(tensor));
   }
 }
 
