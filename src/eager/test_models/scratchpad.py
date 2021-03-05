@@ -28,3 +28,8 @@ print(fenced_ten.numel())
 print(fenced_ten.size())
 print(fenced_ten.cpu())
 print(fenced_ten.relu().cpu())
+
+a = torch.ones(3, 3).to(device)
+b = torch.ones(3, 3)
+c = a + b
+print(c.cpu())

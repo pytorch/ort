@@ -4,12 +4,31 @@
 #include "ort_aten.h"
 #include "ort_tensor.h"
 
-namespace torch_ort {
-namespace eager {
+namespace torch_ort::eager {
 
 #pragma region Helpers
 
-at::Tensor new_with_orttensor_ort(
+namespace {
+  inline bool is_device_supported(at::DeviceType type) {
+    return type == at::kORT || type == at::kCPU;
+  }
+
+  inline void assert_tensor_supported(const at::Tensor& tensor) {
+    if (tensor.is_sparse()) {
+      throw std::runtime_error("ORT copy: sparse not supported");
+    }
+
+    if (tensor.is_quantized()) {
+      throw std::runtime_error("ORT copy: quantized not supported");
+    }
+
+    if (!is_device_supported(tensor.device().type())) {
+      throw std::runtime_error("ORT copy: device not supported");
+    }
+  }
+}
+
+const at::Tensor get_at_tensor_from_ort_tensor(
   OrtValue&& ot,
   const at::TensorOptions& options) {
   return at::Tensor(c10::make_intrusive<ORTTensorImpl>(
@@ -17,17 +36,25 @@ at::Tensor new_with_orttensor_ort(
     options));
 }
 
-const OrtValue& orttensor_from_ort(const at::Tensor& tensor) {
-  return orttensor_from_ort(const_cast<at::Tensor&>(tensor));
+const OrtValue get_ort_tensor_from_at_tensor(const at::Tensor& tensor) {
+  assert_tensor_supported(tensor);
+
+  auto* impl = dynamic_cast<ORTTensorImpl*>(tensor.unsafeGetTensorImpl());
+  if (impl) {
+    return impl->tensor();
+  }
+
+  OrtValue ort_tensor;
+  CreateMLValue(
+    tensor.data_ptr(),
+    get_ort_scalar_type_from_aten(tensor.scalar_type()),
+    tensor.sizes().vec(),
+    &ort_tensor);
+  return ort_tensor;
 }
 
-OrtValue& orttensor_from_ort(at::Tensor& tensor) {
-  // FIXME: assert tensor is from ORT
-  auto impl = static_cast<ORTTensorImpl*>(tensor.unsafeGetTensorImpl());
-  return impl->tensor();
-}
-
-onnxruntime::MLDataType get_ort_scalar_type_from_aten(at::ScalarType dtype){
+const onnxruntime::MLDataType get_ort_scalar_type_from_aten(
+  at::ScalarType dtype) {
   switch (dtype){
     case at::kFloat:
       return onnxruntime::DataTypeImpl::GetType<float>();
@@ -50,6 +77,8 @@ onnxruntime::MLDataType get_ort_scalar_type_from_aten(at::ScalarType dtype){
 
 #pragma endregion
 
+#pragma region Hand-Implemented ATen Ops
+
 at::Tensor aten_empty_memory_format(
   at::IntArrayRef size,
   // *
@@ -67,7 +96,7 @@ at::Tensor aten_empty_memory_format(
     size.vec(),
     &ot);
 
-  return new_with_orttensor_ort(
+  return get_at_tensor_from_ort_tensor(
     std::move(ot),
     options);
 }
@@ -95,7 +124,7 @@ at::Tensor aten_empty_strided(
     get_ort_scalar_type_from_aten(dtype),
     size.vec(),
     &ot);
-  return new_with_orttensor_ort(
+  return get_at_tensor_from_ort_tensor(
     std::move(ot),
     at::device(*device_opt).dtype(dtype));
 }
@@ -103,10 +132,10 @@ at::Tensor aten_empty_strided(
 at::Tensor aten_reshape(at::Tensor const& self, at::IntArrayRef shape) {
   ORT_LOG_FN(self, shape);
 
-  return new_with_orttensor_ort(
+  return get_at_tensor_from_ort_tensor(
     reshape_copy(
       GetORTInvoker(self.device()),
-      orttensor_from_ort(self),
+      get_ort_tensor_from_at_tensor(self),
       shape.vec()),
     self.options());
 }
@@ -114,64 +143,36 @@ at::Tensor aten_reshape(at::Tensor const& self, at::IntArrayRef shape) {
 at::Tensor aten_view(const at::Tensor& self, at::IntArrayRef size) {
   ORT_LOG_FN(self, size);
 
-  return new_with_orttensor_ort(
+  return get_at_tensor_from_ort_tensor(
     reshape_copy(
       GetORTInvoker(self.device()),
-      orttensor_from_ort(self),
+      get_ort_tensor_from_at_tensor(self),
       at::infer_size(
         size,
         self.numel())),
     self.options());
 }
 
-namespace{
-  inline bool is_device_supported(at::DeviceType type){
-    return type == at::kORT || type == at::kCPU;
-  }
-
-  OrtValue ort_tensor_from_at_tensor(at::Tensor& tensor){
-    assert(tensor.device().type() == at:kCPU);
-    tensor.data_ptr();
-    //todo: figure out the correct type
-    OrtValue ot;
-    CreateMLValue(tensor.data_ptr(), get_ort_scalar_type_from_aten(tensor.scalar_type()), tensor.sizes().vec(), &ot);
-    return ot;
-  }
-
-  OrtValue ort_tensor_from_at_tensor(const at::Tensor& tensor){
-    return ort_tensor_from_at_tensor(const_cast<at::Tensor&>(tensor));
-  }
-}
-
-at::Tensor& aten_copy_(at::Tensor & self, const at::Tensor & src, bool non_blocking){
+at::Tensor& aten_copy_(
+  at::Tensor& self,
+  const at::Tensor& src,
+  bool non_blocking) {
   ORT_LOG_FN(self, src, non_blocking);
 
-  if (self.is_sparse() || src.is_sparse()){
-    throw std::runtime_error("ORT copy: sparse not supported");
-  }
-  if (self.is_quantized() || src.is_quantized()){
-    throw std::runtime_error("ORT copy: quantized not supported");
-  }
+  assert_tensor_supported(self);
+  assert_tensor_supported(src);
 
-  if (!is_device_supported(src.device().type()) || !is_device_supported(self.device().type())){
-    throw std::runtime_error("ORT copy: device not supported");
-  }
-  //TODO: more flexible way to dispatch the copy implementation
-  if (self.device().type() == at::kORT && src.device().type() == at::kCPU){
-    copy(
-      GetORTInvoker(self.device()),
-      ort_tensor_from_at_tensor(src),
-      orttensor_from_ort(self));
-  } else if (self.device().type() == at::kCPU && src.device().type() == at::kORT){
-    auto ort_self = ort_tensor_from_at_tensor(self);
-    copy(
-      GetORTInvoker(src.device()),
-      orttensor_from_ort(src),
-      ort_self);
-  }
+  auto& invoker = GetORTInvoker(self.device().type() == at::kORT
+    ? self.device()
+    : src.device());
+  const auto ort_src = get_ort_tensor_from_at_tensor(src);
+  auto ort_self = get_ort_tensor_from_at_tensor(self);
+
+  copy(invoker, ort_src, ort_self);
 
   return self;
 }
 
-} // namespace eager
-} // namespace torch_ort
+#pragma endregion
+
+} // namespace torch_ort::eager

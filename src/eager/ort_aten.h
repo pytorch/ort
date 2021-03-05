@@ -13,13 +13,11 @@
 namespace torch_ort {
 namespace eager {
 
-at::Tensor new_with_orttensor_ort(OrtValue&& ot, const at::TensorOptions& options);
+const at::Tensor get_at_tensor_from_ort_tensor(OrtValue&& ot, const at::TensorOptions& options);
 
-const OrtValue& orttensor_from_ort(const at::Tensor& tensor);
+const OrtValue get_ort_tensor_from_at_tensor(const at::Tensor& tensor);
 
-OrtValue& orttensor_from_ort(at::Tensor& tensor);
-
-onnxruntime::MLDataType get_ort_scalar_type_from_aten(at::ScalarType dtype);
+const onnxruntime::MLDataType get_ort_scalar_type_from_aten(at::ScalarType dtype);
 
 } // namespace eager
 } // namespace torch_ort

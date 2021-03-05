@@ -160,9 +160,9 @@ def write_func_body(writer, op_map, cpp_func):
       writer.writeline()
       have_invoker = True
 
-    writer.write('auto& ')
+    writer.write('auto ')
     writer.write(ort_param_name)
-    writer.write(' = orttensor_from_ort(')
+    writer.write(' = get_ort_tensor_from_at_tensor(')
     writer.write(torch_param_name)
     writer.writeline(');')
 
@@ -192,7 +192,7 @@ def write_func_body(writer, op_map, cpp_func):
   for i, n in enumerate(inputs):
     if i > 0:
       writer.writeline(', ')
-    writer.write(n)
+    writer.write(f'std::move({n})')
   writer.pop_indent()
   writer.writeline()
   writer.writeline(f'}}, {ort_output_name}, nullptr);')
@@ -216,7 +216,7 @@ def write_func_body(writer, op_map, cpp_func):
 
   # TODO: Handle mutliple results
   # TODO: Assert return type
-  writer.writeline('return new_with_orttensor_ort(')
+  writer.writeline('return get_at_tensor_from_ort_tensor(')
   writer.push_indent()
   writer.writeline(f'std::move({ort_value_name}),')
   writer.writeline(f'{ort_out_param_name}.options());')
