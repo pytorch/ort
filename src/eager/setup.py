@@ -4,9 +4,9 @@
 from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension
 from glob import glob
+from shutil import which
 
 import os
-import platform
 import subprocess
 import sys
 
@@ -22,7 +22,7 @@ def build_ort(ort_path, build_dir):
     args = [python_exe, os.path.join(ort_path, 'tools', 'ci_build', 'build.py'),
             '--build_dir', build_dir, '--config', build_config,
             '--skip_submodule_sync', '--build', '--update', '--parallel']
-    if platform.system() == 'Darwin':
+    if which('ninja'):
         args += ['--cmake_generator', 'Ninja']
     subprocess.check_call(args)
 
