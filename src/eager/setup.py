@@ -11,7 +11,7 @@ import subprocess
 import sys
 
 python_exe = sys.executable
-build_config = 'Release'
+build_config = 'Debug'
 
 def is_debug_build():
     return build_config != 'Release'
