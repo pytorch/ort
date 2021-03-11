@@ -77,7 +77,8 @@ extra_compile_args = [
     '-std=c++17',
     '-DONNX_ML',
     '-DONNX_NAMESPACE=onnx',
-    f'-DONNX_BUILD_CONFIG="{build_config}"'
+    f'-DONNX_BUILD_CONFIG="{build_config}"',
+    "-fsized-deallocation"
 ]
 
 if is_debug_build():
