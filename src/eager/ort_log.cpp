@@ -7,7 +7,8 @@
 
 #include "ort_log.h"
 
-namespace torch_ort::eager {
+namespace torch_ort {
+namespace eager {
 
 ORTLog::ORTLog(const char* file, int line, ORTLogLevel log_level) {
   file_ = c10::detail::StripBasename(std::string(file));
@@ -32,4 +33,5 @@ ORTLog::~ORTLog() {
   out << buffer_.str() << "\n" << std::flush;
 }
 
-} // namespace torch_ort::eager
+} // namespace eager
+} // namespace torch_ort

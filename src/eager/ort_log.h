@@ -9,7 +9,8 @@
 #include <c10/util/Optional.h>
 #include <ATen/core/Tensor.h>
 
-namespace torch_ort::eager {
+namespace torch_ort {
+namespace eager {
 
 enum class ORTLogLevel : int {
   FATAL = 0,
@@ -112,4 +113,5 @@ class ORTLog {
 
 #define ORT_LOG_FN(...) ORT_LOG_VERBOSE.func(__FUNCTION__, __VA_ARGS__)
 
-} // namespace torch_ort::eager
+} // namespace eager
+} // namespace torch_ort

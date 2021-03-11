@@ -74,11 +74,11 @@ ort_static_libs.extend(external_libs)
 gen_ort_aten_ops()
 
 extra_compile_args = [
-    '-std=c++17',
+    '-std=c++14',
+    '-fsized-deallocation',
     '-DONNX_ML',
     '-DONNX_NAMESPACE=onnx',
     f'-DONNX_BUILD_CONFIG="{build_config}"',
-    "-fsized-deallocation"
 ]
 
 if is_debug_build():

@@ -4,7 +4,8 @@
 #include "ort_aten.h"
 #include "ort_tensor.h"
 
-namespace torch_ort::eager {
+namespace torch_ort {
+namespace eager {
 
 #pragma region Helpers
 
@@ -175,4 +176,5 @@ at::Tensor& aten_copy_(
 
 #pragma endregion
 
-} // namespace torch_ort::eager
+} // namespace eager
+} // namespace torch_ort
