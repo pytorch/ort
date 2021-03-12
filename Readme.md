@@ -1,15 +1,16 @@
 training pytorch models with onnxruntime
 
-to build:
-    python -m build
+## to build (you need to increase version minor number in version.txt in order to upload python whl):
+    rm dist/*
+    python setup.py bdist_wheel
 
-to publish:
+## to publish:
     python -m twine upload --repository testpypi dist/*
 
-to install:
+## to install:
     pip install -i https://test.pypi.org/simple/ torch-ort-poc
 
-to use torch_ort within PyTorch training scripts:
+## to use torch_ort within PyTorch training scripts:
     import onnxruntime
     from torch_ort import ORTModule
     model = ORTModule(model)
