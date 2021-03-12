@@ -5,10 +5,10 @@ training pytorch models with onnxruntime
     python setup.py bdist_wheel
 
 ## to publish:
-    python -m twine upload --repository testpypi dist/*
+    twine upload dist/*
 
 ## to install:
-    pip install -i https://test.pypi.org/simple/ torch-ort-poc
+    pip install torch-ort-poc
 
 ## to use torch_ort within PyTorch training scripts:
     import onnxruntime
