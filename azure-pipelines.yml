@@ -45,15 +45,20 @@ steps:
 
 - task: TwineAuthenticate@1
   inputs:
-    pythonUploadServiceConnection: 'ortgpunightlytraining'
-  displayName: 'TwineAuthenticate ortgpunightlytraining'
+    pythonUploadServiceConnection: 'liqunpypitorchort'
+  displayName: 'TwineAuthenticate liqunpypitorchort'
 
 - script: |
-    python3 -m twine upload --verbose -r ortgpunightlytraining --config-file $(PYPIRC_PATH) $(Build.ArtifactStagingDirectory)/dist/*.whl
-  displayName: 'python3 -m twine upload --verbose -r ortgpunightlytraining --config-file $(PYPIRC_PATH) $(Build.ArtifactStagingDirectory)/dist/*.whl'
+    python3 -m twine upload --verbose -r liqunpypitorchort --config-file $(PYPIRC_PATH) $(Build.ArtifactStagingDirectory)/dist/*.whl
+  displayName: 'python3 -m twine upload --verbose -r liqunpypitorchort --config-file $(PYPIRC_PATH) $(Build.ArtifactStagingDirectory)/dist/*.whl'
   condition: succeededOrFailed()
   timeoutInMinutes: 20
 
+- script: |
+    twine upload --username $(username) --password $(password) $(Build.ArtifactStagingDirectory)/dist/*.whl
+  displayName: 'twine upload --username $(username) --password ??? $(Build.ArtifactStagingDirectory)/dist/*.whl'
+  condition: succeededOrFailed()
+  timeoutInMinutes: 20
 
 # - script: |
 #     python -m twine upload --repository-url https://test.pypi.org/legacy/ --config-file $(PYPIRC_PATH) $(Build.ArtifactStagingDirectory)/dist/*.whl
