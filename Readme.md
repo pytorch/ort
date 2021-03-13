@@ -1,6 +1,6 @@
-training pytorch models with onnxruntime
+# training pytorch models with onnxruntime
 
-## to build (you need to increase version minor number in version.txt in order to upload python whl):
+## to build (you need to update version number in version.txt in order to be able to upload python whl):
     rm dist/*
     python setup.py bdist_wheel
 
@@ -8,7 +8,11 @@ training pytorch models with onnxruntime
     twine upload dist/*
 
 ## to install:
+### stable:
     pip install torch-ort-poc
+
+### nightly:
+    pip install --pre torch-ort-poc
 
 ## to use torch_ort within PyTorch training scripts:
     import onnxruntime
