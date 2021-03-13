@@ -49,14 +49,8 @@ steps:
   displayName: 'TwineAuthenticate ortgpunightlytraining'
 
 - script: |
-    python3 -m twine upload --verbose --repository-url https://test.pypi.org/legacy/ --config-file $(PYPIRC_PATH) $(Build.ArtifactStagingDirectory)/dist/*.whl
-  displayName: 'python3 -m twine upload --repository testpypi $(Build.ArtifactStagingDirectory)/dist/*.whl'
-  condition: succeededOrFailed()
-  timeoutInMinutes: 20
-
-- script: |
-    python -m twine upload --verbose --repository-url https://test.pypi.org/legacy/ --config-file $(PYPIRC_PATH) $(Build.ArtifactStagingDirectory)/dist/*.whl
-  displayName: 'python -m twine upload --repository testpypi $(Build.ArtifactStagingDirectory)/dist/*.whl'
+    python3 -m twine upload --verbose -r ortgpunightlytraining --config-file $(PYPIRC_PATH) $(Build.ArtifactStagingDirectory)/dist/*.whl
+  displayName: 'python3 -m twine upload --verbose -r ortgpunightlytraining --config-file $(PYPIRC_PATH) $(Build.ArtifactStagingDirectory)/dist/*.whl'
   condition: succeededOrFailed()
   timeoutInMinutes: 20
 
