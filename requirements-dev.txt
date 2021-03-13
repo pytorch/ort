@@ -13,3 +13,4 @@ wget
 setuptools
 build
 twine
+wheel
