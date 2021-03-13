@@ -13,3 +13,5 @@ wget
 setuptools
 build
 twine
+wheel
+datetime

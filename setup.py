@@ -1,4 +1,5 @@
 import setuptools
+from datetime import date
 
 with open("Readme.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -9,7 +10,11 @@ def fetch_requirements(path):
 
 install_requires = fetch_requirements('./requirements.txt')
 
+# 1.2.0.dev1+hg.5.b11e5e6f0b0b
 version_str = open('version.txt', 'r').read().strip()
+
+if 'dev' in version_str:
+    version_str = version_str + date.today().strftime("%Y%m%d")
 
 setuptools.setup(
     name="torch_ort-poc",
