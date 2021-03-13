@@ -34,8 +34,8 @@ steps:
 #   displayName: 'pytest'
 
 - script: |
-    python -m build
-  displayName: 'build'
+    python setup.py bdist_wheel
+  displayName: 'python setup.py bdist_wheel'
 
 - task: CopyFiles@2
   displayName: 'Copy Python Wheel to: $(Build.ArtifactStagingDirectory)'
