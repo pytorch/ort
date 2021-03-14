@@ -9,10 +9,10 @@
 
 ## to install:
 ### stable:
-    pip install torch-ort-poc
+    pip install torch-ort
 
 ### nightly:
-    pip install --pre torch-ort-poc
+    pip install --pre torch-ort
 
 ## to use torch_ort within PyTorch training scripts:
     import onnxruntime
