@@ -1,0 +1,86 @@
+stages:
+- stage: Python_Packaging
+
+  jobs:
+    - job: Linux_py_GPU_Wheels
+      timeoutInMinutes: 180
+      workspace:
+        clean: all
+      pool: Linux-Single-GPU-V100
+      strategy:
+        matrix:
+          # Python36:
+          #   PythonVersion: '3.6'
+          # Python37:
+          #   PythonVersion: '3.7'
+          Python38:
+            PythonVersion: '3.8'
+          # dependency PyTorch does not support Python 3.9 yet
+          # Python39:
+          #   PythonVersion: '3.9'
+      steps:
+      - checkout: self
+        clean: true
+        submodules: recursive
+
+      - template: templates/set-python-manylinux-variables-step.yml
+
+      - template: templates/get-docker-image-steps.yml
+        parameters:
+          Dockerfile: tools/ci_build/github/linux/docker/Dockerfile.manylinux2014_gpu
+          Context: tools/ci_build/github/linux/docker
+          DockerBuildArgs: >-
+            --build-arg PYTHON_VERSION=$(PythonVersion)
+            --build-arg INSTALL_DEPS_EXTRA_ARGS=-t
+            --build-arg BUILD_UID=$(id -u)
+          Repository: onnxruntimetraininggpubuild
+
+      - task: CmdLine@2
+        inputs:
+          script: |
+            mkdir -p $HOME/.onnx
+            docker run --rm --gpus all -e CC=/opt/rh/devtoolset-8/root/usr/bin/cc -e CXX=/opt/rh/devtoolset-8/root/usr/bin/c++ -e CFLAGS="-Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fstack-protector-strong -fstack-clash-protection -fcf-protection -O3 -Wl,--strip-all" -e CXXFLAGS="-Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fstack-protector-strong -fstack-clash-protection -fcf-protection -O3 -Wl,--strip-all" \
+              --volume $(Build.SourcesDirectory):/torch_ort_src \
+              -e NVIDIA_VISIBLE_DEVICES=all \
+              -e NIGHTLY_BUILD \
+              -e BUILD_BUILDNUMBER \
+              -w /torch_ort_src \
+              onnxruntimetraininggpubuild \
+                $(PythonManylinuxDir)/bin/python3 setup.py bdist_wheel
+          workingDirectory: $(Build.SourcesDirectory)
+
+      - task: CopyFiles@2
+        displayName: 'Copy Python Wheel to: $(Build.ArtifactStagingDirectory)'
+        inputs:
+          SourceFolder: '$(Build.SourcesDirectory)'
+          Contents: 'dist/*.whl'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact: ONNXRuntime python wheel'
+        inputs:
+          ArtifactName: onnxruntime_gpu
+
+      - script: |
+          sudo apt-get update
+          sudo apt-get install python3-pip python-dev
+        condition: succeededOrFailed()
+        displayName: 'sudo apt-get install python3-pip python-dev'
+
+      - script: |
+          python3 -m pip install twine
+        displayName: 'python3 -m pip install twine'
+        condition: succeededOrFailed()
+        timeoutInMinutes: 20
+
+      - script: |
+          python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password $(ortpypitrainingnightlypassword) $(Build.ArtifactStagingDirectory)/Release/dist/*.whl
+        displayName: 'python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password ??? $(Build.ArtifactStagingDirectory)/Release/dist/*.whl'
+        condition: succeededOrFailed()
+        timeoutInMinutes: 20
+
+      - template: templates/component-governance-component-detection-steps.yml
+        parameters:
+          condition: 'succeeded'
+
+      - template: templates/clean-agent-build-directory-step.yml
