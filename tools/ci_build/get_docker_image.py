@@ -9,9 +9,6 @@ import os
 import shlex
 import sys
 
-# import subprocess
-# subprocess.check_call([sys.executable, "-m", "pip", "install", 'logger'])
-
 # from logger import get_logger
 
 
