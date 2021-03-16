@@ -8,8 +8,6 @@ def fetch_requirements(path):
     with open(path, 'r') as fd:
         return [r.strip() for r in fd.readlines()]
 
-install_requires = fetch_requirements('./requirements.txt')
-
 # 1.2.0.dev1+hg.5.b11e5e6f0b0b
 version_str = open('version.txt', 'r').read().strip()
 
@@ -32,7 +30,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=install_requires,
     packages=setuptools.find_packages(),
     python_requires=">=3.6",
 )
