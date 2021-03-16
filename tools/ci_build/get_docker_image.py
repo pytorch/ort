@@ -143,6 +143,10 @@ def main():
     # if not use_container_registry:
     #     log.info("No container registry will be used")
 
+    print("args.docker_build_args: ", args.docker_build_args)
+    print("args.container_registry: ", args.container_registry if args.container_registry is not None else "None")
+    print("args.container_registry: ", args.container_registry)
+    
     tag = generate_tag(args.dockerfile, args.context, args.docker_build_args)
 
     full_image_name = \

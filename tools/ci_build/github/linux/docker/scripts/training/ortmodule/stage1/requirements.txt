@@ -11,6 +11,6 @@ torchtext
 tensorboard
 h5py
 wget
---pre onnxruntime-gpu==ort-gpu-nightly-training
+ort-gpu-nightly-training
 # PyTorch Lightning (nightly) is used for CI tests only
 https://github.com/PyTorchLightning/pytorch-lightning/archive/master.zip
