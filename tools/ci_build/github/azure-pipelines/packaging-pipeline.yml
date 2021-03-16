@@ -70,6 +70,19 @@ stages:
               -e NVIDIA_VISIBLE_DEVICES=all \
               -w / \
               onnxruntimetraininggpubuild \
+                /bin/bash -c "ls -la ./torch_ort_src/*"
+          workingDirectory: $(Build.SourcesDirectory)
+        condition: succeededOrFailed()
+        displayName: '/bin/bash -c "ls -la && ls -la "'
+
+      - task: CmdLine@2
+        inputs:
+          script: |
+            docker run --rm --gpus all \
+              --volume $(Build.SourcesDirectory):/torch_ort_src \
+              -e NVIDIA_VISIBLE_DEVICES=all \
+              -w / \
+              onnxruntimetraininggpubuild \
                 $(PythonManylinuxDir)/bin/python3 /torch_ort_src/tests/bert_for_sequence_classification.py
           workingDirectory: $(Build.SourcesDirectory)
         condition: succeededOrFailed()
