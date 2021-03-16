@@ -15,6 +15,8 @@ import random
 import time
 import datetime
 
+import sys
+print (sys.path)
 
 import onnxruntime
 from torchort import ORTModule
