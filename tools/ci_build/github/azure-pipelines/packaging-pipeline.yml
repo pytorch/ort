@@ -55,12 +55,12 @@ stages:
             docker run --rm --gpus all \
               --volume $(Build.SourcesDirectory):/torch_ort_src \
               -e NVIDIA_VISIBLE_DEVICES=all \
-              -w / \
+              -w /torch_ort_src \
               onnxruntimetraininggpubuild \
-                python3 -m pip install /torch_ort_src/dist/*.whl
+                /bin/bash -c "ls -la *"
           workingDirectory: $(Build.SourcesDirectory)
         condition: succeededOrFailed()
-        displayName: 'python3 -m pip install /torch_ort_src/dist/*.whl'
+        displayName: '/bin/bash -c "ls -la *"'
           
       - task: CmdLine@2
         inputs:
