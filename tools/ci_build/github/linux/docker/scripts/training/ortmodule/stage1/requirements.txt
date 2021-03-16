@@ -8,7 +8,7 @@ transformers==v4.3.2
 torch
 torchvision
 torchtext
-tensorboard==v2.0.0
+tensorboard
 h5py
 wget
 --pre onnxruntime-gpu==ort-gpu-nightly-training
