@@ -29,7 +29,7 @@ namespace {
   }
 }
 
-const at::Tensor get_at_tensor_from_ort_tensor(
+const at::Tensor aten_tensor_from_ort(
   OrtValue&& ot,
   const at::TensorOptions& options) {
   return at::Tensor(c10::make_intrusive<ORTTensorImpl>(
@@ -37,24 +37,7 @@ const at::Tensor get_at_tensor_from_ort_tensor(
     options));
 }
 
-const OrtValue get_ort_tensor_from_at_tensor(const at::Tensor& tensor) {
-  assert_tensor_supported(tensor);
-
-  auto* impl = dynamic_cast<ORTTensorImpl*>(tensor.unsafeGetTensorImpl());
-  if (impl) {
-    return impl->tensor();
-  }
-
-  OrtValue ort_tensor;
-  CreateMLValue(
-    tensor.data_ptr(),
-    get_ort_scalar_type_from_aten(tensor.scalar_type()),
-    tensor.sizes().vec(),
-    &ort_tensor);
-  return ort_tensor;
-}
-
-const onnxruntime::MLDataType get_ort_scalar_type_from_aten(
+const onnxruntime::MLDataType ort_scalar_type_from_aten(
   at::ScalarType dtype) {
   switch (dtype){
     case at::kFloat:
@@ -76,11 +59,76 @@ const onnxruntime::MLDataType get_ort_scalar_type_from_aten(
   }
 }
 
+const OrtValue create_ort_value(
+  onnxruntime::ORTInvoker& invoker,
+  const at::Scalar& scalar) {
+  // TODO: support more types
+  float val = scalar.toFloat();
+  OrtValue ort_val;
+  CreateMLValue(
+    invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
+    ort_scalar_type_from_aten(at::kFloat),
+    {},
+    &ort_val);
+  // TODO: use EP's data transfer to copy the data into that tensor
+  auto* ort_tensor = ort_val.GetMutable<onnxruntime::Tensor>();
+  CopyVectorToTensor<float>({val}, *ort_tensor);
+  return ort_val;
+}
+
+const OrtValue create_ort_value(
+  onnxruntime::ORTInvoker& invoker, 
+  const at::Tensor& tensor) {
+  assert_tensor_supported(tensor);
+
+  auto* impl = dynamic_cast<ORTTensorImpl*>(tensor.unsafeGetTensorImpl());
+  if (impl) {
+    return impl->tensor();
+  }
+
+  OrtValue ort_tensor;
+  CreateMLValue(
+    tensor.data_ptr(),
+    ort_scalar_type_from_aten(tensor.scalar_type()),
+    tensor.sizes().vec(),
+    &ort_tensor);
+  return ort_tensor;
+}
+
+const onnx::AttributeProto create_ort_attribute(
+  const char* name,
+  at::Scalar value) {
+  onnx::AttributeProto attr;
+  attr.set_name(name);
+  // FIXME: we need to know the type of the target ORT attribute, since it
+  // matters to ORT. So far all the attributes we care about are floats,
+  // so just do the easy thing and convert everything to float...
+  switch (value.type()) {
+    case at::ScalarType::Double:
+    case at::ScalarType::Long:
+      attr.set_type(onnx::AttributeProto_AttributeType::AttributeProto_AttributeType_FLOAT);
+      attr.set_f(value.to<double>());
+      break;
+    // NB. see FIXME above
+    // case at::ScalarType::Long:
+    //   attr.set_type(onnx::AttributeProto_AttributeType::AttributeProto_AttributeType_INT);
+    //   attr.set_f(value.to<int64_t>());
+    //   break;
+    default:
+      // For most at::ScalarType, it should be safe to just call value.to<>
+      // on it, but for now we want to explicitly know when we've encountered
+      // a new scalar type while bringing up ORT eager mode.
+      ORT_THROW("Unsupported: at::ScalarType::", value.type());
+  }
+
+  return attr;
+}
+
 #pragma endregion
 
 #pragma region Hand-Implemented ATen Ops
 
-at::Tensor aten_empty_memory_format(
+at::Tensor ort_op_aten_empty(
   at::IntArrayRef size,
   // *
   const at::TensorOptions& options, 
@@ -93,16 +141,16 @@ at::Tensor aten_empty_memory_format(
   auto& invoker = GetORTInvoker(options.device());
   CreateMLValue(
     invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
-    get_ort_scalar_type_from_aten(at::kFloat),
+    ort_scalar_type_from_aten(at::kFloat),
     size.vec(),
     &ot);
 
-  return get_at_tensor_from_ort_tensor(
+  return aten_tensor_from_ort(
     std::move(ot),
     options);
 }
 
-at::Tensor aten_empty_strided(
+at::Tensor ort_op_aten_empty_strided(
   at::IntArrayRef size,
   at::IntArrayRef stride,
   // *
@@ -122,39 +170,41 @@ at::Tensor aten_empty_strided(
   auto& invoker = GetORTInvoker(*device_opt);
   CreateMLValue(
     invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
-    get_ort_scalar_type_from_aten(dtype),
+    ort_scalar_type_from_aten(dtype),
     size.vec(),
     &ot);
-  return get_at_tensor_from_ort_tensor(
+  return aten_tensor_from_ort(
     std::move(ot),
     at::device(*device_opt).dtype(dtype));
 }
 
-at::Tensor aten_reshape(at::Tensor const& self, at::IntArrayRef shape) {
+at::Tensor ort_op_aten_reshape(at::Tensor const& self, at::IntArrayRef shape) {
   ORT_LOG_FN(self, shape);
 
-  return get_at_tensor_from_ort_tensor(
+  auto& invoker = GetORTInvoker(self.device());
+  return aten_tensor_from_ort(
     reshape_copy(
-      GetORTInvoker(self.device()),
-      get_ort_tensor_from_at_tensor(self),
+      invoker,
+      create_ort_value(invoker, self),
       shape.vec()),
     self.options());
 }
 
-at::Tensor aten_view(const at::Tensor& self, at::IntArrayRef size) {
+at::Tensor ort_op_aten_view(const at::Tensor& self, at::IntArrayRef size) {
   ORT_LOG_FN(self, size);
 
-  return get_at_tensor_from_ort_tensor(
+  auto& invoker = GetORTInvoker(self.device());
+  return aten_tensor_from_ort(
     reshape_copy(
-      GetORTInvoker(self.device()),
-      get_ort_tensor_from_at_tensor(self),
+      invoker,
+      create_ort_value(invoker, self),
       at::infer_size(
         size,
         self.numel())),
     self.options());
 }
 
-at::Tensor& aten_copy_(
+at::Tensor& ort_op_aten_copy_(
   at::Tensor& self,
   const at::Tensor& src,
   bool non_blocking) {
@@ -166,8 +216,8 @@ at::Tensor& aten_copy_(
   auto& invoker = GetORTInvoker(self.device().type() == at::kORT
     ? self.device()
     : src.device());
-  const auto ort_src = get_ort_tensor_from_at_tensor(src);
-  auto ort_self = get_ort_tensor_from_at_tensor(self);
+  const auto ort_src = create_ort_value(invoker, src);
+  auto ort_self = create_ort_value(invoker, self);
 
   copy(invoker, ort_src, ort_self);
 

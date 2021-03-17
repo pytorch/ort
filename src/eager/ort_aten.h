@@ -13,11 +13,49 @@
 namespace torch_ort {
 namespace eager {
 
-const at::Tensor get_at_tensor_from_ort_tensor(OrtValue&& ot, const at::TensorOptions& options);
+const at::Tensor aten_tensor_from_ort(
+  OrtValue&& ot,
+  const at::TensorOptions& options);
 
-const OrtValue get_ort_tensor_from_at_tensor(const at::Tensor& tensor);
+const onnxruntime::MLDataType ort_scalar_type_from_aten(
+  at::ScalarType dtype);
 
-const onnxruntime::MLDataType get_ort_scalar_type_from_aten(at::ScalarType dtype);
+const OrtValue create_ort_value(
+  onnxruntime::ORTInvoker& invoker,
+  const at::Scalar& scalar);
+
+const OrtValue create_ort_value(
+  onnxruntime::ORTInvoker& invoker,
+  const at::Tensor& tensor);
+
+template<typename T>
+const OrtValue create_ort_value(
+  onnxruntime::ORTInvoker& invoker, 
+  const std::vector<T> values) {
+  OrtValue ort_value;
+  CreateMLValue(
+    invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
+    onnxruntime::DataTypeImpl::GetType<T>(),
+    {(int64_t)values.size(),},
+    &ort_value);
+  CopyVectorToTensor<T>(
+    values,
+    *ort_value.GetMutable<onnxruntime::Tensor>());
+  return ort_value;
+}
+
+template<typename T>
+const OrtValue create_ort_value(
+  onnxruntime::ORTInvoker& invoker, 
+  const at::ArrayRef<T> values) {
+  std::vector<T> values_vector;
+  values_vector.assign(values.begin(), values.end());
+  return create_ort_value(invoker, values_vector);
+}
+
+const onnx::AttributeProto create_ort_attribute(
+  const char* name,
+  at::Scalar value);
 
 } // namespace eager
 } // namespace torch_ort
