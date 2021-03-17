@@ -46,7 +46,7 @@ stages:
               -e BUILD_BUILDNUMBER \
               -w /torch_ort_src \
               onnxruntimetraininggpubuild \
-                $(PythonManylinuxDir)/bin/python3 setup.py bdist_wheel
+                $(PythonManylinuxDir)/bin/python3 build.py
           workingDirectory: $(Build.SourcesDirectory)
 
       - task: CmdLine@2
