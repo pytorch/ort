@@ -8,8 +8,6 @@ def fetch_requirements(path):
     with open(path, 'r') as fd:
         return [r.strip() for r in fd.readlines()]
 
-install_requires = fetch_requirements('./requirements.txt')
-
 # 1.2.0.dev1+hg.5.b11e5e6f0b0b
 version_str = open('version.txt', 'r').read().strip()
 
@@ -17,9 +15,9 @@ if 'dev' in version_str:
     version_str = version_str + date.today().strftime("%Y%m%d")
 
 setuptools.setup(
-    name="torch_ort-poc",
+    name="torchort",
     version=version_str,
-    author="torch_ort contributors",
+    author="torchort contributors",
     description="training Pytorch models with onnxruntime",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -32,7 +30,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=install_requires,
     packages=setuptools.find_packages(),
     python_requires=">=3.6",
 )
