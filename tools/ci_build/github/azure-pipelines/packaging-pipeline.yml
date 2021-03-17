@@ -33,7 +33,7 @@ stages:
             --build-arg PYTHON_VERSION=$(PythonVersion)
             --build-arg INSTALL_DEPS_EXTRA_ARGS=-t
             --build-arg BUILD_UID=$(id -u)
-          Repository: onnxruntimetraininggpubuild
+          Repository: torchortpackingbuild
 
       - task: CmdLine@2
         inputs:
@@ -45,7 +45,7 @@ stages:
               -e NIGHTLY_BUILD \
               -e BUILD_BUILDNUMBER \
               -w /torch_ort_src \
-              onnxruntimetraininggpubuild \
+              torchortpackingbuild \
                 $(PythonManylinuxDir)/bin/python3 build.py
           workingDirectory: $(Build.SourcesDirectory)
 
