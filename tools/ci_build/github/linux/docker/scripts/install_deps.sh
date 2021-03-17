@@ -89,6 +89,15 @@ if [[ $SYS_LONG_BIT = "64" && "$GLIBC_VERSION" -gt "9" ]]; then
   echo "Installing cmake"
   GetFile https://github.com/Kitware/CMake/releases/download/v3.18.2/cmake-3.18.2-Linux-x86_64.tar.gz /tmp/src/cmake-3.18.2-Linux-x86_64.tar.gz
   tar -zxf /tmp/src/cmake-3.18.2-Linux-x86_64.tar.gz --strip=1 -C /usr
+
+  echo "Installing Ninja"
+  GetFile https://github.com/ninja-build/ninja/archive/v1.10.0.tar.gz /tmp/src/ninja-linux.tar.gz
+  tar -zxf ninja-linux.tar.gz
+  cd ninja-1.10.0
+  cmake -Bbuild-cmake -H.
+  cmake --build build-cmake
+  mv ./build-cmake/ninja /usr/bin
+
   echo "Installing Node.js"
   GetFile https://nodejs.org/dist/v12.16.3/node-v12.16.3-linux-x64.tar.xz /tmp/src/node-v12.16.3-linux-x64.tar.xz
   tar -xf /tmp/src/node-v12.16.3-linux-x64.tar.xz --strip=1 -C /usr
