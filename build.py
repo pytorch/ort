@@ -32,7 +32,7 @@ def main():
     run_subprocess([sys.executable, "-m", "pip", "install", "--upgrade", os.path.join(dist_path, wheel_file)], cwd)
     run_subprocess([sys.executable, "-m", "pip", "list"], cwd)
 
-    run_ort_module_tests(cwd, source_dir)
+    run_ort_module_tests(source_dir, source_dir)
 
 if __name__ == "__main__":
     sys.exit(main())
