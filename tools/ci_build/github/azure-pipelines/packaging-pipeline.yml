@@ -33,7 +33,7 @@ stages:
             --build-arg PYTHON_VERSION=$(PythonVersion)
             --build-arg INSTALL_DEPS_EXTRA_ARGS=-t
             --build-arg BUILD_UID=$(id -u)
-          Repository: torchortpackingbuild
+          Repository: torchortpackaging
 
       - task: CmdLine@2
         inputs:
@@ -45,7 +45,7 @@ stages:
               -e NIGHTLY_BUILD \
               -e BUILD_BUILDNUMBER \
               -w /torch_ort_src \
-              torchortpackingbuild \
+              torchortpackaging \
                 $(PythonManylinuxDir)/bin/python3 build.py
           workingDirectory: $(Build.SourcesDirectory)
 
@@ -73,11 +73,11 @@ stages:
         condition: succeededOrFailed()
         timeoutInMinutes: 20
 
-      # - script: |
-      #     python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password $(ortpypitrainingnightlypassword) $(Build.ArtifactStagingDirectory)/dist/*.whl
-      #   displayName: 'python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password ??? $(Build.ArtifactStagingDirectory)/dist/*.whl'
-      #   condition: succeededOrFailed()
-      #   timeoutInMinutes: 20
+      - script: |
+          python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password $(ortpypitrainingnightlypassword) $(Build.ArtifactStagingDirectory)/dist/*.whl
+        displayName: 'python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password ??? $(Build.ArtifactStagingDirectory)/dist/*.whl'
+        condition: succeededOrFailed()
+        timeoutInMinutes: 20
 
       - template: templates/component-governance-component-detection-steps.yml
         parameters:
