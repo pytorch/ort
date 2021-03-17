@@ -56,3 +56,7 @@ class SourceWriter:
   
   def pop_namespace(self):
     self.writeline(f"}} // namespace {self._namespaces.pop()}")
+
+  def pop_namespaces(self):
+    while len(self._namespaces) > 0:
+      self.pop_namespace()
