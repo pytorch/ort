@@ -240,6 +240,9 @@ class AliasInfoType(Type):
     self.inner_type.write(writer)
     self.alias_info.write(writer)
 
+  def _desugar_self(self) -> Type:
+    return self.inner_type
+
 class KWArgsSentinelType(Type):
   def __init__(self, token: Token):
     super().__init__()
