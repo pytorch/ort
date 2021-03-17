@@ -23,14 +23,12 @@ def build_wheel(cwd, source_dir):
 def main():    
     source_dir = os.path.realpath(os.path.dirname(__file__))
     cwd = os.path.normpath(os.path.join(source_dir, ".."))
-    run_subprocess([sys.executable, "-m", "pip", "list"], cwd)
 
     build_wheel(source_dir, source_dir)
-        
+
     dist_path = os.path.join(source_dir, 'dist')
     wheel_file = os.listdir(dist_path)[0]
     run_subprocess([sys.executable, "-m", "pip", "install", "--upgrade", os.path.join(dist_path, wheel_file)], cwd)
-    run_subprocess([sys.executable, "-m", "pip", "list"], cwd)
 
     run_ort_module_tests(source_dir, source_dir)
 
