@@ -92,6 +92,7 @@ if [[ $SYS_LONG_BIT = "64" && "$GLIBC_VERSION" -gt "9" ]]; then
 
   echo "Installing Ninja"
   GetFile https://github.com/ninja-build/ninja/archive/v1.10.0.tar.gz /tmp/src/ninja-linux.tar.gz
+  cd /tmp/src
   tar -zxf ninja-linux.tar.gz
   cd ninja-1.10.0
   cmake -Bbuild-cmake -H.
