@@ -49,12 +49,12 @@ steps:
     artifactFeed: 'torchort-feed'
 
 - script: |
-    python3 -m twine upload -r torchort-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.SourcesDirectory)/dist/*.whl
-  displayName: 'python3 -m twine upload -r torchort-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.SourcesDirectory)/dist/*.whl'
+    more $(PYPIRC_PATH)
+  displayName: '$(PYPIRC_PATH)'
   timeoutInMinutes: 20
+  condition: succeededOrFailed()
 
 - script: |
-    twine upload --username $(username) --password $(password) $(Build.ArtifactStagingDirectory)/dist/*.whl
-  displayName: 'twine upload --username $(username) --password ??? $(Build.ArtifactStagingDirectory)/dist/*.whl'
-  condition: succeededOrFailed()
+    python3 -m twine upload -r torchort-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.SourcesDirectory)/dist/*.whl
+  displayName: 'python3 -m twine upload -r torchort-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.SourcesDirectory)/dist/*.whl'
   timeoutInMinutes: 20
