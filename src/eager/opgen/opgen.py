@@ -24,6 +24,9 @@ class Transpose(ONNXOp):
 class Relu(ONNXOp):
   def __init__(self, x): super().__init__('Relu', 1, x)
 
+class MatMul(ONNXOp):
+  def __init__(self, a, b): super().__init__('MatMul', 1, a, b)
+
 ortgen = ORTGen({
   'aten::empty.memory_format': SignatureOnly(),
   'aten::empty_strided': SignatureOnly(),
@@ -35,7 +38,13 @@ ortgen = ORTGen({
   'aten::mul.Tensor': Mul('self', 'other'),
   'aten::addmm': Gemm('mat1', 'mat2', 'self', Alpha='alpha', Beta='beta'),
   'aten::t': Transpose('self'),
-  'aten::relu': Relu('self')
+  'aten::relu': Relu('self'),
+  'aten::mm': MatMul('self', 'mat2'),
+  'aten::sum.dim_IntList': SignatureOnly(),
+  'aten::threshold_backward': SignatureOnly(),
+  'aten::zeros_like': SignatureOnly(),
+  'aten::add_.Tensor': SignatureOnly(),
+  'aten::zero_': SignatureOnly()
 }, function_name_prefix='ort_op_aten_')
 
 import os
