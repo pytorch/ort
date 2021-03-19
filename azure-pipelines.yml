@@ -44,18 +44,24 @@ steps:
   displayName: 'python3 -m pip install twine keyring artifacts-keyring'
   timeoutInMinutes: 20
 
-# - task: TwineAuthenticate@1
-#   inputs:
-#     artifactFeed: 'torchort-feed'
+- task: TwineAuthenticate@1
+  inputs:
+    artifactFeed: 'torchort-feed'
+
+- script: |
+    more $(PYPIRC_PATH)
+  displayName: '$(PYPIRC_PATH)'
+  timeoutInMinutes: 1
+  condition: succeededOrFailed()
 
 # - script: |
-#     more $(PYPIRC_PATH)
-#   displayName: '$(PYPIRC_PATH)'
-#   timeoutInMinutes: 1
+#     python3 -m twine upload -r torchort-feed --repository-url https://aiinfra.pkgs.visualstudio.com/Lotus/_packaging/torchort-feed/pypi/upload --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) $(Build.SourcesDirectory)/dist/*.whl
+#   displayName: 'python3 -m twine upload -r torchort-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.SourcesDirectory)/dist/*.whl'
+#   timeoutInMinutes: 20
 #   condition: succeededOrFailed()
 
 - script: |
-    python3 -m twine upload -r torchort-feed --repository-url https://aiinfra.pkgs.visualstudio.com/Lotus/_packaging/torchort-feed/pypi/upload --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) $(Build.SourcesDirectory)/dist/*.whl
+    python3 -m twine upload -r torchort-feed --repository-url https://aiinfra.pkgs.visualstudio.com/Lotus/_packaging/torchort-feed/pypi/upload --config-file $(PYPIRC_PATH) $(Build.SourcesDirectory)/dist/*.whl
   displayName: 'python3 -m twine upload -r torchort-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.SourcesDirectory)/dist/*.whl'
   timeoutInMinutes: 20
   condition: succeededOrFailed()
