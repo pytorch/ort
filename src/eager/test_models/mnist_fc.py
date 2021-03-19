@@ -26,7 +26,7 @@ num_classes = 10
 batch_size = 128
 
 batch = torch.rand((batch_size, input_size))
-device = torch_ort.device.apollo()
+device = torch_ort.device.cpu()
 
 with torch.no_grad():
 

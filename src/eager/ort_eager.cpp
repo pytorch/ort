@@ -16,14 +16,11 @@ PYBIND11_MODULE(torch_ort, torch_ort_module) {
   for (auto const& entry : GetORTBackendsManager().GetBackendKinds()) {
     device_module.def(
       entry.second.c_str(),
-      [entry](int index) {
+      [entry](int device_index) {
         return py::cast<py::object>(
-          THPDevice_New(
-            ORTBackendsManager::MakePyTorchDevice(
-              entry.first,
-              index)));
+          THPDevice_New(at::Device(at::DeviceType::ORT, device_index)));
       },
-      py::arg("device_index") = 0);
+      py::arg("device_index") = -1);
   }
 }
 

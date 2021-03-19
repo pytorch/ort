@@ -4,7 +4,7 @@
 import torch
 import torch_ort
 
-device = torch_ort.device.apollo()
+device = torch_ort.device.cpu()
 
 ones = torch.ones(2, 3).to(device)
 print(ones.cpu())

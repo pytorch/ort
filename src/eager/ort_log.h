@@ -36,13 +36,20 @@ class ORTLog {
     return *this;
   }
 
+  template<>
+  ORTLog& operator<<(const at::Device device) {
+    *this << "Device:" << c10::DeviceTypeName(device.type(), true);
+    *this << ":" << device.index();
+    return *this;
+  }
+
   template<typename T>
   ORTLog& operator<<(const c10::optional<T> optional) {
     if (optional.has_value()) {
       *this << *optional;
     } else {
       *this << "None";
-  }
+    }
     return *this;
   }
 

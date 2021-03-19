@@ -4,6 +4,7 @@
 #include <core/providers/cpu/cpu_execution_provider.h>
 
 #include "ort_backends.h"
+#include "ort_log.h"
 
 namespace torch_ort {
 namespace eager {
@@ -20,6 +21,8 @@ onnxruntime::ORTInvoker& GetORTInvoker(const at::Device device) {
 }
 
 onnxruntime::ORTInvoker& ORTBackendsManager::GetInvoker(const at::Device device) {
+  ORT_LOG_FN(device);
+
   TORCH_CHECK(device.type() == at::DeviceType::ORT, "must be an ORT device");
   TORCH_CHECK(device.index() >= 0, "must have a valid index");
 
@@ -27,11 +30,6 @@ onnxruntime::ORTInvoker& ORTBackendsManager::GetInvoker(const at::Device device)
   if (lookup != backends_.end()) {
     return *lookup->second;
   }
-
-  // FIXME: create the correct EP from (device_kind, device_index):
-  ORTDeviceKind device_kind;
-  uint8_t device_index;
-  GetORTDeviceKindAndIndex(device.index(), device_kind, device_index);
 
   auto ep = onnxruntime::make_unique<onnxruntime::CPUExecutionProvider>(
     onnxruntime::CPUExecutionProviderInfo(false));
