@@ -51,7 +51,7 @@ steps:
 - script: |
     more $(PYPIRC_PATH)
   displayName: '$(PYPIRC_PATH)'
-  timeoutInMinutes: 20
+  timeoutInMinutes: 1
   condition: succeededOrFailed()
 
 - script: |
