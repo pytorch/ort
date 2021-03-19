@@ -118,7 +118,7 @@ class ORTLog {
 #define ORT_LOG_VERBOSE ORT_LOG(ORTLogLevel::VERBOSE)
 #define ORT_LOG_TRACE ORT_LOG(ORTLogLevel::TRACE)
 
-#define ORT_LOG_FN(...) ORT_LOG_VERBOSE.func(__FUNCTION__, __VA_ARGS__)
+#define ORT_LOG_FN(...) ORT_LOG_VERBOSE.func(__PRETTY_FUNCTION__, ##__VA_ARGS__)
 
 } // namespace eager
 } // namespace torch_ort

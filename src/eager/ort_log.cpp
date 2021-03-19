@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #include <iostream>
+#include <thread>
 
 #include <c10/util/StringUtil.h>
 
@@ -18,6 +19,9 @@ ORTLog::ORTLog(const char* file, int line, ORTLogLevel log_level) {
 
 ORTLog::~ORTLog() {
   static const char* const LOG_PREFIX = "FEWIDVT";
+  static std::mutex mutex;
+
+  mutex.lock();
 
   auto& out = std::cerr;
 
@@ -31,6 +35,8 @@ ORTLog::~ORTLog() {
 
   out << " ORT " << file_ << ":" << line_ << "] ";
   out << buffer_.str() << "\n" << std::flush;
+
+  mutex.unlock();
 }
 
 } // namespace eager
