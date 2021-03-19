@@ -68,16 +68,30 @@ stages:
         displayName: 'sudo apt-get install python3-pip python-dev'
 
       - script: |
-          python3 -m pip install twine
-        displayName: 'python3 -m pip install twine'
-        condition: succeededOrFailed()
+          python3 -m pip install twine keyring artifacts-keyring
+        displayName: 'python3 -m pip install twine keyring artifacts-keyring'
         timeoutInMinutes: 20
 
+      - task: TwineAuthenticate@1
+        inputs:
+          artifactFeed: 'az-devops-ort-gpu-nightly-training-feed'
+
       - script: |
-          python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password $(ortpypitrainingnightlypassword) $(Build.ArtifactStagingDirectory)/dist/*.whl
-        displayName: 'python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password ??? $(Build.ArtifactStagingDirectory)/dist/*.whl'
-        condition: succeededOrFailed()
+          python3 -m twine upload -r az-devops-ort-gpu-nightly-training-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.ArtifactStagingDirectory)/Release/dist/*.whl
+        displayName: 'python3 -m twine upload --verbose -r ort-gpu-nightly-training-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.ArtifactStagingDirectory)/Release/dist/*.whl'
         timeoutInMinutes: 20
+
+      # - script: |
+      #     python3 -m pip install twine
+      #   displayName: 'python3 -m pip install twine'
+      #   condition: succeededOrFailed()
+      #   timeoutInMinutes: 20
+
+      # - script: |
+      #     python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password $(ortpypitrainingnightlypassword) $(Build.ArtifactStagingDirectory)/dist/*.whl
+      #   displayName: 'python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password ??? $(Build.ArtifactStagingDirectory)/dist/*.whl'
+      #   condition: succeededOrFailed()
+      #   timeoutInMinutes: 20
 
       - template: templates/component-governance-component-detection-steps.yml
         parameters:
