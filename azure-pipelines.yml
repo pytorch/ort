@@ -40,19 +40,19 @@ steps:
     Contents: 'dist/*.whl'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
-  - script: |
-      python3 -m pip install twine keyring artifacts-keyring
-    displayName: 'python3 -m pip install twine keyring artifacts-keyring'
-    timeoutInMinutes: 20
+- script: |
+    python3 -m pip install twine keyring artifacts-keyring
+  displayName: 'python3 -m pip install twine keyring artifacts-keyring'
+  timeoutInMinutes: 20
 
-  - task: TwineAuthenticate@1
-    inputs:
-      artifactFeed: 'torchort-feed'
+- task: TwineAuthenticate@1
+  inputs:
+    artifactFeed: 'torchort-feed'
 
-  - script: |
-      python3 -m twine upload -r torchort-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.SourcesDirectory)/dist/*.whl
-    displayName: 'python3 -m twine upload -r torchort-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.SourcesDirectory)/dist/*.whl'
-    timeoutInMinutes: 20
+- script: |
+    python3 -m twine upload -r torchort-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.SourcesDirectory)/dist/*.whl
+  displayName: 'python3 -m twine upload -r torchort-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.SourcesDirectory)/dist/*.whl'
+  timeoutInMinutes: 20
 
 - script: |
     twine upload --username $(username) --password $(password) $(Build.ArtifactStagingDirectory)/dist/*.whl
