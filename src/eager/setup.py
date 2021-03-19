@@ -21,7 +21,7 @@ def build_ort(ort_path, build_dir):
         os.mkdir(build_dir)
     args = [python_exe, os.path.join(ort_path, 'tools', 'ci_build', 'build.py'),
             '--build_dir', build_dir, '--config', build_config,
-            '--skip_submodule_sync', '--build', '--update', '--parallel']
+            '--skip_submodule_sync', '--build', '--update', '--parallel', '--enable_training', '--disable_nccl', '--use_mpi', 'false']
     if which('ninja'):
         args += ['--cmake_generator', 'Ninja']
     subprocess.check_call(args)
@@ -46,6 +46,7 @@ ort_include_dir=[os.path.join(current_path, 'onnxruntime', 'include', 'onnxrunti
                  os.path.join(current_path, 'onnxruntime', 'cmake', 'external', 'SafeInt'),
                  os.path.join(current_path, 'onnxruntime', 'cmake', 'external', 'protobuf', 'src'),
                  os.path.join(current_path, 'onnxruntime', 'cmake', 'external', 'nsync', 'public'),
+                 os.path.join(current_path, 'onnxruntime', 'cmake', 'external', 'mp11', 'include'),
                  os.path.join(current_path, 'ort_build', build_config, 'external', 'onnx')]
 
 ort_libs = [
@@ -68,7 +69,8 @@ external_libs = [ort_build_root + '/external/nsync/libnsync_cpp.a',
               ort_build_root + '/external/onnx/libonnx.a',
               ort_build_root + '/external/onnx/libonnx_proto.a',
               ort_build_root + f'/external/protobuf/cmake/{protobuf_lib}',
-              ort_build_root + '/external/re2/libre2.a',]
+              ort_build_root + '/external/re2/libre2.a',
+              ort_build_root + '/tensorboard/libtensorboard.a']
 ort_static_libs.extend(external_libs)
 
 gen_ort_aten_ops()
