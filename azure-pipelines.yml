@@ -58,3 +58,4 @@ steps:
     python3 -m twine upload -r torchort-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.SourcesDirectory)/dist/*.whl
   displayName: 'python3 -m twine upload -r torchort-feed --username $(ortpypitrainingnightlyusername) --password $(aiinfrapypifeedpassword) --config-file $(PYPIRC_PATH) $(Build.SourcesDirectory)/dist/*.whl'
   timeoutInMinutes: 20
+  condition: succeededOrFailed()
