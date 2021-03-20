@@ -164,6 +164,11 @@ class ORTGen:
     cpp_func: ast.FunctionDecl):
     assert(len(cpp_func.parameters) > 0)
 
+    return_alias_info = self._get_alias_info(cpp_func.torch_func.return_type)
+    if return_alias_info and not return_alias_info.is_writable:
+      return_alias_info = None
+    in_place_param: ast.ParameterDecl = None
+
     # Eval the outer ONNX op to produce a topologically ordered list of ops
     ctx = ONNXOpEvalContext()
     onnx_op.eval(ctx)
@@ -191,14 +196,25 @@ class ORTGen:
     writer.writeline('.device());')
     writer.writeline()
 
+    # FIXME: warn if we have not consumed all torch parameters (either as
+    # an ORT input or ORT attribute).
+
     # Perform kernel fission on the ATen op to yield a chain of ORT Invokes
     # e.g. aten::add(x, y, α) -> onnx::Add(x, onnx::Mul(α, y))
     for onnx_op_index, onnx_op in enumerate(ctx.ops):
       # Torch -> ORT inputs
       for op_input in onnx_op.inputs:
-        if not isinstance(op_input, Outputs):
-          writer.write(f'auto& ort_input_{op_input} = ')
-          writer.writeline(f'create_ort_value(invoker, {op_input});')
+        if isinstance(op_input, Outputs):
+          continue
+        # See if this input is aliased as an in-place tensor
+        cpp_param = cpp_func.get_parameter(op_input)
+        if return_alias_info and cpp_param and \
+          len(cpp_param.torch_param) == 1 and \
+          self._get_alias_info(cpp_param.torch_param[0]) == return_alias_info:
+          in_place_param = cpp_param
+
+        writer.write(f'auto ort_input_{op_input} = ')
+        writer.writeline(f'create_ort_value(invoker, {op_input});')
 
       # Torch kwargs -> ORT attributes
       attrs = { k:v for k, v in onnx_op.attributes.items() if v }
@@ -255,15 +271,28 @@ class ORTGen:
       # We'll potentially return back to Torch from this op
       return_outputs = onnx_op.outputs
 
-    # Box ORT output to Torch return
     # TODO: Pick the right "out" Torch parameter; do not assume the first one
     # TODO: Handle mutliple results
     # TODO: Assert return type
-    writer.writeline('return aten_tensor_from_ort(')
-    writer.push_indent()
-    writer.writeline(f'std::move({return_outputs}[0]),')
-    writer.writeline(f'{first_torch_param.identifier.value}.options());')
-    writer.pop_indent()
+
+    if not return_alias_info:
+      writer.writeline('return aten_tensor_from_ort(')
+      writer.push_indent()
+      writer.writeline(f'std::move({return_outputs}[0]),')
+      writer.writeline(f'{first_torch_param.identifier.value}.options());')
+      writer.pop_indent()
+      return
+
+    if not in_place_param:
+      raise Exception(f'"{cpp_func.torch_func.torch_schema}" ' +
+        'has alias info on its return type but no associated parameter')
+
+    writer.writeline(f'auto& ort_result_tensor = {return_outputs}[0].Get<onnxruntime::Tensor>();')
+    writer.writeline('auto* ort_result_data = ort_result_tensor.DataRaw(ort_result_tensor.DataType());')
+    writer.writeline(f'auto* ort_self_tensor = ort_input_{in_place_param.identifier.value}.GetMutable<onnxruntime::Tensor>();')
+    writer.writeline('auto* ort_self_data = ort_self_tensor->MutableDataRaw(ort_self_tensor->DataType());')
+    writer.writeline('memcpy(ort_self_data, ort_result_data, ort_self_tensor->DataType()->Size() * ort_self_tensor->Shape().Size());')
+    writer.writeline(f'return {in_place_param.identifier.value};')
 
   def _write_function_registrations(
     self,
@@ -284,6 +313,13 @@ class ORTGen:
     writer.pop_indent()
     writer.writeline('}')
     writer.writeline()
+
+  def _get_alias_info(self, torch_type_or_param: ast.Type or ast.ParameterDecl):
+    if isinstance(torch_type_or_param, ast.ParameterDecl):
+      torch_type = torch_type_or_param.parameter_type
+    else:
+      torch_type = torch_type_or_param
+    return getattr(torch_type.desugar(), 'alias_info', None)
 
   def _torch_function_needs_unboxed_registration(
     self,
@@ -362,6 +398,6 @@ class ORTGen:
 
       for j in range(torch_param_range):
         torch_param = torch_func.parameters[i + j].member
-        cpp_param.torch_param.append(torch_param.parameter_type.desugar())
+        cpp_param.torch_param.append(torch_param)
 
     return cpp_func, torch_func

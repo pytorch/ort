@@ -323,52 +323,6 @@ at::Tensor& ort_op_aten_zero_(at::Tensor& self){
   return self;
 }
 
-at::Tensor& ort_op_aten_add_(
-    at::Tensor& self,
-    const at::Tensor& other,
-    // *,
-    at::Scalar alpha) {
-
-  auto& invoker = GetORTInvoker(self.device());
-
-  auto ort_in_self = create_ort_value(invoker, self);
-  auto ort_in_other = create_ort_value(invoker, other);
-  auto ort_alpha = create_ort_value(invoker, alpha);
-
-  std::vector<OrtValue> ort_tmp(1);
-
-  auto status = invoker.Invoke(
-    "Mul", {
-      std::move(ort_in_other),
-      std::move(ort_alpha)
-    }, ort_tmp, nullptr);
-
-  if (!status.IsOK())
-    throw std::runtime_error(
-      "ORT return failure status: Mul: " + status.ErrorMessage());
-
-  std::vector<OrtValue> ort_out(1);
-
-  status = invoker.Invoke(
-    "Add", {
-      std::move(ort_in_self),
-      std::move(ort_tmp[0])
-    }, ort_out, nullptr);
-
-  if (!status.IsOK())
-    throw std::runtime_error(
-      "ORT return failure status: Add" + status.ErrorMessage());
-
-  OrtValue ort_result = ort_out[0];
-  auto& ort_result_tensor = ort_result.Get<onnxruntime::Tensor>();
-  auto* ort_result_data = ort_result_tensor.DataRaw(ort_result_tensor.DataType());
-  auto* ort_self_tensor = ort_in_self.GetMutable<onnxruntime::Tensor>();
-  auto* ort_self_data = ort_self_tensor->MutableDataRaw(ort_self_tensor->DataType());
-  memcpy(ort_self_data, ort_result_data, ort_self_tensor->DataType()->Size() * ort_self_tensor->Shape().Size());
-  return self;
-}
-
-
 #pragma endregion
 
 } // namespace eager

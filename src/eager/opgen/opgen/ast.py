@@ -220,6 +220,17 @@ class AliasInfo(Node):
     self.contained_types = []
     self.tokens = []
     self.is_writable = False
+  
+  def __str__(self):
+    buffer = io.StringIO()
+    self.write(buffer)
+    return buffer.getvalue()
+
+  def __eq__(self, obj):
+    return isinstance(obj, AliasInfo) and str(self) == str(obj)
+
+  def __ne__(self, obj):
+    return not self.__eq__(obj)
 
   def write(self, writer: TextIO):
     writer.write("(")
@@ -235,6 +246,7 @@ class AliasInfoType(Type):
     super().__init__()
     self.inner_type = inner_type
     self.alias_info = alias_info
+    self.inner_type.alias_info = alias_info
 
   def write(self, writer: TextIO):
     self.inner_type.write(writer)
@@ -307,6 +319,13 @@ class FunctionDecl(Decl):
     self.parameters = parameters
     self.semicolon = semicolon
     self.arrow = arrow
+  
+  def get_parameter(self, identifier: str) -> ParameterDecl:
+    for param in self.parameters:
+      id = param.member.identifier
+      if id and id.value == identifier:
+        return param.member
+    return None
 
 class TranslationUnitDecl(Decl):
   def __init__(self, decls: [FunctionDecl]):
