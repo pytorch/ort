@@ -117,7 +117,9 @@ class ORTGen:
     self._write_function_registrations(writer, generated_funcs)
     self._write_file_postlude(writer)
 
-    # FIXME: raise an error if there are any ops left in self._mapped_ops
+    if len(self._mapped_ops) > 0:
+      raise Exception('Torch operation(s) could not be parsed for mapping: ' + \
+        ', '.join([f'\'{o}\'' for o in self._mapped_ops.keys()]))
 
   def _write_file_prelude(self, writer: writer.SourceWriter):
     writer.writeline('// AUTO-GENERATED CODE! - DO NOT EDIT!')
