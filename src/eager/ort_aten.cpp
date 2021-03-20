@@ -100,10 +100,13 @@ const onnx::AttributeProto create_ort_attribute(
   at::Scalar value) {
   onnx::AttributeProto attr;
   attr.set_name(name);
-  // FIXME: we need to know the type of the target ORT attribute, since it
-  // matters to ORT. So far all the attributes we care about are floats,
-  // so just do the easy thing and convert everything to float...
+  // FIXME: we may need to know the type of the target ORT attribute for
+  // conversion. So far, we don't, but there may come a time...
   switch (value.type()) {
+    case at::ScalarType::Bool:
+      attr.set_type(onnx::AttributeProto_AttributeType::AttributeProto_AttributeType_INT);
+      attr.set_i(value.to<int32_t>());
+      break;
     case at::ScalarType::Double:
     case at::ScalarType::Long:
       attr.set_type(onnx::AttributeProto_AttributeType::AttributeProto_AttributeType_FLOAT);
@@ -248,45 +251,6 @@ at::Tensor ort_op_aten_zeros_like(
   memset(output_tensor->MutableDataRaw(element_type), 0, element_type->Size() * shape.Size());
   return aten_tensor_from_ort(
     std::move(output),
-    self.options());
-}
-
-at::Tensor ort_op_aten_sum(
-  const at::Tensor& self,
-  at::IntArrayRef dim,
-  bool keepdim,
-  // *,
-  c10::optional<at::ScalarType> dtype) {
-  ORT_LOG_FN(self, dim, keepdim, dtype);
-
-  auto& invoker = GetORTInvoker(self.device());
-
-  auto ort_in_self = create_ort_value(invoker, self);
-  OrtValue dim_ort_value;
-  std::vector<int64_t> dim_vector;
-  dim_vector.assign(dim.begin(), dim.end());
-  //todo: avoid the copy on this small vector;
-  auto element_type = onnxruntime::DataTypeImpl::GetType<int64_t>();
-  CreateMLValue(invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
-                element_type, {(int64_t)dim.size(),}, &dim_ort_value);
-  auto* ort_dim_tensor = dim_ort_value.GetMutable<onnxruntime::Tensor>();
-  CopyVectorToTensor<int64_t>(dim_vector, *ort_dim_tensor);
-
-  std::vector<OrtValue> ort_out(1);
-
-  auto status = invoker.Invoke(
-    "ReduceSum", {
-      std::move(ort_in_self),
-      std::move(dim_ort_value)
-    }, ort_out, nullptr);
-
-  if (!status.IsOK())
-    throw std::runtime_error(
-      "ORT return failure status:" + status.ErrorMessage());
-
-  OrtValue ort_result = ort_out[0];
-  return aten_tensor_from_ort(
-    std::move(ort_result),
     self.options());
 }
 

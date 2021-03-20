@@ -29,17 +29,26 @@ class Relu(ONNXOp):
 class MatMul(ONNXOp):
   def __init__(self, a, b): super().__init__('MatMul', 1, a, b)
 
+class ReduceSum(ONNXOp):
+  def __init__(self, data, axes, KeepDims=None, noop_with_empty_axes=None):
+    super().__init__('ReduceSum', 1, data, axes, KeepDims=KeepDims, noop_with_empty_axes=noop_with_empty_axes)
+
 class ReluGrad(ONNXOp):
     def __init__(self, dY, X):
       super().__init__('ReluGrad', 1, dY, X)
       self.domain = kMSDomain
 
 ortgen = ORTGen({
+  # Hand-Implemented Ops
   'aten::empty.memory_format': SignatureOnly(),
   'aten::empty_strided': SignatureOnly(),
+  'aten::zeros_like': SignatureOnly(),
+  'aten::zero_': SignatureOnly(),
   'aten::copy_': SignatureOnly(),
   'aten::reshape': SignatureOnly(),
   'aten::view': SignatureOnly(),
+
+  # Fully Generated Ops
   'aten::add.Tensor': Add('self', Mul('alpha', 'other')),
   'aten::add_.Tensor': Add('self', Mul('alpha', 'other')),
   'aten::sub.Tensor': Sub('self', Mul('alpha', 'other')),
@@ -49,11 +58,8 @@ ortgen = ORTGen({
   'aten::t': Transpose('self'),
   'aten::relu': Relu('self'),
   'aten::mm': MatMul('self', 'mat2'),
-  'aten::sum.dim_IntList': SignatureOnly(),
-  'aten::threshold_backward': ReluGrad('grad_output', 'self'),
-  'aten::zeros_like': SignatureOnly(),
-  'aten::add_.Tensor': SignatureOnly(),
-  'aten::zero_': SignatureOnly()
+  'aten::sum.dim_IntList': ReduceSum('self', 'dim', KeepDims='keepdim'),
+  'aten::threshold_backward': ReluGrad('grad_output', 'self')
 }, function_name_prefix='ort_op_aten_')
 
 import os
