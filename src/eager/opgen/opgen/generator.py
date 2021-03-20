@@ -36,6 +36,7 @@ class ONNXOp:
     self.outputs = Outputs(outputs)
     self.inputs = inputs
     self.attributes = attributes
+    self.domain = None
 
   def eval(self, ctx: ONNXOpEvalContext):
     evaluated_inputs = []
@@ -235,7 +236,10 @@ class ORTGen:
           op_input = f'ort_input_{op_input}'
         writer.writeline(f'std::move({op_input}),')
       writer.pop_indent()
-      writer.writeline(f'}}, {onnx_op.outputs}, {attrs_arg});')
+      writer.write(f'}}, {onnx_op.outputs}, {attrs_arg}')
+      if onnx_op.domain:
+        writer.write(f', {onnx_op.domain}')
+      writer.writeline(');')
       writer.writeline()
 
       # Assert invocation

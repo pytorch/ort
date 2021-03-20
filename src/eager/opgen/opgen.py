@@ -5,6 +5,8 @@ from opgen.generator import \
   ONNXOp as ONNXOp, \
   SignatureOnly as SignatureOnly
 
+kMSDomain = 'onnxruntime::kMSDomain'
+
 class Add(ONNXOp):
   def __init__(self, a, b): super().__init__('Add', 1, a, b)
 
@@ -27,6 +29,11 @@ class Relu(ONNXOp):
 class MatMul(ONNXOp):
   def __init__(self, a, b): super().__init__('MatMul', 1, a, b)
 
+class ReluGrad(ONNXOp):
+    def __init__(self, dY, X):
+      super().__init__('ReluGrad', 1, dY, X)
+      self.domain = kMSDomain
+
 ortgen = ORTGen({
   'aten::empty.memory_format': SignatureOnly(),
   'aten::empty_strided': SignatureOnly(),
@@ -41,7 +48,7 @@ ortgen = ORTGen({
   'aten::relu': Relu('self'),
   'aten::mm': MatMul('self', 'mat2'),
   'aten::sum.dim_IntList': SignatureOnly(),
-  'aten::threshold_backward': SignatureOnly(),
+  'aten::threshold_backward': ReluGrad('grad_output', 'self'),
   'aten::zeros_like': SignatureOnly(),
   'aten::add_.Tensor': SignatureOnly(),
   'aten::zero_': SignatureOnly()

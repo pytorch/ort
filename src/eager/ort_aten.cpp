@@ -224,35 +224,6 @@ at::Tensor& ort_op_aten_copy_(
   return self;
 }
 
-
-at::Tensor ort_op_aten_threshold_backward(
-    const at::Tensor& grad_output,
-    const at::Tensor& self,
-    at::Scalar threshold){
-  ORT_LOG_FN(grad_output, self, threshold);
-
-  auto& invoker = GetORTInvoker(self.device());
-
-  auto ort_in_dY = create_ort_value(invoker, grad_output);
-  auto ort_in_self = create_ort_value(invoker, self);
-  std::vector<OrtValue> ort_out(1);
-
-  auto status = invoker.Invoke(
-    "ReluGrad", {
-      std::move(ort_in_dY),
-      std::move(ort_in_self)
-    }, ort_out, nullptr, onnxruntime::kMSDomain);
-
-  if (!status.IsOK())
-    throw std::runtime_error(
-      "ORT return failure status:" + status.ErrorMessage());
-
-  OrtValue ort_result = ort_out[0];
-  return aten_tensor_from_ort(
-    std::move(ort_result),
-    self.options());
-}
-
 at::Tensor ort_op_aten_zeros_like(
   const at::Tensor& self,
   // *,
