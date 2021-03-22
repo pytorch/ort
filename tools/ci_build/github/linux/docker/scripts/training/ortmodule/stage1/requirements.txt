@@ -11,6 +11,7 @@ torchtext
 tensorboard
 h5py
 wget
+--extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ORT-Nightly/pypi/simple/
 ort-gpu-nightly-training
 # PyTorch Lightning (nightly) is used for CI tests only
 https://github.com/PyTorchLightning/pytorch-lightning/archive/master.zip
