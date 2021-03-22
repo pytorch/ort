@@ -15,11 +15,8 @@ import random
 import time
 import datetime
 
-import sys
-print (sys.path)
-
 import onnxruntime
-from torchort import ORTModule
+from torch_ort import ORTModule
 
 def train(model, optimizer, scheduler, train_dataloader, epoch, device, args):
     # ========================================

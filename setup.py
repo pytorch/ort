@@ -15,9 +15,9 @@ if 'dev' in version_str:
     version_str = version_str + date.today().strftime("%Y%m%d")
 
 setuptools.setup(
-    name="torchort",
+    name="torch_ort",
     version=version_str,
-    author="torchort contributors",
+    author="torch-ort contributors",
     description="training Pytorch models with onnxruntime",
     long_description=long_description,
     long_description_content_type="text/markdown",
