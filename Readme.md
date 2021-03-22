@@ -16,7 +16,8 @@
     TBD
 ### nightly:
     (make sure you are not in the ort repo folder - otherwise torch-ort is taken as already installed)
-    pip install --pre torch-ort ort-gpu-nightly-training
+    pip install --pre --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ORT-Nightly/pypi/simple/ ort-gpu-nightly-training
+    pip install torch-ort
 
     (eventually we are aiming at: pip install --pre torch-ort onnxruntime=1.9.0+cu111_training)
 
