@@ -3,7 +3,7 @@
 ## Dependencies & Environment
 
 ```bash
-conda install numpy ninja pyyaml mkl mkl-include setuptools cmake cffi typing_extensions future six requests dataclasses pkg-config libuv
+conda install numpy ninja pyyaml mkl mkl-include setuptools cmake cffi typing_extensions future six requests dataclasses pkg-config libuv llvm-openmp
 ```
 
 ```bash
