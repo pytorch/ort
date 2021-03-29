@@ -32,4 +32,11 @@ print(fenced_ten.relu().cpu())
 a = torch.ones(3, 3).to(device)
 b = torch.ones(3, 3)
 c = a + b
+d = torch.sin (c)
+e = torch.tan (c)
+torch.sin_(c)
+print ("sin-in-place:")
 print(c.cpu())
+print ("sin explicit:")
+print (d.cpu ())
+
