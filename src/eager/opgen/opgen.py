@@ -49,6 +49,11 @@ class ReluGrad(ONNXOp):
     super().__init__('ReluGrad', 1, dY, X)
     self.domain = kMSDomain
 
+class Mod(ONNXOp):
+  def __init__(self, A, B, Fmod=None):
+    super().__init__('Mod', 1, A, B,
+      Fmod=ONNXAttr(Fmod, ONNXType.INT))
+
 single_arg_op_names = ["data", "_shape_as_tensor", "abs", "absolute", "angle", "sgn",
 "_conj", "acos", "arccos", "acosh", "arccosh", "asinh", "arcsinh",
 "atanh", "arctanh", "asin", "arcsin", "atan", "arctan", "atleast_1d",
@@ -106,8 +111,12 @@ ops = {
   'aten::mm': MatMul('self', 'mat2'),
   
   'aten::sum.dim_IntList': ReduceSum('self', 'dim', KeepDims='keepdim'),
-  'aten::threshold_backward': ReluGrad('grad_output', 'self')  
+  'aten::threshold_backward': ReluGrad('grad_output', 'self'),
+
+  'aten::fmod.Scalar': Mod('self', 'other', Fmod=1),
+  'aten::fmod.Tensor': Mod('self', 'other', Fmod=1),
 }
+
 ops.update (implicit_single_arg_ops)
 ops.update (explicit_single_arg_ops)
 ortgen = ORTGen(ops)
