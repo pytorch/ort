@@ -59,16 +59,29 @@ class FunctionGenerationError(NotImplementedError):
   def __init__(self, cpp_func: ast.FunctionDecl, message: str):
     super().__init__(f'{message}: {cpp_func.torch_func.torch_schema}')
 
+class MappedOpFunction:
+  def __init__(
+    self,
+    torch_op_namespace: str,
+    torch_op_name: str,
+    onnx_op: ONNXOp,
+    cpp_func: ast.FunctionDecl,
+    torch_func: ast.FunctionDecl,
+    signature_only: bool):
+    self.torch_op_namespace = torch_op_namespace
+    self.torch_op_name = torch_op_name
+    self.onnx_op = onnx_op
+    self.cpp_func = cpp_func
+    self.torch_func = torch_func
+    self.signature_only = signature_only
+
 class ORTGen:
-  _mapped_ops: Dict[str, ONNXOp] = {}
-  function_name_prefix: str
+  _mapped_ops: Dict[str, ONNXOp]
 
   def __init__(
     self,
-    ops: Optional[Dict[str, ONNXOp]] = None,
-    function_name_prefix: str = None):
+    ops: Optional[Dict[str, ONNXOp]] = None):
     self._mapped_ops = {}
-    self.function_name_prefix = function_name_prefix
     if ops:
       self.register_many(ops)
 
@@ -83,36 +96,38 @@ class ORTGen:
     self._write_file_prelude(writer)
 
     generated_funcs = []
-    for cpp_func, torch_func in self._parse_function_decls(cpp_parser):
-      if self.function_name_prefix:
-        cpp_func.identifier.value = self.function_name_prefix + \
-          cpp_func.identifier.value
+    current_ns = None
 
-      torch_op_name = torch_func.identifier.value
-      if torch_op_name not in self._mapped_ops:
-        continue
-      onnx_op = self._mapped_ops[torch_op_name]
-      if not onnx_op:
-        continue
-
-      signature_only = isinstance(onnx_op, SignatureOnly)
+    for mapped_func in self._parse_mapped_function_decls(cpp_parser):
+      ns = mapped_func.torch_op_namespace
+      if current_ns and current_ns != ns:
+        current_ns = None
+        writer.pop_namespace()
+      if ns != current_ns:
+        current_ns = ns
+        writer.writeline()
+        writer.push_namespace(ns)
 
       writer.writeline()
-      writer.writeline(f'// {torch_func.torch_schema}')
+      writer.writeline(f'// {mapped_func.torch_func.torch_schema}')
 
-      self._write_function_signature(writer, cpp_func)
-      if signature_only:
+      self._write_function_signature(writer, mapped_func.cpp_func)
+      if mapped_func.signature_only:
         writer.writeline(';')
       else:
         writer.writeline(' {')
         writer.push_indent()
-        self._write_function_body(writer, onnx_op, cpp_func)
+        self._write_function_body(writer, mapped_func)
         writer.pop_indent()
         writer.writeline('}')
 
-      del self._mapped_ops[torch_op_name]
+      del self._mapped_ops[mapped_func.torch_func.identifier.value]
 
-      generated_funcs.append((cpp_func, torch_func))
+      generated_funcs.append(mapped_func)
+
+    if current_ns:
+      current_ns = None
+      writer.pop_namespace()
 
     self._write_function_registrations(writer, generated_funcs)
     self._write_file_postlude(writer)
@@ -162,8 +177,9 @@ class ORTGen:
   def _write_function_body(
     self,
     writer: writer.SourceWriter,
-    onnx_op: ONNXOp,
-    cpp_func: ast.FunctionDecl):
+    mapped_func: MappedOpFunction):
+    onnx_op, cpp_func = mapped_func.onnx_op, mapped_func.cpp_func
+
     assert(len(cpp_func.parameters) > 0)
 
     return_alias_info = self._get_alias_info(cpp_func.torch_func.return_type)
@@ -299,19 +315,28 @@ class ORTGen:
   def _write_function_registrations(
     self,
     writer: writer.SourceWriter,
-    generated_funcs: List[Tuple[ast.FunctionDecl, ast.FunctionDecl]]):
+    generated_funcs: List[MappedOpFunction]):
     writer.writeline()
     writer.writeline('TORCH_LIBRARY_IMPL(aten, ORT, m) {')
     writer.push_indent()
     writer.writeline('ORT_LOG_DEBUG << "ATen init";')
-    for cpp_func, torch_func in generated_funcs:
-      reg_function_arg = cpp_func.identifier.value
+
+    for mapped_func in generated_funcs:
+      cpp_func, torch_func = mapped_func.cpp_func, mapped_func.torch_func
+  
+      if mapped_func.torch_op_namespace:
+        reg_function_arg = f'{mapped_func.torch_op_namespace}::'
+      else:
+        reg_function_arg = ''
+      reg_function_arg += cpp_func.identifier.value
+
       if self._torch_function_needs_unboxed_registration(torch_func):
         writer.write('m.impl_UNBOXED(')
       else:
         writer.write('m.impl(')
         reg_function_arg = f'TORCH_FN({reg_function_arg})'
       writer.writeline(f'"{torch_func.identifier.value}", {reg_function_arg});')
+
     writer.pop_indent()
     writer.writeline('}')
     writer.writeline()
@@ -346,6 +371,31 @@ class ORTGen:
       ast.BoolType,
       ast.IntType,
       ast.KWArgsSentinelType))
+
+  def _parse_mapped_function_decls(self, cpp_parser: parser.CPPParser):
+    for cpp_func, torch_func in self._parse_function_decls(cpp_parser):
+      torch_op_name = torch_func.identifier.value
+      if torch_op_name not in self._mapped_ops:
+        continue
+      onnx_op = self._mapped_ops[torch_op_name]
+      if not onnx_op:
+        continue
+
+      try:
+        torch_op_namespace = torch_op_name[0:torch_op_name.index('::')]
+        torch_op_name = torch_op_name[len(torch_op_namespace) + 2:]
+      except:
+        torch_op_namespace = None
+
+      cpp_func.identifier.value = torch_op_name.replace('.', '__')
+
+      yield MappedOpFunction(
+        torch_op_namespace,
+        torch_op_name,
+        onnx_op,
+        cpp_func,
+        torch_func,
+        isinstance(onnx_op, SignatureOnly))
 
   def _parse_function_decls(self, cpp_parser: parser.CPPParser):
     # Parse the C++ declarations

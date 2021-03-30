@@ -131,7 +131,9 @@ const onnx::AttributeProto create_ort_attribute(
 
 #pragma region Hand-Implemented ATen Ops
 
-at::Tensor ort_op_aten_empty(
+namespace aten {
+
+at::Tensor empty__memory_format(
   at::IntArrayRef size,
   // *
   const at::TensorOptions& options,
@@ -153,7 +155,7 @@ at::Tensor ort_op_aten_empty(
     options);
 }
 
-at::Tensor ort_op_aten_empty_strided(
+at::Tensor empty_strided(
   at::IntArrayRef size,
   at::IntArrayRef stride,
   // *
@@ -181,7 +183,7 @@ at::Tensor ort_op_aten_empty_strided(
     at::device(*device_opt).dtype(dtype));
 }
 
-at::Tensor ort_op_aten_reshape(at::Tensor const& self, at::IntArrayRef shape) {
+at::Tensor reshape(at::Tensor const& self, at::IntArrayRef shape) {
   ORT_LOG_FN(self, shape);
 
   auto& invoker = GetORTInvoker(self.device());
@@ -193,7 +195,7 @@ at::Tensor ort_op_aten_reshape(at::Tensor const& self, at::IntArrayRef shape) {
     self.options());
 }
 
-at::Tensor ort_op_aten_view(const at::Tensor& self, at::IntArrayRef size) {
+at::Tensor view(const at::Tensor& self, at::IntArrayRef size) {
   ORT_LOG_FN(self, size);
 
   auto& invoker = GetORTInvoker(self.device());
@@ -207,7 +209,7 @@ at::Tensor ort_op_aten_view(const at::Tensor& self, at::IntArrayRef size) {
     self.options());
 }
 
-at::Tensor& ort_op_aten_copy_(
+at::Tensor& copy_(
   at::Tensor& self,
   const at::Tensor& src,
   bool non_blocking) {
@@ -227,7 +229,7 @@ at::Tensor& ort_op_aten_copy_(
   return self;
 }
 
-at::Tensor ort_op_aten_zeros_like(
+at::Tensor zeros_like(
   const at::Tensor& self,
   // *,
   c10::optional<at::ScalarType> dtype,
@@ -254,7 +256,7 @@ at::Tensor ort_op_aten_zeros_like(
     self.options());
 }
 
-at::Tensor& ort_op_aten_zero_(at::Tensor& self){
+at::Tensor& zero_(at::Tensor& self){
   auto& invoker = GetORTInvoker(self.device());
   auto ort_in_self = create_ort_value(invoker, self);
   OrtValue flag_val;
@@ -286,6 +288,8 @@ at::Tensor& ort_op_aten_zero_(at::Tensor& self){
   memcpy(ort_self_data, ort_result_data, ort_self_tensor->DataType()->Size() * ort_self_tensor->Shape().Size());
   return self;
 }
+
+} // namespace aten
 
 #pragma endregion
 

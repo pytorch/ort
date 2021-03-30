@@ -102,7 +102,7 @@ ops = {
 }
 ops.update (implicit_single_arg_ops)
 ops.update (explicit_single_arg_ops)
-ortgen = ORTGen(ops, function_name_prefix='ort_op_aten_')
+ortgen = ORTGen(ops)
 
 import os
 import sys
