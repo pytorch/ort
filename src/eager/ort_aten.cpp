@@ -98,25 +98,27 @@ const OrtValue create_ort_value(
 const onnx::AttributeProto create_ort_attribute(
   const char* name,
   at::Scalar value) {
+  return create_ort_attribute(name, value, value.type());
+}
+
+const onnx::AttributeProto create_ort_attribute(
+  const char* name,
+  at::Scalar value,
+  at::ScalarType type) {
   onnx::AttributeProto attr;
   attr.set_name(name);
-  // FIXME: we may need to know the type of the target ORT attribute for
-  // conversion. So far, we don't, but there may come a time...
-  switch (value.type()) {
-    case at::ScalarType::Bool:
-      attr.set_type(onnx::AttributeProto_AttributeType::AttributeProto_AttributeType_INT);
-      attr.set_i(value.to<int32_t>());
-      break;
+  switch (type) {
+    case at::ScalarType::Float:
     case at::ScalarType::Double:
-    case at::ScalarType::Long:
       attr.set_type(onnx::AttributeProto_AttributeType::AttributeProto_AttributeType_FLOAT);
       attr.set_f(value.to<double>());
       break;
-    // NB. see FIXME above
-    // case at::ScalarType::Long:
-    //   attr.set_type(onnx::AttributeProto_AttributeType::AttributeProto_AttributeType_INT);
-    //   attr.set_f(value.to<int64_t>());
-    //   break;
+    case at::ScalarType::Bool:
+    case at::ScalarType::Int:
+    case at::ScalarType::Long:
+      attr.set_type(onnx::AttributeProto_AttributeType::AttributeProto_AttributeType_INT);
+      attr.set_i(value.to<int64_t>());
+      break;
     default:
       // For most at::ScalarType, it should be safe to just call value.to<>
       // on it, but for now we want to explicitly know when we've encountered

@@ -3,6 +3,8 @@
 from opgen.generator import \
   ORTGen as ORTGen, \
   ONNXOp as ONNXOp, \
+  ONNXType as ONNXType, \
+  ONNXAttr as ONNXAttr, \
   SignatureOnly as SignatureOnly
 
 kMSDomain = 'onnxruntime::kMSDomain'
@@ -18,10 +20,14 @@ class Mul(ONNXOp):
 
 class Gemm(ONNXOp):
   def __init__(self, a, b, c, Alpha=None, Beta=None, TransA=None, TransB=None):
-    super().__init__('Gemm', 1, a, b, c, Alpha=Alpha, Beta=Beta, TransA=TransA, TransB=TransB)
+    super().__init__('Gemm', 1, a, b, c,
+      Alpha=ONNXAttr(Alpha, ONNXType.FLOAT),
+      Beta=ONNXAttr(Beta, ONNXType.FLOAT),
+      TransA=ONNXAttr(TransA, ONNXType.INT),
+      TransB=ONNXAttr(TransB, ONNXType.INT))
 
 class Transpose(ONNXOp):
-  def __init__(self, data, perms=None): super().__init__('Transpose', 1, data, perms=perms)
+  def __init__(self, data): super().__init__('Transpose', 1, data)
 
 class Relu(ONNXOp):
   def __init__(self, x): super().__init__('Relu', 1, x)
@@ -34,12 +40,14 @@ class MatMul(ONNXOp):
 
 class ReduceSum(ONNXOp):
   def __init__(self, data, axes, KeepDims=None, noop_with_empty_axes=None):
-    super().__init__('ReduceSum', 1, data, axes, KeepDims=KeepDims, noop_with_empty_axes=noop_with_empty_axes)
+    super().__init__('ReduceSum', 1, data, axes,
+      KeepDims=ONNXAttr(KeepDims, ONNXType.INT),
+      noop_with_empty_axes=ONNXAttr(noop_with_empty_axes, ONNXType.INT))
 
 class ReluGrad(ONNXOp):
-    def __init__(self, dY, X):
-      super().__init__('ReluGrad', 1, dY, X)
-      self.domain = kMSDomain
+  def __init__(self, dY, X):
+    super().__init__('ReluGrad', 1, dY, X)
+    self.domain = kMSDomain
 
 single_arg_op_names = ["data", "_shape_as_tensor", "abs", "absolute", "angle", "sgn",
 "_conj", "acos", "arccos", "acosh", "arccosh", "asinh", "arcsinh",

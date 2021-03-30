@@ -16,6 +16,15 @@ class Outputs:
   def __str__(self):
     return self.name if self.name else f'<unbound output>'
 
+class ONNXType:
+  FLOAT = 'at::ScalarType::Float'
+  INT = 'at::ScalarType::Int'
+
+class ONNXAttr:
+  def __init__(self, value, type: ONNXType=None):
+    self.value = value
+    self.type = type
+
 class ONNXOpEvalContext:
   ops: ['ONNXOp']
 
@@ -235,15 +244,21 @@ class ORTGen:
         writer.writeline(f'create_ort_value(invoker, {op_input});')
 
       # Torch kwargs -> ORT attributes
-      attrs = { k:v for k, v in onnx_op.attributes.items() if v }
+      attrs = { k:v for k, v in onnx_op.attributes.items() if v and v.value }
       if len(attrs) > 0:
         attrs_arg = 'attrs'
         writer.writeline()
         writer.writeline(f'NodeAttributes {attrs_arg}({len(attrs)});')
+
         for attr_name, attr in attrs.items():
-          writer.write(f'{attrs_arg}[AttrName::{attr_name}] = ')
-          writer.write('create_ort_attribute(')
-          writer.writeline(f'AttrName::{attr_name}, {attr});')
+          attr_name = f'AttrName::{attr_name}'
+          writer.write(f'{attrs_arg}[{attr_name}] = ')
+          writer.writeline('create_ort_attribute(')
+          writer.push_indent()
+          writer.writeline(f'{attr_name},')
+          writer.writeline(f'{attr.value},')
+          writer.writeline(f'{attr.type});')
+          writer.pop_indent()
         attrs_arg = f'&{attrs_arg}'
       else:
         attrs_arg = 'nullptr'
