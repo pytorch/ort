@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 from typing import TextIO, Optional, Dict, List, Tuple
 
 import sys
@@ -16,12 +19,16 @@ class Outputs:
   def __str__(self):
     return self.name if self.name else f'<unbound output>'
 
-class ONNXType:
+class AttrType:
   FLOAT = 'at::ScalarType::Float'
+  FLOATS = '<unsupported:FLOATS>'
   INT = 'at::ScalarType::Int'
+  INTS = '<unsupported:INTS>'
+  STRING = '<unsupported:STRING>'
+  STRINGS = '<unsupported:STRINGS>'
 
 class ONNXAttr:
-  def __init__(self, value, type: ONNXType=None):
+  def __init__(self, value, type: AttrType=None):
     self.value = value
     self.type = type
 
@@ -251,7 +258,7 @@ class ORTGen:
         writer.writeline(f'NodeAttributes {attrs_arg}({len(attrs)});')
 
         for attr_name, attr in attrs.items():
-          attr_name = f'AttrName::{attr_name}'
+          attr_name = f'"{attr_name}"'
           writer.write(f'{attrs_arg}[{attr_name}] = ')
           writer.writeline('create_ort_attribute(')
           writer.push_indent()
