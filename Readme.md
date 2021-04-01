@@ -1,36 +1,54 @@
-# training pytorch models with onnxruntime
+# Train PyTorch models with ONNX Runtime
 
-### torch-ort can be used to train pytorch models with onnxruntime backend. Before using torch-ort, one need to have a working pytorch gpu environment.
+PyTorch/ORT is a Python package that uses ONNX Runtime to accelerate PyTorch model training.
 
-## to build (you need to update version number in version.txt in order to be able to upload a python whl):
-    (run 'pip install setuptools', if it is not already installed) 
-    rm dist/*
-    python setup.py bdist_wheel
+## Pre-requisites
 
-## to publish (it will ask for user name and password):
-    twine upload dist/*
+You need a machine with at least one NVDIA GPU to run PyTorch/ORT.
 
-## to install:
+You can install run PyTorch/ORT in your local environment, or with docker. If you are using docker, the following base image is suitable: `nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04`.
 
-### stable:
-    TBD
-### nightly:
-    (make sure you are not in the ort repo folder - otherwise torch-ort is taken as already installed)
-    pip install --pre --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ORT-Nightly/pypi/simple/ ort-gpu-nightly-training
-    pip install torch-ort
+## Install
 
-    (eventually we are aiming at: pip install --pre torch-ort onnxruntime=1.9.0+cu111_training)
+1. Install CUDA
 
-## to test:
-    python ./ort/tests/bert_for_sequence_classification.py
-## to use torch-ort within PyTorch training scripts:
-    import onnxruntime
-    from torch_ort import ORTModule
-    model = ORTModule(model)
-    # normal PyTorch training script follows
+2. Install CuDNN
 
-## FAQs
-### Question: When running training script with ORTModule, I got an error of missing Cuda shared library:
-### Answer: It is possible that your torch install has a different version of Cuda library than onnxruntime. In this case, do:
-    conda install -c anaconda cudatoolkit=10.2.89
-    (replace with the right cudatoolkit version)
+3. Install PyTorch/ORT and dependencies
+
+- `pip install onnx ninja`
+- `pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu111/torch_nightly.html`
+- `pip install --pre --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ORT-Nightly/pypi/simple/ ort-gpu-nightly-training`
+- `pip install torch-ort`
+ 
+- 
+## Test your installation
+
+1. Clone this repo
+
+- `git clone git@github.com:pytorch/ort.git`
+
+2. Install extra dependencies
+
+- `pip install wget pandas sklearn transformers`
+
+3. Run the training script
+
+- `python ./ort/tests/bert_for_sequence_classification.py`
+
+## Add PyTorch/ORT to your PyTorch training script
+
+```python
+import onnxruntime
+from torch_ort import ORTModule
+model = ORTModule(model)
+# PyTorch training script follows
+```
+
+## Versioning
+
+### CUDA
+
+The PyTorch/ORT package was built with CUDA 11.1. If you have a different version of CUDA installed, you should install the CUDA 11.1 toolkit.
+
+This is a limitation that will be removed in the next release.
