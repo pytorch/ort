@@ -6,7 +6,7 @@ PyTorch/ORT is a Python package that uses ONNX Runtime to accelerate PyTorch mod
 
 You need a machine with at least one NVDIA GPU to run PyTorch/ORT.
 
-You can install run PyTorch/ORT in your local environment, or with docker. If you are using docker, the following base image is suitable: `nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04`.
+You can install run PyTorch/ORT in your local environment, or with Docker. If you are using Docker, the following base image is suitable: `nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04`.
 
 ## Install
 
@@ -21,7 +21,6 @@ You can install run PyTorch/ORT in your local environment, or with docker. If yo
 - `pip install --pre --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ORT-Nightly/pypi/simple/ ort-gpu-nightly-training`
 - `pip install torch-ort`
  
-- 
 ## Test your installation
 
 1. Clone this repo
