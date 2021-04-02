@@ -35,7 +35,6 @@ ops = {
   'aten::mul.Tensor': Mul('self', 'other'),
   'aten::addmm': Gemm('mat1', 'mat2', 'self', alpha='alpha', beta='beta'),
   'aten::t': Transpose('self'),
-  'aten::relu': Relu('self'),
   'aten::mm': MatMul('self', 'mat2'),
   
   'aten::sum.dim_IntList': ReduceSum('self', 'dim', keepdims='keepdim'),
