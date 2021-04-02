@@ -327,11 +327,7 @@ class ORTGen:
       raise Exception(f'"{cpp_func.torch_func.torch_schema}" ' +
         'has alias info on its return type but no associated parameter')
 
-    writer.writeline(f'auto& ort_result_tensor = {return_outputs}[0].Get<onnxruntime::Tensor>();')
-    writer.writeline('auto* ort_result_data = ort_result_tensor.DataRaw(ort_result_tensor.DataType());')
-    writer.writeline(f'auto* ort_self_tensor = ort_input_{in_place_param.identifier.value}.GetMutable<onnxruntime::Tensor>();')
-    writer.writeline('auto* ort_self_data = ort_self_tensor->MutableDataRaw(ort_self_tensor->DataType());')
-    writer.writeline('memcpy(ort_self_data, ort_result_data, ort_self_tensor->DataType()->Size() * ort_self_tensor->Shape().Size());')
+    writer.writeline(f'copy(invoker, {return_outputs}[0], ort_input_{in_place_param.identifier.value});')
     writer.writeline(f'return {in_place_param.identifier.value};')
 
   def _write_function_registrations(

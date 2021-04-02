@@ -103,3 +103,10 @@ setup(
     cmdclass={
         'build_ext': BuildExtension
     })
+
+subprocess.check_call([
+    python_exe,
+    os.path.join(
+        os.path.dirname(__file__),
+        'test',
+        'ort_ops.py')])
