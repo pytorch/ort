@@ -43,8 +43,17 @@ steps:
 - script: 'pip install twine'
   displayName: 'pip install twine'
 
-- script: |
-    twine upload --username $(username) --password $(password) $(Build.ArtifactStagingDirectory)/dist/*.whl
-  displayName: 'twine upload --username $(username) --password ??? $(Build.ArtifactStagingDirectory)/dist/*.whl'
-  condition: succeededOrFailed()
-  timeoutInMinutes: 20
+# - script: |
+#     twine upload --username $(username) --password $(password) $(Build.ArtifactStagingDirectory)/dist/*.whl
+#   displayName: 'twine upload --username $(username) --password ??? $(Build.ArtifactStagingDirectory)/dist/*.whl'
+#   condition: succeededOrFailed()
+#   timeoutInMinutes: 20
+
+- task: AzureFileCopy@4
+  inputs:
+    sourcePath:  $(Build.ArtifactStagingDirectory)/dist/*.whl
+    azureSubscription: 'AIInfraBuildOnnxRuntimeOSS'
+    destination: azureBlob
+    storage: onnxruntimepackages
+    containerName: $web
+    continueOnError: true
