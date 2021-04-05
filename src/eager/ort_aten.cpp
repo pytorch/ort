@@ -281,13 +281,7 @@ at::Tensor& zero_(at::Tensor& self){
     throw std::runtime_error(
       "ORT return failure status:" + status.ErrorMessage());
 
-  //TODO: fix the inplace
-  OrtValue ort_result = ort_out[0];
-  auto& ort_result_tensor = ort_result.Get<onnxruntime::Tensor>();
-  auto* ort_result_data = ort_result_tensor.DataRaw(ort_result_tensor.DataType());
-  auto* ort_self_tensor = ort_in_self.GetMutable<onnxruntime::Tensor>();
-  auto* ort_self_data = ort_self_tensor->MutableDataRaw(ort_self_tensor->DataType());
-  memcpy(ort_self_data, ort_result_data, ort_self_tensor->DataType()->Size() * ort_self_tensor->Shape().Size());
+  copy(invoker, ort_out[0], ort_in_self);
   return self;
 }
 
