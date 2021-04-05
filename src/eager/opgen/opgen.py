@@ -40,7 +40,7 @@ ops = {
   'aten::fmod.Scalar': Mod('self', 'other', fmod=1),
   'aten::fmod.Tensor': Mod('self', 'other', fmod=1),
 
-  'aten::softshrink': Shrink('self', bias=1.5, lambd='lambd'),
+  'aten::softshrink': Shrink('self', bias='lambd', lambd='lambd'), #yes, bias is set to 'lambd'
   'aten::hardshrink': Shrink('self', bias=0, lambd='lambd'),
 }
 
