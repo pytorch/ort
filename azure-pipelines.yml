@@ -49,11 +49,7 @@ steps:
 #   condition: succeededOrFailed()
 #   timeoutInMinutes: 20
 
-- task: AzureFileCopy@4
+- task: CmdLine@2
   inputs:
-    sourcePath:  $(Build.ArtifactStagingDirectory)/dist/*.whl
-    azureSubscription: 'AIInfraBuildOnnxRuntimeOSS'
-    destination: azureBlob
-    storage: onnxruntimepackages
-    containerName: $web
-    continueOnError: true
+    script: |
+      azcopy cp $(Build.ArtifactStagingDirectory)/dist/*.whl https://onnxruntimepackages.blob.core.windows.net/$web
