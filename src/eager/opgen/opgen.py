@@ -6,7 +6,8 @@
 from opgen.generator import \
   ORTGen as ORTGen, \
   ONNXOp as ONNXOp, \
-  SignatureOnly as SignatureOnly
+  SignatureOnly as SignatureOnly, \
+  MakeFallthrough as MakeFallthrough
 
 from opgen.onnxops import *
 
