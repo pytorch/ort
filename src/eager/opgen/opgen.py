@@ -3,6 +3,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+from copy import deepcopy
+
 from opgen.generator import \
   ORTGen as ORTGen, \
   ONNXOp as ONNXOp, \
@@ -28,25 +30,6 @@ ops = {
   'aten::reshape': SignatureOnly(),
   'aten::view': SignatureOnly(),
 
-  # Fully Generated Ops
-  'aten::add.Tensor': Add('self', Mul('alpha', 'other')),
-  'aten::add_.Tensor': Add('self', Mul('alpha', 'other')),
-  'aten::sub.Tensor': Sub('self', Mul('alpha', 'other')),
-  'aten::sub_.Tensor': Sub('self', Mul('alpha', 'other')),
-  'aten::mul.Tensor': Mul('self', 'other'),
-  'aten::mul_.Tensor': Mul('self', 'other'),
-  'aten::div.Tensor': Div('self', 'other'),
-  'aten::div_.Tensor': Div('self', 'other'),
-
-  'aten::add.Scalar': Add('self', 'other'),
-  'aten::add_.Scalar': Add('self', 'other'),
-  'aten::sub.Scalar': Sub('self', 'other'),
-  'aten::sub_.Scalar': Sub('self', 'other'),
-  'aten::mul.Scalar': Mul('self', 'other'),
-  'aten::mul_.Scalar': Mul('self', 'other'),
-  'aten::div.Scalar': Div('self', 'other'),
-  'aten::div_.Scalar': Div('self', 'other'),
-
   'aten::addmm': Gemm('mat1', 'mat2', 'self', alpha='alpha', beta='beta'),
   'aten::t': Transpose('self'),
   'aten::mm': MatMul('self', 'mat2'),
@@ -58,16 +41,25 @@ ops = {
   'aten::fmod.Tensor': Mod('self', 'other', fmod=1),
 }
 
-for single_arg_op in [
+for binary_op, onnx_op in {
+  'add': Add('self', Mul('alpha', 'other')),
+  'sub': Sub('self', Mul('alpha', 'other')),
+  'mul': Mul('self', 'other'),
+  'div': Div('self', 'other')}.items():
+  for dtype in ['Tensor', 'Scalar']:
+    for variant in ['', '_']:
+      ops[f'aten::{binary_op}{variant}.{dtype}'] = deepcopy(onnx_op)
+
+for unary_op in [
   'abs','acos','acosh', 'asinh', 'atanh', 'asin', 'atan', 'ceil', 'cos',
   'cosh', 'erf', 'exp', 'floor', 'isnan', 'log', 'reciprocal', 'neg', 'round',
   'relu', 'selu', 'sigmoid', 'sin', 'sinh', 'sqrt', 'tan', 'tanh', 'nonzero',
   'sign', 'min', 'max', 'hardsigmoid', 'isinf', 'det']:
-  aten_name = f'aten::{single_arg_op}'
-  onnx_op = onnx_ops[single_arg_op]('self')
+  aten_name = f'aten::{unary_op}'
+  onnx_op = onnx_ops[unary_op]('self')
   ops[aten_name] = onnx_op
   # produce the in-place variant as well for ops that support it
-  if single_arg_op not in ['isnan', 'nonzero', 'min', 'max', 'isinf', 'det']:
+  if unary_op not in ['isnan', 'nonzero', 'min', 'max', 'isinf', 'det']:
     ops[f'{aten_name}_'] = onnx_op
 
 ortgen = ORTGen(ops)
