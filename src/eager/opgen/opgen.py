@@ -33,12 +33,15 @@ ops = {
   'aten::addmm': Gemm('mat1', 'mat2', 'self', alpha='alpha', beta='beta'),
   'aten::t': Transpose('self'),
   'aten::mm': MatMul('self', 'mat2'),
-  
+
   'aten::sum.dim_IntList': ReduceSum('self', 'dim', keepdims='keepdim'),
   'aten::threshold_backward': ReluGrad('grad_output', 'self'),
 
   'aten::fmod.Scalar': Mod('self', 'other', fmod=1),
   'aten::fmod.Tensor': Mod('self', 'other', fmod=1),
+
+  'aten::softshrink': Shrink('self', bias='lambd', lambd='lambd'), #yes, bias is set to 'lambd'
+  'aten::hardshrink': Shrink('self', bias=0, lambd='lambd'),
 }
 
 for binary_op, onnx_op in {

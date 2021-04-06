@@ -45,3 +45,9 @@ b = torch.tensor([[3.3, 3.3]]).to(device)
 c = torch.fmod(a, b)
 
 print(c.cpu())
+
+a = torch.tensor([[5, 3, -5]], dtype=torch.float).to(device)
+b = torch.hardshrink(a, 3) #should be [5, 0, -5]
+c = torch.nn.functional.softshrink(a, 3) #should be [2, 0, -2]
+print(b.cpu())
+print(c.cpu())
