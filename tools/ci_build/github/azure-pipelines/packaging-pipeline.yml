@@ -73,11 +73,11 @@ stages:
           scriptType: 'bash'
           scriptLocation: 'inlineScript'
           inlineScript: |
-            upload_python_package_to_azure_storage.py \
-              --python_wheel_path, $(Build.ArtifactStagingDirectory)/dist/*.whl,
-              --account_name, onnxruntimepackages,
-              --account_key, $(orttrainingpackagestorageaccountkey),
-              --container_name,  "$web",
+            python3 $(Build.SourcesDirectory)/upload_python_package_to_azure_storage.py \
+              --python_wheel_path, $(Build.ArtifactStagingDirectory)/dist/*.whl, \
+              --account_name, onnxruntimepackages, \
+              --account_key, $(orttrainingpackagestorageaccountkey), \
+              --container_name,  "$web"
           condition: succeededOrFailed()
           displayName: 
 
