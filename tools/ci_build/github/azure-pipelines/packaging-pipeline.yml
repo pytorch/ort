@@ -78,8 +78,10 @@ stages:
           scriptType: 'bash'
           scriptLocation: 'inlineScript'
           inlineScript: |
+            files=($(Build.ArtifactStagingDirectory)/dist/*.whl) && \
+            echo ${files[0]} && \
             python3 $(Build.SourcesDirectory)/upload_python_package_to_azure_storage.py \
-              --python_wheel_path, $(Build.ArtifactStagingDirectory)/dist/*.whl, \
+              --python_wheel_path, ${files[0]}, \
               --account_name, onnxruntimepackages, \
               --account_key, $(orttrainingpackagestorageaccountkey), \
               --container_name,  "$web"
