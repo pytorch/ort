@@ -43,13 +43,27 @@ steps:
 - script: 'pip install twine'
   displayName: 'pip install twine'
 
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'AIInfraBuildOnnxRuntimeOSS'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      upload_python_package_to_azure_storage.py \
+        --python_wheel_path, $(Build.ArtifactStagingDirectory)/dist/*.whl,
+        --account_name, onnxruntimepackages,
+        --account_key, $(orttrainingpackagestorageaccountkey),
+        --container_name,  "$web",
+    condition: succeededOrFailed()
+    displayName: 
+
 # - script: |
 #     twine upload --username $(username) --password $(password) $(Build.ArtifactStagingDirectory)/dist/*.whl
 #   displayName: 'twine upload --username $(username) --password ??? $(Build.ArtifactStagingDirectory)/dist/*.whl'
 #   condition: succeededOrFailed()
 #   timeoutInMinutes: 20
 
-- task: CmdLine@2
-  inputs:
-    script: |
-      azcopy cp $(Build.ArtifactStagingDirectory)/dist/*.whl https://onnxruntimepackages.blob.core.windows.net/$web
+# - task: CmdLine@2
+#   inputs:
+#     script: |
+#       azcopy cp $(Build.ArtifactStagingDirectory)/dist/*.whl https://onnxruntimepackages.blob.core.windows.net/$web
