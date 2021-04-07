@@ -10,6 +10,11 @@ def upload_whl(python_wheel_path, account_name, account_key, container_name):
     )
 
     blob_name = os.path.basename(python_wheel_path)
+    print('account_name: ', account_name)
+    print('account_key: ', account_key)
+    print('container_name: ', container_name)
+    print('blob_name: ', blob_name)
+    print('python_wheel_path: ', python_wheel_path)
     block_blob_service.create_blob_from_path(container_name, blob_name, python_wheel_path)
 
     html_blob_name = 'onnxruntime_nightly.html'
