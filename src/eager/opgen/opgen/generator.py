@@ -24,7 +24,7 @@ class AttrType:
   FLOATS = '<unsupported:FLOATS>'
   INT = 'at::ScalarType::Int'
   INTS = '<unsupported:INTS>'
-  STRING = '<unsupported:STRING>'
+  STRING = 'const char*'
   STRINGS = '<unsupported:STRINGS>'
 
 class ONNXAttr:
@@ -76,7 +76,7 @@ class MakeFallthrough(ONNXOp):
 
 class FunctionGenerationError(NotImplementedError):
   def __init__(self, cpp_func: ast.FunctionDecl, message: str):
-    super().__init__(f'{message}: {cpp_func.torch_func.torch_schema}')
+    super().__init__(f'{message} (torch: {cpp_func.torch_func.torch_schema})')
 
 class MappedOpFunction:
   def __init__(
@@ -265,13 +265,19 @@ class ORTGen:
         writer.writeline(f'NodeAttributes {attrs_arg}({len(attrs)});')
 
         for attr_name, attr in attrs.items():
-          attr_name = f'"{attr_name}"'
-          writer.write(f'{attrs_arg}[{attr_name}] = ')
+          writer.write(f'{attrs_arg}["{attr_name}"] = ')
           writer.writeline('create_ort_attribute(')
           writer.push_indent()
-          writer.writeline(f'{attr_name},')
-          writer.writeline(f'{attr.value},')
-          writer.writeline(f'{attr.type});')
+          writer.write(f'"{attr_name}", {attr.value}')
+          if attr.type.startswith('at::ScalarType::'):
+            writer.write(f', {attr.type}')
+          elif attr.type != AttrType.STRING:
+            raise FunctionGenerationError(
+              cpp_func,
+              f'Unsure how how to map ONNX op "{onnx_op.name}" attribute ' + 
+              f'"{attr_name}" of type "{attr.type}" to a call to ' +
+              'create_ort_attribute. Please teach generator.py.')
+          writer.writeline(');')
           writer.pop_indent()
         attrs_arg = f'&{attrs_arg}'
       else:

@@ -62,5 +62,9 @@ const onnx::AttributeProto create_ort_attribute(
   at::Scalar value,
   at::ScalarType type);
 
+const onnx::AttributeProto create_ort_attribute(
+  const char* name,
+  const char* value);
+
 } // namespace eager
 } // namespace torch_ort

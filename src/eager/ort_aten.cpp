@@ -129,6 +129,16 @@ const onnx::AttributeProto create_ort_attribute(
   return attr;
 }
 
+const onnx::AttributeProto create_ort_attribute(
+  const char* name,
+  const char* value) {
+  onnx::AttributeProto attr;
+  attr.set_name(name);
+  attr.set_type(onnx::AttributeProto_AttributeType::AttributeProto_AttributeType_STRING);
+  attr.set_s(value);
+  return attr;
+}
+
 #pragma endregion
 
 #pragma region Hand-Implemented ATen Ops
