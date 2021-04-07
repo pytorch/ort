@@ -46,4 +46,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    upload_whl(args.python_wheel_path, args.account_name, args.account_key, args.container_name)
+    upload_whl(
+        args.python_wheel_path,
+        args.account_name,
+        args.account_key,
+        args.container_name if args.container_name else '$web')

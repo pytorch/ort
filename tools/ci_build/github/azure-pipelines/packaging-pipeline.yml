@@ -84,10 +84,42 @@ stages:
               --python_wheel_path ${files[0]} \
               --account_name onnxruntimepackages \
               --account_key $(orttrainingpackagestorageaccountkey) \
-              --container_name "$web"
+              --container_name '$web'
           condition: succeededOrFailed()
           displayName: 
 
+      - task: AzureCLI@2
+        inputs:
+          azureSubscription: 'AIInfraBuild'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            files=($(Build.ArtifactStagingDirectory)/dist/*.whl) && \
+            echo ${files[0]} && \
+            python3 $(Build.SourcesDirectory)/upload_python_package_to_azure_storage.py \
+              --python_wheel_path ${files[0]} \
+              --account_name onnxruntimepackages \
+              --account_key $(orttrainingpackagestorageaccountkey) \
+              --container_name $web
+          condition: succeededOrFailed()
+          displayName: 
+
+      - task: AzureCLI@2
+        inputs:
+          azureSubscription: 'AIInfraBuild'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            files=($(Build.ArtifactStagingDirectory)/dist/*.whl) && \
+            echo ${files[0]} && \
+            python3 $(Build.SourcesDirectory)/upload_python_package_to_azure_storage.py \
+              --python_wheel_path ${files[0]} \
+              --account_name onnxruntimepackages \
+              --account_key $(orttrainingpackagestorageaccountkey) \
+              --container_name $web
+          condition: succeededOrFailed()
+          displayName: 
+            
       # - script: |
       #     python3 -m pip install twine
       #   displayName: 'python3 -m pip install twine'
