@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 #include <core/providers/cpu/cpu_execution_provider.h>
-
+#include <core/common/logging/sinks/clog_sink.h>
 #include "ort_backends.h"
 #include "ort_log.h"
 
@@ -12,7 +12,13 @@ namespace eager {
 using namespace onnxruntime;
 
 ORTBackendsManager& GetORTBackendsManager() {
-  static ORTBackendsManager instance;
+  const std::string logger_id{"torch_ort"};
+  static auto logging_manager = onnxruntime::make_unique<logging::LoggingManager>(
+      std::unique_ptr<logging::ISink>{new logging::CLogSink{}},
+      logging::Severity::kVERBOSE, false,
+      logging::LoggingManager::InstanceType::Default,
+      &logger_id); 
+  static ORTBackendsManager instance {logging_manager->DefaultLogger()};
   return instance;
 }
 
@@ -36,7 +42,8 @@ onnxruntime::ORTInvoker& ORTBackendsManager::GetInvoker(const at::Device device)
 
   auto invoker = 
     onnxruntime::make_unique<onnxruntime::ORTInvoker>(
-      std::move(ep));
+      std::move(ep),
+      logger_);
 
   backends_[device.index()] = std::move(invoker);
   return *backends_[device.index()];
