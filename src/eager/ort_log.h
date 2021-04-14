@@ -36,7 +36,6 @@ class ORTLog {
     return *this;
   }
 
-  template<>
   ORTLog& operator<<(const at::Device device) {
     *this << "Device:" << c10::DeviceTypeName(device.type(), true);
     *this << ":" << device.index();
@@ -53,7 +52,6 @@ class ORTLog {
     return *this;
   }
 
-  template<>
   ORTLog& operator<<(const c10::Scalar scalar) {
     *this << "Scalar:" << scalar.type();
     switch (scalar.type()) {
@@ -72,7 +70,6 @@ class ORTLog {
     return *this;
   }
 
-  template<>
   ORTLog& operator<<(const at::Tensor tensor) {
     *this << "Tensor";
     return *this;
@@ -118,7 +115,11 @@ class ORTLog {
 #define ORT_LOG_VERBOSE ORT_LOG(ORTLogLevel::VERBOSE)
 #define ORT_LOG_TRACE ORT_LOG(ORTLogLevel::TRACE)
 
-#define ORT_LOG_FN(...) ORT_LOG_VERBOSE.func(__PRETTY_FUNCTION__, ##__VA_ARGS__)
+template<typename...Ts>
+inline void ORT_LOG_FN(Ts... args) {
+   ORT_LOG_VERBOSE.func(__PRETTY_FUNCTION__, args...);
+}
+//#define ORT_LOG_FN(...) ORT_LOG_VERBOSE.func(__PRETTY_FUNCTION__, ##__VA_ARGS__)
 
 } // namespace eager
 } // namespace torch_ort
