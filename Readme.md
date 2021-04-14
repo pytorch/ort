@@ -21,6 +21,8 @@ You can install run PyTorch/ORT in your local environment, or with Docker. If yo
 - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly.html`
 - `pip install torch-ort`
  
+ to install release package of onnxruntime-training:
+ - `pip install onnxruntime-training`
 ## Test your installation
 
 1. Clone this repo
