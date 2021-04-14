@@ -1,3 +1,5 @@
 # runtime requirements
-onnxruntime-gpu>=1.7
+--pre
+-f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly.html
+onnxruntime-training>1.7.0
 torch>=1.8

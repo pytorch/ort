@@ -18,7 +18,7 @@ You can install run PyTorch/ORT in your local environment, or with Docker. If yo
 
 - `pip install onnx ninja`
 - `pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu111/torch_nightly.html`
-- `pip install --pre --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ORT-Nightly/pypi/simple/ ort-gpu-nightly-training`
+- `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly.html`
 - `pip install torch-ort`
  
 ## Test your installation
