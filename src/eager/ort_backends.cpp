@@ -11,14 +11,21 @@ namespace eager {
 
 using namespace onnxruntime;
 
+std::unique_ptr<Environment> CreateEnvironment() {
+    std::unique_ptr<Environment> env;    
+    const std::string logger_id{"torch_ort"};
+    auto logging_manager = onnxruntime::make_unique<logging::LoggingManager>(
+        std::unique_ptr<logging::ISink>{new logging::CLogSink{}},
+        logging::Severity::kVERBOSE, false,
+        logging::LoggingManager::InstanceType::Default,
+        &logger_id); 
+    Environment::Create(std::move(logging_manager), env);
+    return env;
+}
+
 ORTBackendsManager& GetORTBackendsManager() {
-  const std::string logger_id{"torch_ort"};
-  static auto logging_manager = onnxruntime::make_unique<logging::LoggingManager>(
-      std::unique_ptr<logging::ISink>{new logging::CLogSink{}},
-      logging::Severity::kVERBOSE, false,
-      logging::LoggingManager::InstanceType::Default,
-      &logger_id); 
-  static ORTBackendsManager instance {logging_manager->DefaultLogger()};
+  static auto env = CreateEnvironment();
+  static ORTBackendsManager instance {env->GetLoggingManager()->DefaultLogger()};
   return instance;
 }
 
