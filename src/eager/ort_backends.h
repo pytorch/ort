@@ -19,7 +19,7 @@ public:
     kDirectML = 3
   };
 
-  ORTBackendsManager() {
+  ORTBackendsManager(const onnxruntime::logging::Logger& logger) : logger_(logger) {
     backend_kinds_[ORTDeviceKind::kCPU] = "cpu";
     backend_kinds_[ORTDeviceKind::kCUDA] = "cuda";
     backend_kinds_[ORTDeviceKind::kDirectML] = "direct_ml";
@@ -34,6 +34,7 @@ public:
 private:
   std::map<ORTDeviceKind, std::string> backend_kinds_;
   std::map<at::DeviceIndex, std::unique_ptr<onnxruntime::ORTInvoker>> backends_;
+  const onnxruntime::logging::Logger& logger_;
 };
 
 ORTBackendsManager& GetORTBackendsManager();
