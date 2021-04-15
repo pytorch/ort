@@ -26,6 +26,7 @@ class AttrType:
   INTS = '<unsupported:INTS>'
   STRING = 'const char*'
   STRINGS = '<unsupported:STRINGS>'
+  TENSOR = 'at::Tensor'
 
 class ONNXAttr:
   def __init__(self, value, type: AttrType=None):

@@ -24,7 +24,6 @@ ops = {
   # Hand-Implemented Ops
   'aten::empty.memory_format': SignatureOnly(),
   'aten::empty_strided': SignatureOnly(),
-  'aten::zeros_like': SignatureOnly(),
   'aten::zero_': SignatureOnly(),
   'aten::copy_': SignatureOnly(),
   'aten::reshape': SignatureOnly(),
@@ -33,6 +32,7 @@ ops = {
   'aten::addmm': Gemm('mat1', 'mat2', 'self', alpha='alpha', beta='beta'),
   'aten::t': Transpose('self'),
   'aten::mm': MatMul('self', 'mat2'),
+  'aten::zeros_like': ConstantOfShape(Shape('self')), #the default constant is 0, so don't need to speicify attribute
 
   'aten::sum.dim_IntList': ReduceSum('self', 'dim', keepdims='keepdim'),
   'aten::threshold_backward': ReluGrad('grad_output', 'self'),

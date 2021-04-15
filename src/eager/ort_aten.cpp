@@ -241,33 +241,6 @@ at::Tensor& copy_(
   return self;
 }
 
-at::Tensor zeros_like(
-  const at::Tensor& self,
-  // *,
-  c10::optional<at::ScalarType> dtype,
-  c10::optional<at::Layout> layout,
-  c10::optional<at::Device> device,
-  c10::optional<bool> pin_memory,
-  c10::optional<at::MemoryFormat> memory_format){
-
-  auto& invoker = GetORTInvoker(self.device());
-
-  auto ort_in_self = create_ort_value(invoker, self);
-  auto& ort_in_self_tensor = ort_in_self.Get<onnxruntime::Tensor>();
-  auto& shape = ort_in_self_tensor.Shape();
-
-  OrtValue output;
-  //todo: avoid the copy on this small shape vector;
-  auto element_type = ort_in_self_tensor.DataType();
-  CreateMLValue(invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
-                element_type, shape.GetDims(), &output);
-  auto* output_tensor = output.GetMutable<onnxruntime::Tensor>();
-  memset(output_tensor->MutableDataRaw(element_type), 0, element_type->Size() * shape.Size());
-  return aten_tensor_from_ort(
-    std::move(output),
-    self.options());
-}
-
 at::Tensor& zero_(at::Tensor& self){
   auto& invoker = GetORTInvoker(self.device());
   auto ort_in_self = create_ort_value(invoker, self);

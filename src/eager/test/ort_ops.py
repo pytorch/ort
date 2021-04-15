@@ -53,6 +53,13 @@ class OrtOpTests(unittest.TestCase):
     cpu_sin_pi = torch.sin(torch.Tensor([np.pi]))
     ort_sin_pi = torch.sin(torch.Tensor([np.pi]).to(device))
     assert torch.allclose(cpu_sin_pi, ort_sin_pi.cpu())
+  
+  def test_zero_like(self):
+    device = self.get_device()
+    ones = torch.ones((10, 10), dtype=torch.float32)
+    cpu_zeros = torch.zeros_like(ones)
+    ort_zeros = torch.zeros_like(ones.to(device))
+    assert torch.allclose(cpu_zeros, ort_zeros.cpu())
 
 if __name__ == '__main__':
   unittest.main()
