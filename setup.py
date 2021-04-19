@@ -14,6 +14,8 @@ version_str = open('version.txt', 'r').read().strip()
 if 'dev' in version_str:
     version_str = version_str + date.today().strftime("%Y%m%d")
 
+install_requires = fetch_requirements('requirements.txt')
+
 setuptools.setup(
     name="torch_ort",
     version=version_str,
@@ -22,6 +24,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/pytorch/ort",
+    install_requires=install_requires,
     project_urls={
         "Bug Tracker": "https://github.com/pytorch/ort/issues",
     },
