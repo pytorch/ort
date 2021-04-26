@@ -4,6 +4,7 @@
 #include "ort_ops.h"
 #include "ort_util.h"
 #include "ort_log.h"
+#include <ATen/InferSize.h>
 
 namespace torch_ort {
 namespace eager {

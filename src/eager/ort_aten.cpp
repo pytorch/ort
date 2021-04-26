@@ -3,6 +3,7 @@
 
 #include "ort_aten.h"
 #include "ort_tensor.h"
+#include <ATen/InferSize.h>
 
 namespace torch_ort {
 namespace eager {
