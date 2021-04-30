@@ -55,7 +55,6 @@ stages:
           Context: tools/ci_build/github/linux/docker
           DockerBuildArgs: >-
             --build-arg PYTHON_VERSION=$(PythonVersion)
-            --build-arg INSTALL_DEPS_EXTRA_ARGS=-t
             --build-arg BUILD_UID=$(id -u)
           Repository: torchortci
 
