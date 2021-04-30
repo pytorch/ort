@@ -4,8 +4,9 @@ set -e -x
 SCRIPT_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 INSTALL_DEPS_TRAINING=false
 INSTALL_DEPS_DISTRIBUTED_SETUP=false
+CU_VER="11.1"
 
-while getopts p:d:mv parameter_Option
+while getopts p:d:v:m parameter_Option
 do case "${parameter_Option}"
 in
 p) PYTHON_VER=${OPTARG};;
