@@ -70,7 +70,7 @@ stages:
               -e BUILD_BUILDNUMBER \
               -w /torch_ort_src \
               torchortci \
-                $(PythonManylinuxDir)/bin/python3 build.py
+                /usr/bin/python build.py
           workingDirectory: $(Build.SourcesDirectory)
 
       - task: CopyFiles@2
