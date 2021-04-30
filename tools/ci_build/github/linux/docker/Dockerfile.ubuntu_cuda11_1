@@ -1,32 +1,28 @@
-# ONNX Runtime Training Module for PyTorch
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License.
+FROM nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04
 
-# Usage
-#   Build: docker build -f 2021-04.ORT.CUDA11.1 -t [image-name] .
-#   Run: docker run -it --gpus all --name [run-name] [image-name]:latest /bin/bash 
-# Example:
-#   docker build -f 2021-04.ORT.CUDA11.1 -t ort.cuda11.1 .
-#   docker run -it --gpus all --name my-experiments ort.cuda11.1:latest /bin/bash 
+ARG PYTHON_VERSION=3.6
+ARG INSTALL_DEPS_EXTRA_ARGS
 
-# CUDA development image for building sources
-FROM nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04 as builder
+ADD scripts /tmp/scripts
+RUN /tmp/scripts/install_ubuntu.sh -p $PYTHON_VERSION && \
+    /tmp/scripts/install_deps.sh -p $PYTHON_VERSION -d gpu $INSTALL_DEPS_EXTRA_ARGS && \
+    rm -rf /tmp/scripts
 
-# Install and update tools to minimize security vulnerabilities
-RUN apt-get update
-RUN apt-get install -y software-properties-common wget apt-utils patchelf git libprotobuf-dev protobuf-compiler cmake
-RUN unattended-upgrade
-RUN apt-get autoremove -y
+WORKDIR /root
 
-# Python and pip
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
-RUN apt-get install -y python3-pip
-RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
-RUN pip install --upgrade pip
+# Allow configure to pick up GDK and CuDNN where it expects it.
+# (Note: $CUDNN_VERSION is defined by NVidia's base image)
+RUN _CUDNN_VERSION=$(echo $CUDNN_VERSION | cut -d. -f1-2) && \
+    mkdir -p /usr/local/cudnn-$_CUDNN_VERSION/cuda/include && \
+    ln -s /usr/include/cudnn.h /usr/local/cudnn-$_CUDNN_VERSION/cuda/include/cudnn.h && \
+    mkdir -p /usr/local/cudnn-$_CUDNN_VERSION/cuda/lib64 && \
+    ln -s /etc/alternatives/libcudnn_so /usr/local/cudnn-$_CUDNN_VERSION/cuda/lib64/libcudnn.so && \
+    ln -s /usr/local/cudnn{-$_CUDNN_VERSION,}
 
-# PyTorch
-RUN pip install onnx ninja
-RUN pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu111/torch_nightly.html
+ENV LD_LIBRARY_PATH /usr/local/openblas/lib:$LD_LIBRARY_PATH
 
-# ORT Module
-RUN pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu111.html
+ARG BUILD_USER=onnxruntimedev
+ARG BUILD_UID=1000
+RUN adduser --gecos 'onnxruntime Build User' --disabled-password $BUILD_USER --uid $BUILD_UID
+WORKDIR /home/$BUILD_USER
+USER $BUILD_USER
