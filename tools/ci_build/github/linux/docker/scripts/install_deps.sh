@@ -4,16 +4,14 @@ set -e -x
 SCRIPT_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 INSTALL_DEPS_TRAINING=false
 INSTALL_DEPS_DISTRIBUTED_SETUP=false
-ORTMODULE_BUILD=false
 
-while getopts p:d:tmu parameter_Option
+while getopts p:d:mv parameter_Option
 do case "${parameter_Option}"
 in
 p) PYTHON_VER=${OPTARG};;
 d) DEVICE_TYPE=${OPTARG};;
-t) INSTALL_DEPS_TRAINING=true;;
+v) CU_VER=${OPTARG};;
 m) INSTALL_DEPS_DISTRIBUTED_SETUP=true;;
-u) ORTMODULE_BUILD=true;;
 esac
 done
 
@@ -126,7 +124,7 @@ fi
 export ONNX_ML=1
 export CMAKE_ARGS="-DONNX_GEN_PB_TYPE_STUBS=OFF -DONNX_WERROR=OFF"
 ${PYTHON_EXE} -m pip install -r ${0/%install_deps\.sh/requirements\.txt}
-${PYTHON_EXE} -m pip install -r ${0/%install_deps.sh/training\/ortmodule\/stage1\/requirements.txt}
+${PYTHON_EXE} -m pip install -r ${0/%install_deps.sh/training\/ortmodule\/stage1\/requirements_torch_cu${CU_VER}.txt}
 # Due to a [bug on DeepSpeed](https://github.com/microsoft/DeepSpeed/issues/663), we install it separately through ortmodule/stage2/requirements.txt
 ${PYTHON_EXE} -m pip install -r ${0/%install_deps.sh/training\/ortmodule\/stage2\/requirements.txt}
 if [[ $INSTALL_DEPS_DISTRIBUTED_SETUP = true ]]; then
