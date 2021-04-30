@@ -6,7 +6,8 @@ stages:
       timeoutInMinutes: 180
       workspace:
         clean: all
-      pool: Linux-Single-GPU-V100
+      # pool: Linux-Single-GPU-V100
+      pool: Linux-Multi-GPU-V100-E2E3
       strategy:
         matrix:
           # Python36 Cuda10.2:
