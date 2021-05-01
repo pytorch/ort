@@ -1,53 +1,42 @@
 stages:
-- stage: Python_Packaging
+- stage: CI_Stage
 
   jobs:
-    - job: Linux_py_GPU_Wheels
+    - job: CI_Job
       timeoutInMinutes: 180
       workspace:
         clean: all
-      # pool: Linux-Single-GPU-V100
-      pool: Linux-Multi-GPU-V100-E2E3
+      pool: Linux-Single-GPU-V100
       strategy:
         matrix:
-          # Python36 Cuda10.2:
-          #   PythonVersion: '3.6'
-          #   CudaVersion: '10.2'
-          #   DockerFile: 'Dockerfile.manylinux2014_training_cuda10_2'
-          # Python36 Cuda11.1:
-          #   PythonVersion: '3.6'
-          #   CudaVersion: '11.1'
-          #   DockerFile: 'Dockerfile.manylinux2014_training_cuda11_1'
-          # Python37 Cuda10.2:
-          #   PythonVersion: '3.7'
-          #   CudaVersion: '10.2'
-          #   DockerFile: 'Dockerfile.manylinux2014_training_cuda10_2'
-          # Python37 Cuda11.1:
-          #   PythonVersion: '3.7'
-          #   CudaVersion: '11.1'
-          #   DockerFile: 'Dockerfile.manylinux2014_training_cuda11_1'
+          Python36 Cuda10.2:
+            PythonVersion: '3.6'
+            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+          Python36 Cuda11.1:
+            PythonVersion: '3.6'
+            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
+          Python37 Cuda10.2:
+            PythonVersion: '3.7'
+            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+          Python37 Cuda11.1:
+            PythonVersion: '3.7'
+            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
           Python38 Cuda10.2:
             PythonVersion: '3.8'
-            CudaVersion: '10.2'
             DockerFile: 'Dockerfile.ubuntu_cuda10_2'
           Python38 Cuda11.1:
             PythonVersion: '3.8'
-            CudaVersion: '11.1'
             DockerFile: 'Dockerfile.ubuntu_cuda11_1'
-          # Python39 Cuda10.2:
-          #   PythonVersion: '3.9'
-          #   CudaVersion: '10.2'
-          #   DockerFile: 'Dockerfile.manylinux2014_training_cuda10_2'
-          # Python39 Cuda11.1:
-          #   PythonVersion: '3.9'
-          #   CudaVersion: '11.1'
-          #   DockerFile: 'Dockerfile.manylinux2014_training_cuda11_1'
+          Python39 Cuda10.2:
+            PythonVersion: '3.9'
+            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+          Python39 Cuda11.1:
+            PythonVersion: '3.9'
+            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
       steps:
       - checkout: self
         clean: true
         submodules: recursive
-
-      - template: templates/set-python-manylinux-variables-step.yml
 
       - template: templates/get-docker-image-steps.yml
         parameters:
@@ -80,9 +69,9 @@ stages:
           TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
       - task: PublishBuildArtifacts@1
-        displayName: 'Publish Artifact: ONNXRuntime python wheel'
+        displayName: 'Publish Artifact: torch-ort python wheel'
         inputs:
-          ArtifactName: onnxruntime_gpu
+          ArtifactName: torch-ort
 
       - template: templates/component-governance-component-detection-steps.yml
         parameters:

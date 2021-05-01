@@ -9,15 +9,8 @@ stages:
       pool: Linux-Single-GPU-V100
       strategy:
         matrix:
-          # Python36:
-          #   PythonVersion: '3.6'
-          # Python37:
-          #   PythonVersion: '3.7'
           Python38:
             PythonVersion: '3.8'
-          # dependency PyTorch does not support Python 3.9 yet
-          # Python39:
-          #   PythonVersion: '3.9'
       steps:
       - checkout: self
         clean: true
@@ -31,7 +24,6 @@ stages:
           Context: tools/ci_build/github/linux/docker
           DockerBuildArgs: >-
             --build-arg PYTHON_VERSION=$(PythonVersion)
-            --build-arg INSTALL_DEPS_EXTRA_ARGS=-t
             --build-arg BUILD_UID=$(id -u)
           Repository: torchortpackaging
 
@@ -57,9 +49,9 @@ stages:
           TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
       - task: PublishBuildArtifacts@1
-        displayName: 'Publish Artifact: ONNXRuntime python wheel'
+        displayName: 'Publish Artifact: torch-ort python wheel'
         inputs:
-          ArtifactName: onnxruntime_gpu
+          ArtifactName: torch-ort
 
       - script: |
           sudo apt-get update
