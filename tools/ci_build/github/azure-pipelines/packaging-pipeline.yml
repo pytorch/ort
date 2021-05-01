@@ -30,7 +30,6 @@ stages:
       - task: CmdLine@2
         inputs:
           script: |
-            mkdir -p $HOME/.onnx
             docker run --rm --gpus all \
               --volume $(Build.SourcesDirectory):/torch_ort_src \
               -e NVIDIA_VISIBLE_DEVICES=all \
