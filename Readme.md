@@ -4,11 +4,11 @@ PyTorch/ORT is a Python package that uses ONNX Runtime to accelerate PyTorch mod
 
 ## Pre-requisites
 
-You need a machine with at least one NVDIA GPU to run PyTorch/ORT.
+You need a machine with at least one NVIDIA or AMD GPU to run PyTorch/ORT.
 
-You can install run PyTorch/ORT in your local environment, or with Docker. If you are using Docker, the following base image is suitable: `nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04`.
+You can install run PyTorch/ORT in your local environment, or with Docker. If you are using Docker, the following base image is suitable for Nvidia and AMD respectively : `nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04` or `rocm/pytorch:rocm4.1.1_ubuntu18.04_py3.6_pytorch`.
 
-## Install
+## Install for Nvidia GPUs
 
 1. Install CUDA
 
@@ -27,6 +27,15 @@ You can install run PyTorch/ORT in your local environment, or with Docker. If yo
 - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu102.html`
 - `pip install torch-ort`
 
+## Install for AMD GPUs
+
+1. Install Rocm 4.1 base package ([instructions](https://rocmdocs.amd.com/en/latest/Installation_Guide/Installation-Guide.html))
+
+2. Install Rocm 4.1 libraries ([instructions](https://rocmdocs.amd.com/en/latest/Installation_Guide/Software-Stack-for-AMD-GPU.html#machine-learning-and-high-performance-computing-software-stack-for-amd-gpu-v4-1))
+
+3. Install Rocm 4.1 RCCL ([instructions](https://github.com/ROCmSoftwarePlatform/rccl/tree/rocm-4.1.0))
+
+4. Install PyTorch/ORT and dependencies
 ### AMD ROCM version 4.1
 - `pip install onnx ninja`
 - `pip install --pre torch -f https://download.pytorch.org/whl/nightly/rocm4.1/torch_nightly.html`
