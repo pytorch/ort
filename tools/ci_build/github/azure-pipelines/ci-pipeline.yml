@@ -9,30 +9,31 @@ stages:
       pool: Linux-Single-GPU-V100
       strategy:
         matrix:
-          # Python36 Cuda10.2:
-          #   PythonVersion: '3.6'
-          #   DockerFile: 'Dockerfile.ubuntu_cuda10_2'
-          # Python36 Cuda11.1:
-          #   PythonVersion: '3.6'
-          #   DockerFile: 'Dockerfile.ubuntu_cuda11_1'
-          # Python37 Cuda10.2:
-          #   PythonVersion: '3.7'
-          #   DockerFile: 'Dockerfile.ubuntu_cuda10_2'
-          # Python37 Cuda11.1:
-          #   PythonVersion: '3.7'
-          #   DockerFile: 'Dockerfile.ubuntu_cuda11_1'
-          # Python38 Cuda10.2:
-          #   PythonVersion: '3.8'
-          #   DockerFile: 'Dockerfile.ubuntu_cuda10_2'
-          # Python38 Cuda11.1:
-          #   PythonVersion: '3.8'
-          #   DockerFile: 'Dockerfile.ubuntu_cuda11_1'
-          Python39 Cuda10.2:
-            PythonVersion: '3.9'
+          Python36 Cuda10.2:
+            PythonVersion: '3.6'
             DockerFile: 'Dockerfile.ubuntu_cuda10_2'
-          Python39 Cuda11.1:
-            PythonVersion: '3.9'
+          Python36 Cuda11.1:
+            PythonVersion: '3.6'
             DockerFile: 'Dockerfile.ubuntu_cuda11_1'
+          Python37 Cuda10.2:
+            PythonVersion: '3.7'
+            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+          Python37 Cuda11.1:
+            PythonVersion: '3.7'
+            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
+          Python38 Cuda10.2:
+            PythonVersion: '3.8'
+            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+          Python38 Cuda11.1:
+            PythonVersion: '3.8'
+            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
+          # install_ubuntu.sh hangs with Python 3.9
+          # Python39 Cuda10.2:
+          #   PythonVersion: '3.9'
+          #   DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+          # Python39 Cuda11.1:
+          #   PythonVersion: '3.9'
+          #   DockerFile: 'Dockerfile.ubuntu_cuda11_1'
       steps:
       - checkout: self
         clean: true

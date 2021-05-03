@@ -109,7 +109,6 @@ if [ "$OS_VERSION" = "16.04" ]; then
     exit 1
 elif [ "$OS_VERSION" = "18.04" ]; then
     if [ "$PYTHON_VER" != "3.6" ]; then
-        DEBIAN_FRONTEND=noninteractive
 	    add-apt-repository -y ppa:deadsnakes/ppa
         apt-get update
         apt-get install -y --no-install-recommends \
@@ -125,7 +124,6 @@ elif [ "$OS_VERSION" = "18.04" ]; then
 
 else # ubuntu20.04
     if [ "$PYTHON_VER" != "3.8" ]; then
-        DEBIAN_FRONTEND=noninteractive
 	    add-apt-repository -y ppa:deadsnakes/ppa
         apt-get update
         apt-get install -y --no-install-recommends \
