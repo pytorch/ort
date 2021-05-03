@@ -73,4 +73,3 @@ model = ORTModule(model)
 
 The PyTorch/ORT package was built with CUDA 11.1. If you have a different version of CUDA installed, you should install the CUDA 11.1 toolkit.
 
-This is a limitation that will be removed in the next release.
