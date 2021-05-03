@@ -8,7 +8,6 @@ def fetch_requirements(path):
     with open(path, 'r') as fd:
         return [r.strip() for r in fd.readlines()]
 
-# 1.2.0.dev1+hg.5.b11e5e6f0b0b
 version_str = open('version.txt', 'r').read().strip()
 
 if 'dev' in version_str:

@@ -1,31 +1,52 @@
 stages:
-- stage: Python_Packaging
+- stage: CI_Stage
 
   jobs:
-    - job: Linux_py_GPU_Wheels
+    - job: CI_Job
       timeoutInMinutes: 180
       workspace:
         clean: all
       pool: Linux-Single-GPU-V100
       strategy:
         matrix:
-          Python38:
+          Python36 Cuda10.2:
+            PythonVersion: '3.6'
+            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+          Python36 Cuda11.1:
+            PythonVersion: '3.6'
+            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
+          Python37 Cuda10.2:
+            PythonVersion: '3.7'
+            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+          Python37 Cuda11.1:
+            PythonVersion: '3.7'
+            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
+          Python38 Cuda10.2:
             PythonVersion: '3.8'
+            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+          Python38 Cuda11.1:
+            PythonVersion: '3.8'
+            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
+          # install_ubuntu.sh hangs with Python 3.9
+          # Python39 Cuda10.2:
+          #   PythonVersion: '3.9'
+          #   DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+          # Python39 Cuda11.1:
+          #   PythonVersion: '3.9'
+          #   DockerFile: 'Dockerfile.ubuntu_cuda11_1'
       steps:
       - checkout: self
         clean: true
         submodules: recursive
 
-      - template: templates/set-python-manylinux-variables-step.yml
-
       - template: templates/get-docker-image-steps.yml
         parameters:
-          Dockerfile: tools/ci_build/github/linux/docker/Dockerfile.manylinux2014_gpu
+          Dockerfile: tools/ci_build/github/linux/docker/$(DockerFile)
           Context: tools/ci_build/github/linux/docker
           DockerBuildArgs: >-
             --build-arg PYTHON_VERSION=$(PythonVersion)
             --build-arg BUILD_UID=$(id -u)
-          Repository: torchortpackaging
+          Repository: torchortci
 
       - task: CmdLine@2
         inputs:
@@ -36,8 +57,8 @@ stages:
               -e NIGHTLY_BUILD \
               -e BUILD_BUILDNUMBER \
               -w /torch_ort_src \
-              torchortpackaging \
-                $(PythonManylinuxDir)/bin/python3 build.py
+              torchortci \
+                /usr/bin/python3 build.py
           workingDirectory: $(Build.SourcesDirectory)
 
       - task: CopyFiles@2
@@ -51,24 +72,6 @@ stages:
         displayName: 'Publish Artifact: torch-ort python wheel'
         inputs:
           ArtifactName: torch-ort
-
-      - script: |
-          sudo apt-get update
-          sudo apt-get install python3-pip python-dev
-        condition: succeededOrFailed()
-        displayName: 'sudo apt-get install python3-pip python-dev'
-
-      - script: |
-          python3 -m pip install twine
-        displayName: 'python3 -m pip install twine'
-        condition: succeededOrFailed()
-        timeoutInMinutes: 20
-
-      - script: |
-          python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password $(ortpypitrainingnightlypassword) $(Build.ArtifactStagingDirectory)/dist/*.whl
-        displayName: 'python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password ??? $(Build.ArtifactStagingDirectory)/dist/*.whl'
-        condition: succeededOrFailed()
-        timeoutInMinutes: 20
 
       - template: templates/component-governance-component-detection-steps.yml
         parameters:
