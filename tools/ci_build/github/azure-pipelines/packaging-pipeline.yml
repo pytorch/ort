@@ -6,7 +6,7 @@ stages:
       timeoutInMinutes: 180
       workspace:
         clean: all
-      pool: Linux-Single-GPU-V100
+      pool: Onnxruntime-Linux-GPU
       strategy:
         matrix:
           Python38:
