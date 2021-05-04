@@ -64,11 +64,25 @@ stages:
         condition: succeededOrFailed()
         timeoutInMinutes: 20
 
-      - script: |
-          python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password $(ortpypitrainingnightlypassword) $(Build.ArtifactStagingDirectory)/dist/*.whl
-        displayName: 'python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password ??? $(Build.ArtifactStagingDirectory)/dist/*.whl'
-        condition: succeededOrFailed()
-        timeoutInMinutes: 20
+      - task: AzureCLI@2
+        inputs:
+          azureSubscription: 'AIInfraBuildOnnxRuntimeOSS'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            files=($(Build.ArtifactStagingDirectory)/dist/*.whl) && \
+            tools/ci_build/upload_python_package_to_pypi.py \
+                --python_wheel_path ${files[0]} \
+                --account_name $(ortpypitrainingnightlyusername) \
+                --account_token $(ortpypitrainingnightlypassword)
+          condition: succeededOrFailed()
+          displayName:
+
+      # - script: |
+      #     python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password $(ortpypitrainingnightlypassword) $(Build.ArtifactStagingDirectory)/dist/*.whl
+      #   displayName: 'python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password ??? $(Build.ArtifactStagingDirectory)/dist/*.whl'
+      #   condition: succeededOrFailed()
+      #   timeoutInMinutes: 20
 
       - template: templates/component-governance-component-detection-steps.yml
         parameters:
