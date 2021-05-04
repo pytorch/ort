@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import os
+import sys
 import argparse
 import subprocess
 
@@ -19,6 +19,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     subprocess.run([
+        sys.executable,
+        '-m',
         "twine",
         "upload",
         "--username",
