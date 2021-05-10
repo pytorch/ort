@@ -1,33 +1,59 @@
 # Train PyTorch models with ONNX Runtime
 
-PyTorch/ORT is a Python package that uses ONNX Runtime to accelerate PyTorch model training.
+ONNX Runtime for PyTorch accelerates PyTorch model training using ONNX Runtime.
+
+It is available via the torch-ort python package.
+
+This repository contains the source code for the package as well as instructions for running the package and samples demonstrating how to do so.
 
 ## Pre-requisites
 
-You need a machine with at least one NVIDIA or AMD GPU to run PyTorch/ORT.
+You need a machine with at least one NVIDIA or AMD GPU to run ONNX Runtime for PyTorch.
 
-You can install run PyTorch/ORT in your local environment, or with Docker. If you are using Docker, the following base image is suitable for Nvidia and AMD respectively : `nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04` or `rocm/pytorch:rocm4.1.1_ubuntu18.04_py3.6_pytorch`.
+You can install and run torch-ort in your local environment, or with Docker.
 
-## Install for Nvidia GPUs
+## Run in a Python environment
 
-1. Install CUDA
+### Default dependencies
 
-2. Install CuDNN
+By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
 
-3. Install PyTorch/ORT and dependencies
-### Nvidia CUDA version 11.1
-- `pip install onnx ninja`
-- `pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu111/torch_nightly.html`
-- `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu111.html`
-- `pip install torch-ort`
+1. Install CUDA 10.2
 
-### Nvidia CUDA version 10.2
-- `pip install onnx ninja`
-- `pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html`
-- `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu102.html`
-- `pip install torch-ort`
+2. Install CuDNN 7.6.5
 
-## Install for AMD GPUs
+3. Install torch-ort and dependencies
+
+    - `pip install onnx ninja`
+    - `pip install torch-ort`
+
+### Explicitly install for NVIDIA CUDA 10.2
+
+1. Install CUDA 10.2
+
+2. Install CuDNN 7
+
+3. Install torch-ort and dependencies
+
+    - `pip install onnx ninja`
+    - `pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html`
+    - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu102.html`
+    - `pip install torch-ort`
+
+### Explicitly install for NVIDIA CUDA 11.1
+
+1. Install CUDA 11.1
+
+2. Install CuDNN 8
+
+3. Install torch-ort and dependencies
+
+    - `pip install onnx ninja`
+    - `pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu111/torch_nightly.html`
+    - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu111.html`
+    - `pip install torch-ort`
+
+### Explicitly install for AMD Rocm 4.1
 
 1. Install Rocm 4.1 base package ([instructions](https://rocmdocs.amd.com/en/latest/Installation_Guide/Installation-Guide.html))
 
@@ -35,15 +61,27 @@ You can install run PyTorch/ORT in your local environment, or with Docker. If yo
 
 3. Install Rocm 4.1 RCCL ([instructions](https://github.com/ROCmSoftwarePlatform/rccl/tree/rocm-4.1.0))
 
-4. Install PyTorch/ORT and dependencies
-### AMD ROCM version 4.1
-- `pip install onnx ninja`
-- `pip install --pre torch -f https://download.pytorch.org/whl/nightly/rocm4.1/torch_nightly.html`
-- `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_rocm41.html`
-- `pip install torch-ort`
+4. Install torch-ort and dependencies
+    - `pip install onnx ninja`
+    - `pip install --pre torch -f https://download.pytorch.org/whl/nightly/rocm4.1/torch_nightly.html`
+    - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_rocm41.html`
+    - `pip install torch-ort`
 
- to install release package of onnxruntime-training:
- - `pip install onnxruntime-training`
+## Run using Docker
+
+The [docker](docker) directory contains dockerfiles for NVIDIA CUDA 10.2 and NVIDIA CUDA 11.1 configurations.
+
+- [docker/ort-cu102-cudnn7-devel-ubuntu18.04-dockerfile](docker/ort-cu102-cudnn7-devel-ubuntu18.04-dockerfile)
+- [docker/ort-cu111-cudnn8-devel-ubuntu18.04-dockerfile](docker/ort-cu111-cudnn8-devel-ubuntu18.04-dockerfile)
+
+1. Build the docker image
+
+    `docker build -t torch-ort:latest -f docker/ort-cu102-cudnn7-devel-ubuntu18.04-dockerfile .`
+
+2. Run the docker container using the image you have just built
+
+    `docker run -it --gpus all torch-ort:latest`
+
 ## Test your installation
 
 1. Clone this repo
@@ -58,7 +96,7 @@ You can install run PyTorch/ORT in your local environment, or with Docker. If yo
 
 - `python ./ort/tests/bert_for_sequence_classification.py`
 
-## Add PyTorch/ORT to your PyTorch training script
+## Add ONNX Runtime for PyTorch to your PyTorch training script
 
 ```python
 import onnxruntime
@@ -67,10 +105,3 @@ model = ORTModule(model)
 # PyTorch training script follows
 ```
 
-## Versioning
-
-### CUDA
-
-The PyTorch/ORT package was built with CUDA 11.1. If you have a different version of CUDA installed, you should install the CUDA 11.1 toolkit.
-
-This is a limitation that will be removed in the next release.
