@@ -20,7 +20,7 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
 
 1. Install CUDA 10.2
 
-2. Install CuDNN 7.6.5
+2. Install CuDNN 7
 
 3. Install torch-ort and dependencies
 
