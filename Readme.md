@@ -71,7 +71,7 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
 
 The [docker](docker) directory contains dockerfiles for the NVIDIA CUDA 11.1 configuration.
 
-- [docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04](Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04)
+- [docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04](docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04)
 
 1. Build the docker image
 
