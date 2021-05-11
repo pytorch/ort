@@ -36,7 +36,7 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
 3. Install torch-ort and dependencies
 
     - `pip install onnx ninja`
-    - `pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html`
+    - `pip install torch==1.8.1`
     - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu102.html`
     - `pip install torch-ort`
 
@@ -49,7 +49,7 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
 3. Install torch-ort and dependencies
 
     - `pip install onnx ninja`
-    - `pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu111/torch_nightly.html`
+    - `pip install torch==1.8.1`
     - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu111.html`
     - `pip install torch-ort`
 
