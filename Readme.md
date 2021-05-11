@@ -69,18 +69,17 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
 
 ## Run using Docker
 
-The [docker](docker) directory contains dockerfiles for NVIDIA CUDA 10.2 and NVIDIA CUDA 11.1 configurations.
+The [docker](docker) directory contains dockerfiles for the NVIDIA CUDA 11.1 configuration.
 
-- [docker/ort-cu102-cudnn7-devel-ubuntu18.04-dockerfile](docker/ort-cu102-cudnn7-devel-ubuntu18.04-dockerfile)
-- [docker/ort-cu111-cudnn8-devel-ubuntu18.04-dockerfile](docker/ort-cu111-cudnn8-devel-ubuntu18.04-dockerfile)
+- [docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04](Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04)
 
 1. Build the docker image
 
-    `docker build -t torch-ort:latest -f docker/ort-cu102-cudnn7-devel-ubuntu18.04-dockerfile .`
+    `docker build -f Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04 -t ort.cu111 .`
 
 2. Run the docker container using the image you have just built
 
-    `docker run -it --gpus all torch-ort:latest`
+    `docker run -it --gpus all --name my-experiments ort.cu111:latest /bin/bash`
 
 ## Test your installation
 
