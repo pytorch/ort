@@ -24,7 +24,7 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
 
 3. Install torch-ort and dependencies
 
-    - `pip install onnx ninja`
+    - `pip install ninja`
     - `pip install torch-ort`
 
 ### Explicitly install for NVIDIA CUDA 10.2
@@ -35,7 +35,7 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
 
 3. Install torch-ort and dependencies
 
-    - `pip install onnx ninja`
+    - `pip install ninja`
     - `pip install torch==1.8.1`
     - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu102.html`
     - `pip install torch-ort`
@@ -48,7 +48,7 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
 
 3. Install torch-ort and dependencies
 
-    - `pip install onnx ninja`
+    - `pip install ninja`
     - `pip install torch==1.8.1`
     - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu111.html`
     - `pip install torch-ort`
@@ -62,7 +62,7 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
 3. Install ROCm 4.1 RCCL ([instructions](https://github.com/ROCmSoftwarePlatform/rccl/tree/rocm-4.1.0))
 
 4. Install torch-ort and dependencies
-    - `pip install onnx ninja`
+    - `pip install ninja`
     - `pip install --pre torch -f https://download.pytorch.org/whl/nightly/rocm4.1/torch_nightly.html`
     - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_rocm41.html`
     - `pip install torch-ort`
