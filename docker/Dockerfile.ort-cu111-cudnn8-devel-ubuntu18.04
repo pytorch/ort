@@ -3,11 +3,11 @@
 # Licensed under the MIT License.
 
 # Usage
-#   Build: docker build -f ort-11.1.1-cudnn8-devel-ubuntu18.04-dockerfile -t [image-name] .
+#   Build: docker build -f Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04 -t [image-name] .
 #   Run: docker run -it --gpus all --name [run-name] [image-name]:latest /bin/bash 
 # Example:
-#   docker build -f ort-11.1.1-cudnn8-devel-ubuntu18.04-dockerfile -t ort.cuda11.1 .
-#   docker run -it --gpus all --name my-experiments ort.cuda11.1:latest /bin/bash 
+#   docker build -f Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04 -t ort.cu111 .
+#   docker run -it --gpus all --name my-experiments ort.cu111:latest /bin/bash 
 
 # CUDA development image for building sources
 FROM nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04 as builder
