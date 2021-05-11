@@ -53,13 +53,13 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
     - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu111.html`
     - `pip install torch-ort`
 
-### Explicitly install for AMD Rocm 4.1
+### Explicitly install for AMD ROCm 4.1
 
-1. Install Rocm 4.1 base package ([instructions](https://rocmdocs.amd.com/en/latest/Installation_Guide/Installation-Guide.html))
+1. Install ROCm 4.1 base package ([instructions](https://rocmdocs.amd.com/en/latest/Installation_Guide/Installation-Guide.html))
 
-2. Install Rocm 4.1 libraries ([instructions](https://rocmdocs.amd.com/en/latest/Installation_Guide/Software-Stack-for-AMD-GPU.html#machine-learning-and-high-performance-computing-software-stack-for-amd-gpu-v4-1))
+2. Install ROCm 4.1 libraries ([instructions](https://rocmdocs.amd.com/en/latest/Installation_Guide/Software-Stack-for-AMD-GPU.html#machine-learning-and-high-performance-computing-software-stack-for-amd-gpu-v4-1))
 
-3. Install Rocm 4.1 RCCL ([instructions](https://github.com/ROCmSoftwarePlatform/rccl/tree/rocm-4.1.0))
+3. Install ROCm 4.1 RCCL ([instructions](https://github.com/ROCmSoftwarePlatform/rccl/tree/rocm-4.1.0))
 
 4. Install torch-ort and dependencies
     - `pip install onnx ninja`
