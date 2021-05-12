@@ -1,4 +1,4 @@
-# Train PyTorch models with ONNX Runtime
+# Accelerate PyTorch models with ONNX Runtime
 
 ONNX Runtime for PyTorch accelerates PyTorch model training using ONNX Runtime.
 
@@ -98,9 +98,12 @@ The [docker](docker) directory contains dockerfiles for the NVIDIA CUDA 11.1 con
 ## Add ONNX Runtime for PyTorch to your PyTorch training script
 
 ```python
-import onnxruntime
 from torch_ort import ORTModule
 model = ORTModule(model)
+
 # PyTorch training script follows
 ```
 
+## License
+
+This project has an MIT license, as found in the [LICENSE](LICENSE) file.
