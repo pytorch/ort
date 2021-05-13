@@ -3,7 +3,6 @@
 
 #include "ort_aten.h"
 #include "ort_tensor.h"
-#include <ATen/InferSize.h>
 
 namespace torch_ort {
 namespace eager {
@@ -148,15 +147,22 @@ namespace aten {
 
 at::Tensor empty__memory_format(
   at::IntArrayRef size,
-  // *
-  const at::TensorOptions& options,
+  // *,
+  c10::optional<at::ScalarType> dtype_opt,
+  c10::optional<at::Layout> layout_opt,
+  c10::optional<at::Device> device_opt,
+  c10::optional<bool> pin_memory,
   c10::optional<at::MemoryFormat> memory_format) {
-  ORT_LOG_FN(size, options, memory_format);
+  ORT_LOG_FN(size, dtype_opt, layout_opt, device_opt, pin_memory, memory_format);
+
+  assert(dtype_opt.has_value());
+  assert(device_opt.has_value());
+  assert(!layout_opt.has_value());
 
   // TODO: validate options and memory format
   // TODO: figure out how to get the correct element type.
   OrtValue ot;
-  auto& invoker = GetORTInvoker(options.device());
+  auto& invoker = GetORTInvoker(*device_opt);
   CreateMLValue(
     invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
     ort_scalar_type_from_aten(at::kFloat),
@@ -165,7 +171,9 @@ at::Tensor empty__memory_format(
 
   return aten_tensor_from_ort(
     std::move(ot),
-    options);
+    at::TensorOptions()
+      .device(*device_opt)
+      .dtype(*dtype_opt));
 }
 
 at::Tensor empty_strided(
@@ -176,7 +184,7 @@ at::Tensor empty_strided(
   c10::optional<at::Layout> layout_opt,
   c10::optional<at::Device> device_opt,
   c10::optional<bool> pin_memory_opt) {
-  ORT_LOG_FN(stride, dtype_opt, layout_opt, device_opt, pin_memory_opt);
+  ORT_LOG_FN(size, stride, dtype_opt, layout_opt, device_opt, pin_memory_opt);
 
   // TODO: handle stride
   // TODO: how to handle type conversion
@@ -193,7 +201,9 @@ at::Tensor empty_strided(
     &ot);
   return aten_tensor_from_ort(
     std::move(ot),
-    at::device(*device_opt).dtype(dtype));
+    at::TensorOptions()
+      .device(*device_opt)
+      .dtype(dtype));
 }
 
 at::Tensor reshape(at::Tensor const& self, at::IntArrayRef shape) {

@@ -31,7 +31,7 @@ inline void CopyVectorToTensor<bool>(const std::vector<bool>& value, onnxruntime
   }
 }
 
-std::vector<int64_t> GetStrides(const std::vector<int64_t>& shape, int64_t element_size);
+std::vector<int64_t> GetStrides(const std::vector<int64_t>& shape);
 
 } // namespace eager
 } // namespace torch_ort

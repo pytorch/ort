@@ -20,7 +20,7 @@ PYBIND11_MODULE(torch_ort, torch_ort_module) {
         return py::cast<py::object>(
           THPDevice_New(at::Device(at::DeviceType::ORT, device_index)));
       },
-      py::arg("device_index") = -1);
+      py::arg("device_index") = 0);
   }
 }
 

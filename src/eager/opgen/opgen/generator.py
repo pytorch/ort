@@ -365,12 +365,8 @@ class ORTGen:
           reg_function_arg = ''
         reg_function_arg += cpp_func.identifier.value
 
-      if mapped_func.make_fallthrough:
-        writer.write('m.impl(')
-      elif self._torch_function_needs_unboxed_registration(torch_func):
-        writer.write('m.impl_UNBOXED(')
-      else:
-        writer.write('m.impl(')
+      writer.write('m.impl(')
+      if not mapped_func.make_fallthrough:
         reg_function_arg = f'TORCH_FN({reg_function_arg})'
 
       writer.writeline(f'"{torch_func.identifier.value}", {reg_function_arg});')
@@ -385,30 +381,6 @@ class ORTGen:
     else:
       torch_type = torch_type_or_param
     return getattr(torch_type.desugar(), 'alias_info', None)
-
-  def _torch_function_needs_unboxed_registration(
-    self,
-    torch_func: ast.FunctionDecl):
-    if self._torch_type_needs_unboxed_registration(torch_func.return_type):
-      return True
-
-    for torch_param in torch_func.parameters:
-      if self._torch_type_needs_unboxed_registration(
-        torch_param.member.parameter_type):
-        return True
-
-    return False
-
-  def _torch_type_needs_unboxed_registration(self, torch_type: ast.Type):
-    torch_type = torch_type.desugar()
-    if isinstance(torch_type, ast.ArrayType):
-      torch_type = torch_type.base_type
-    return not isinstance(torch_type, (
-      ast.TensorType,
-      ast.ScalarType,
-      ast.BoolType,
-      ast.IntType,
-      ast.KWArgsSentinelType))
 
   def _parse_mapped_function_decls(self, cpp_parser: parser.CPPParser):
     for cpp_func, torch_func in self._parse_function_decls(cpp_parser):

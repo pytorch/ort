@@ -25,6 +25,24 @@ c10::intrusive_ptr<c10::TensorImpl> ORTTensorImpl::shallow_copy_and_detach(
   return impl;
 }
 
+c10::intrusive_ptr<c10::TensorImpl> ORTTensorImpl::shallow_copy_and_detach(
+  c10::VariableVersion&& version_counter,
+  bool allow_tensor_metadata_change) const {
+  auto impl = c10::make_intrusive<ORTTensorImpl>(
+    tensor_,
+    at::TensorOptions()
+      .dtype(this->dtype())
+      .device(this->device()));
+
+  copy_tensor_metadata(
+    this,
+    impl.get(),
+    std::move(version_counter),
+    allow_tensor_metadata_change);
+
+  return impl;
+}
+
 void ORTTensorImpl::shallow_copy_from(
   const c10::intrusive_ptr<TensorImpl>& impl) {
   auto* src_impl = dynamic_cast<ORTTensorImpl*>(impl.get());
@@ -63,16 +81,24 @@ void ORTTensorImpl::cacheSizeMetadata() {
   // TODO: wrap with change generation guard
   auto& tensor = tensor_.Get<onnxruntime::Tensor>();
   auto shape = tensor.Shape();
+  auto strides = GetStrides(shape.GetDims());
+
   numel_ = shape.Size();
-  sizes_ = shape.GetDims();
-  strides_ = GetStrides(
-    shape.GetDims(),
-    tensor.DataType()->Size());
+
+  sizes_and_strides_.set_sizes(shape.GetDims());
+
+  for (std::size_t i = 0; i < strides.size(); i++) {
+    sizes_and_strides_.stride_at_unchecked(i) = strides[i];
+  }
 }
 
-static const at::Storage no_storage_ = {};
-const at::Storage& ORTTensorImpl::storage() const { return no_storage_; }
-bool ORTTensorImpl::has_storage() const { return false; }
+const at::Storage& ORTTensorImpl::storage() const {
+  throw std::runtime_error("ORT Tensors do not have storage");
+}
+
+bool ORTTensorImpl::has_storage() const {
+  return false;
+}
 
 } // namespace eager
 } // namespace torch_ort

@@ -36,8 +36,13 @@ onnxruntime::ORTInvoker& GetORTInvoker(const at::Device device) {
 onnxruntime::ORTInvoker& ORTBackendsManager::GetInvoker(const at::Device device) {
   ORT_LOG_FN(device);
 
+  auto device_index = 0;
+  if (device.has_index()) {
+    device_index = device.index();
+  }
+
   TORCH_CHECK(device.type() == at::DeviceType::ORT, "must be an ORT device");
-  TORCH_CHECK(device.index() >= 0, "must have a valid index");
+  TORCH_CHECK(device_index >= 0, "must have a valid index");
 
   auto lookup = backends_.find(device.index());
   if (lookup != backends_.end()) {
@@ -52,8 +57,8 @@ onnxruntime::ORTInvoker& ORTBackendsManager::GetInvoker(const at::Device device)
       std::move(ep),
       logger_);
 
-  backends_[device.index()] = std::move(invoker);
-  return *backends_[device.index()];
+  backends_[device_index] = std::move(invoker);
+  return *backends_[device_index];
 }
 
 } // namespace eager
