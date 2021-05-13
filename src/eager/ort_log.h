@@ -115,11 +115,11 @@ class ORTLog {
 #define ORT_LOG_VERBOSE ORT_LOG(ORTLogLevel::VERBOSE)
 #define ORT_LOG_TRACE ORT_LOG(ORTLogLevel::TRACE)
 
-template<typename...Ts>
-inline void ORT_LOG_FN(Ts... args) {
-   ORT_LOG_VERBOSE.func(__PRETTY_FUNCTION__, args...);
-}
-//#define ORT_LOG_FN(...) ORT_LOG_VERBOSE.func(__PRETTY_FUNCTION__, ##__VA_ARGS__)
+#ifdef __clang__
+#  define ORT_LOG_FN(...) ORT_LOG_VERBOSE.func(__PRETTY_FUNCTION__,##__VA_ARGS__)
+#else
+#  define ORT_LOG_FN(...) ORT_LOG_VERBOSE << __PRETTY_FUNCTION__
+#endif
 
 } // namespace eager
 } // namespace torch_ort
