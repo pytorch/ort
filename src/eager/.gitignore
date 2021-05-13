@@ -1,2 +1,3 @@
 ort_build/
+build/
 ort_aten.g.cpp
