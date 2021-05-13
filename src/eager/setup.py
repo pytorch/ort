@@ -144,8 +144,6 @@ setup(
   })
 
 subprocess.check_call([
-    python_exe,
-    os.path.join(
-        os.path.dirname(__file__),
-        'test',
-        'ort_ops.py')])
+  python_exe,
+  os.path.join(self_dir, 'test')
+])
