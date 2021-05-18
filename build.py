@@ -30,6 +30,7 @@ def main():
     wheel_file = os.listdir(dist_path)[0]
     run_subprocess([sys.executable, "-m", "pip", "install", "--upgrade", os.path.join(dist_path, wheel_file)], cwd)
 
+    print("installing requirements-test.txt")
     requirements_path = os.path.join(source_dir, 'tests', 'requirements-test.txt')
     run_subprocess([sys.executable, "-m", "pip", "install", "-r", requirements_path], cwd)
 
