@@ -30,6 +30,9 @@ def main():
     wheel_file = os.listdir(dist_path)[0]
     run_subprocess([sys.executable, "-m", "pip", "install", "--upgrade", os.path.join(dist_path, wheel_file)], cwd)
 
+    requirements_path = os.path.join(source_dir, 'tests', 'requirements-test.txt')
+    run_subprocess([sys.executable, "-m", "pip", "install", "-r", requirements_path], cwd)
+
     run_ort_module_tests(source_dir, source_dir)
 
 if __name__ == "__main__":
