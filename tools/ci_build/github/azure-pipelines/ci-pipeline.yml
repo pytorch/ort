@@ -43,7 +43,7 @@ stages:
         inputs:
           script: |
             docker build -f ort/docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04 -t torchortci .
-          displayName: "Get ${{ parameters.Repository }} image"
+          displayName: "docker build"
 
       - task: CmdLine@2
         inputs:
