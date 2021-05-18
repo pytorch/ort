@@ -39,15 +39,6 @@ stages:
         clean: true
         submodules: recursive
 
-      - template: templates/get-docker-image-steps.yml
-        parameters:
-          Dockerfile: tools/ci_build/github/linux/docker/$(DockerFile)
-          Context: tools/ci_build/github/linux/docker
-          DockerBuildArgs: >-
-            --build-arg PYTHON_VERSION=$(PythonVersion)
-            --build-arg BUILD_UID=$(id -u)
-          Repository: torchortci
-
       - task: CmdLine@2
         inputs:
           script: |
