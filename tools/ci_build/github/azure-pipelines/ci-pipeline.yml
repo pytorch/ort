@@ -42,7 +42,7 @@ stages:
       - task: CmdLine@2
         inputs:
           script: |
-            docker build -f ort/docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04 -t torchortci .
+            docker build -f docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04 -t torchortci .
           displayName: "docker build"
 
       - task: CmdLine@2
