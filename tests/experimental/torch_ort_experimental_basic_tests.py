@@ -145,3 +145,54 @@ def test_set_loglevel_with_bad_model(bad_model):
     with pytest.raises(TypeError) as runtime_error:
         torch_ort.experimental.set_log_level(model=bad_model, level=torch_ort.experimental.LogLevel.WARNING)
     assert "`model` must be a `ORTModule` object, but " in str(runtime_error.value)
+
+
+@pytest.mark.parametrize("strategy, level", ([torch_ort.experimental.PropagateCastOpsStrategy.NONE, -1],
+                                             [torch_ort.experimental.PropagateCastOpsStrategy.INSERT_AND_REDUCE, 0],
+                                             [torch_ort.experimental.PropagateCastOpsStrategy.FLOOD_FILL, 1],
+                                             [torch_ort.experimental.PropagateCastOpsStrategy.REMOVE_INPUT_OUTPUT_UP_DOWN_CASTS, 2]))
+def test_set_propagate_cast(strategy, level):
+    # Setting up ORTModule
+    device = 'cuda'
+    D_in, H, D_out = 784, 500, 10
+    model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
+    model = ORTModule(model)
+
+    torch_ort.experimental.set_propagate_cast_ops_optimization(model=model, level=level, strategy=strategy)
+    for mode in [True, False]:
+        assert model._execution_manager(is_training=mode)._propagate_cast_ops_strategy == strategy
+        assert model._execution_manager(is_training=mode)._propagate_cast_ops_level == level
+
+
+
+@pytest.mark.parametrize("bad_model", [None, bool])
+def test_set_propagate_cast_with_bad_model(bad_model):
+
+    with pytest.raises(TypeError) as runtime_error:
+        torch_ort.experimental.set_propagate_cast_ops_optimization(model=bad_model)
+    assert "`model` must be a `ORTModule` object, but " in str(runtime_error.value)
+
+@pytest.mark.parametrize("bad_strategy", [None, bool])
+def test_set_propagate_cast_with_bad_strategy(bad_strategy):
+    # Setting up ORTModule
+    device = 'cuda'
+    D_in, H, D_out = 784, 500, 10
+    model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
+    model = ORTModule(model)
+
+    with pytest.raises(TypeError) as runtime_error:
+        torch_ort.experimental.set_propagate_cast_ops_optimization(model=model, strategy=bad_strategy)
+    assert "`strategy` must be a `PropagateCastOpsStrategy` object, but" in str(runtime_error.value)
+
+@pytest.mark.parametrize("bad_level", [None, -2, 3])
+def test_set_propagate_cast_with_bad_level(bad_level):
+    # Setting up ORTModule
+    device = 'cuda'
+    D_in, H, D_out = 784, 500, 10
+    model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
+    model = ORTModule(model)
+
+    strategy = torch_ort.experimental.PropagateCastOpsStrategy.INSERT_AND_REDUCE
+    with pytest.raises(TypeError) as runtime_error:
+        torch_ort.experimental.set_propagate_cast_ops_optimization(model=model, strategy=strategy, level=bad_level)
+    assert "`level` must be an integer between (-1, 2)" in str(runtime_error.value)

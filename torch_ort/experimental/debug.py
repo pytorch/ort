@@ -41,6 +41,7 @@ def save_intermediate_onnx_graphs(model: ORTModule, prefix: str, enable: bool=Tr
     if not prefix_name or prefix_name.isspace():
         raise NameError(f'{prefix_name} is not a valid prefix name for the ONNX graph files.')
 
+    # Set flags for both eval and training mode
     for mode in [True, False]:
         model._execution_manager(is_training=mode)._save_onnx = enable
         model._execution_manager(is_training=mode)._save_onnx_prefix = prefix
