@@ -7,8 +7,10 @@ def set_propagate_cast_ops_optimization(model: ORTModule,
                                         level: int=-1) -> None:
     '''Set Cast Op propagation strategy for ONNX graph optimization in an attempt to achieve higher throughput
 
-    Cast Op propagation allows ONNX graph to be optimized by replacing 32-bit operations by their 16-bit counterpart
+    Cast Op propagation allows ONNX graph to be optimized by replacing float32 nodes by their 16-bit counterpart
     without losing precision during computation. To enable cast propagation, user must select `strategy` and a `level`.
+    Each combination of strategy and level have predefined lists of allowed nodes that are safe to move float-cast
+    operations from inputs to outputs and float16-cast operations from outputs to inputs.
 
     Args:
         model (ORTModule): ORTModule instance to apply the cast propagation configuration
@@ -18,16 +20,16 @@ def set_propagate_cast_ops_optimization(model: ORTModule,
             locally change cast operations. For example, in order to fuse Transpose and MatMul nodes,
             the TransposeMatMulFunsion optimization could interchange Transpose and Cast if the Cast node exists
             between Transpose and MatMul.
-            INSERT_AND_REDUCE strategy inserts and reduces cast operations around the nodes with allowed nodes.
-            FLOOD_FILL strategy expands float16 regions using the allowed nodes, and unlike INSERT_AND_REDUCE,
-            does not touch opcodes outside expanded float16 region.
+            INSERT_AND_REDUCE strategy inserts and reduces cast operations around nodes with a predefined list of
+            allowed nodes, even if that results in changing nodes outside the expanded float16 region.            
+            FLOOD_FILL strategy expands float16 regions using the a predefined allowed list of nodes without modifying
+            nodes outside the expanded float16 region.
             REMOVE_INPUT_OUTPUT_UP_DOWN_CASTS strategy removes float Cast on inputs and float16 Casts on outputs for
             nodes of any operations to increase throughput. For example, if both inputs of a node with Add operation,
             happen to be outputs of float Cast operations and the output happen to be input to a float16 Cast operation,
             requiring the Add operation to be performed in float instead of float16, then it is possible to remove casts
             on inputs and output to perform the Add operation in float16 to increase throughput.
-            This pattern of up/down casts on inputs/outputs could be due to other cast propagation optimizations.
-            If this strategy flag is not set then the transformation will not be performed.
+            The pattern of up/down casts on inputs/outputs could be due to other cast propagation optimizations.
         level (int, default is -1): Level -1 does not optimize the graph by moving Cast operations.
             Level 1 and 2 use predetermined list of nodes considered safe to move before/after cast operation. While
             level 1 guarantees precision is not affected, level 2 usually affects final precision.
