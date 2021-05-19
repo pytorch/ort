@@ -3,10 +3,10 @@ from torch_ort import ORTModule
 from onnxruntime.training.ortmodule._logger import LogLevel
 
 
-def save_intermediate_onnx_graphs(model: ORTModule, prefix: str) -> bool:
+def save_intermediate_onnx_graphs(model: ORTModule, prefix: str, enable: bool=True) -> None:
     '''Saves all intermediate ONNX graphs produced by `model` at the specified `prefix`
 
-    When `prefix` is either None or an empty string, ONNX graphs saving is disabled, otherwise
+    When `enable` is `False`, ONNX graphs saving is disabled, otherwise
     multiple ONNX graphs will be saved as specified by `prefix` with an ending ".onnx" extension.
 
     Args:
@@ -14,9 +14,7 @@ def save_intermediate_onnx_graphs(model: ORTModule, prefix: str) -> bool:
         prefix(str): Full path plus a file prefix to be prepended to all ONNX graphs.
                      Prefix must have a directory and file prefix components (e.g. /foo/bar_).
                      The directory must exist and be writable by the user.
-
-    Returns:
-        True if ONNX graph save is enabled or False otherwise
+        enable (bool, default is True): Toggle to enable or disable ONNX graph saving
 
     Raises:
         NotADirectoryError: if :attr:`prefix`does not contain a directory component
@@ -28,7 +26,11 @@ def save_intermediate_onnx_graphs(model: ORTModule, prefix: str) -> bool:
     if not isinstance(model, ORTModule):
         raise TypeError(f'`model` must be a `ORTModule` object, but `{type(model)}` object was specified.')
 
-    assert prefix is None or isinstance(prefix, str), '`prefix` must be a non-empty string or `None`.'
+    if not isinstance(prefix, str):
+        raise TypeError('`prefix` must be a non-empty string.')
+
+    if not isinstance(enable, bool):
+        raise TypeError('`enable` must be a boolean.')
 
     dir_name = os.path.dirname(prefix)
     prefix_name = os.path.basename(prefix)
@@ -39,23 +41,17 @@ def save_intermediate_onnx_graphs(model: ORTModule, prefix: str) -> bool:
     if not prefix_name or prefix_name.isspace():
         raise NameError(f'{prefix_name} is not a valid prefix name for the ONNX graph files.')
 
-    enable_save = dir_name and prefix_name
     for mode in [True, False]:
-        model._execution_manager(is_training=mode)._save_onnx = enable_save
+        model._execution_manager(is_training=mode)._save_onnx = enable
         model._execution_manager(is_training=mode)._save_onnx_prefix = prefix
 
-    return enable_save
 
-
-def set_log_level(model: ORTModule, level: LogLevel) -> None:
+def set_log_level(model: ORTModule, level: LogLevel=LogLevel.WARNING) -> None:
     '''Set verbosity level for `model` at the specified `level`
 
     Args:
         model (ORTModule): ORTModule instance
-        level(LogLevel): Log level which must be one of ().
-
-    Returns:
-        True if ONNX graph save is enabled or False otherwise
+        level(LogLevel, default is WARNING): Log level which must be one of VERBOSE, INFO, WARNING, ERROR, FATAL.
 
     Raises:
         TypeError: if :attr:`model` is not a :class:`ORTModule` object

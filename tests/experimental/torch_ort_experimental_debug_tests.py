@@ -20,8 +20,8 @@ class NeuralNetSinglePositionalArgument(torch.nn.Module):
         out = self.fc2(out)
         return out
 
-
-def test_save_onnx():
+@pytest.mark.parametrize("enable", [True, False, None])
+def test_save_onnx(enable):
     # Generating a safe filename prefix to save onnx graphs
     prefix = ''
     with tempfile.NamedTemporaryFile() as f:
@@ -32,10 +32,20 @@ def test_save_onnx():
     N, D_in, H, D_out = 64, 784, 500, 10
     model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
     model = ORTModule(model)
-    torch_ort.experimental.save_intermediate_onnx_graphs(model=model, prefix=prefix)
+
+    if enable is None:
+        # Use implicit default value
+        torch_ort.experimental.save_intermediate_onnx_graphs(model=model, prefix=prefix)
+        # But explicitly set default value for assertion below
+        enable = True
+    else:
+        torch_ort.experimental.save_intermediate_onnx_graphs(model=model, enable=enable, prefix=prefix)
 
     x = torch.randn(N, D_in, device=device)
     _ = model(x)
+
+    # Check saving status
+    assert enable == model._execution_manager(model._is_training())._save_onnx
 
     # Check ONNX graphs were saved and delete them before completing the test
     success = True
@@ -45,9 +55,11 @@ def test_save_onnx():
                      '_training_optimized.onnx']
     for suffix in file_suffixes:
         filename = prefix + suffix
-        if not os.path.exists(filename):
+        if (enable and not os.path.exists(filename)) or (not enable and os.path.exists(filename)):
             success = False
-        else:
+
+        # Clean-up time
+        if os.path.exists(filename):
             os.remove(filename)
 
     assert success is True
@@ -58,41 +70,53 @@ def test_save_onnx_with_bad_model(bad_model):
 
     prefix = os.path.join(tempfile.gettempdir(), 'prefix')
     with pytest.raises(TypeError) as runtime_error:
-        torch_ort.experimental.save_intermediate_onnx_graphs(model=bad_model, prefix=prefix)
+        torch_ort.experimental.save_intermediate_onnx_graphs(model=bad_model, enable=True, prefix=prefix)
     assert "`model` must be a `ORTModule` object, but " in str(runtime_error.value)
 
 
 @pytest.mark.parametrize("bad_prefix, error_type", (['/sys/ortmodule/prefix', 'folder_not_exist'],
-                                                    [f'{tempfile.gettempdir()}/', 'prefix_not_valid']))
+                                                    [f'{tempfile.gettempdir()}/', 'prefix_name_not_valid'],
+                                                    [None, 'prefix_type_not_valid'],
+                                                    [True, 'prefix_type_not_valid']))
 def test_save_onnx_with_bad_prefix(bad_prefix, error_type):
     device = 'cuda'
     D_in, H, D_out = 784, 500, 10
     model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
     model = ORTModule(model)
 
-    print(bad_prefix)
     if error_type == 'folder_not_exist':
         with pytest.raises(NotADirectoryError) as runtime_error:
             torch_ort.experimental.save_intermediate_onnx_graphs(model=model, prefix=bad_prefix)
         assert "is not a valid directory to save ONNX graphs" in str(runtime_error.value)
-    elif error_type == 'prefix_not_valid':
+    elif error_type == 'prefix_name_not_valid':
         with pytest.raises(NameError) as runtime_error:
             torch_ort.experimental.save_intermediate_onnx_graphs(model=model, prefix=bad_prefix)
         assert "is not a valid prefix name for the ONNX graph files" in str(runtime_error.value)
-
+    elif error_type == 'prefix_type_not_valid':
+        with pytest.raises(TypeError) as runtime_error:
+            torch_ort.experimental.save_intermediate_onnx_graphs(model=model, prefix=bad_prefix)
+        assert "`prefix` must be a non-empty string" in str(runtime_error.value)
 
 @pytest.mark.parametrize("level", [torch_ort.experimental.LogLevel.VERBOSE,
                                    torch_ort.experimental.LogLevel.INFO,
                                    torch_ort.experimental.LogLevel.WARNING,
                                    torch_ort.experimental.LogLevel.ERROR,
-                                   torch_ort.experimental.LogLevel.FATAL])
+                                   torch_ort.experimental.LogLevel.FATAL,
+                                   None])
 def test_set_loglevel(level):
     # Setting up ORTModule
     device = 'cuda'
     N, D_in, H, D_out = 64, 784, 500, 10
     model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
     model = ORTModule(model)
-    torch_ort.experimental.set_log_level(model=model, level=level)
+
+    if level is None:
+        # Use implicit default value
+        torch_ort.experimental.set_log_level(model=model)
+        # But explicitly set default value for assertion below
+        level = torch_ort.experimental.LogLevel.WARNING
+    else:
+        torch_ort.experimental.set_log_level(model=model, level=level)
 
     x = torch.randn(N, D_in, device=device)
     _ = model(x)
