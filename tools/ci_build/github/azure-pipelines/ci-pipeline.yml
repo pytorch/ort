@@ -17,16 +17,16 @@ stages:
           #   DockerFile: 'Dockerfile.ubuntu_cuda11_1'
           Python37 Cuda10.2:
             PythonVersion: '3.7'
-            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+            DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
           Python37 Cuda11.1:
             PythonVersion: '3.7'
-            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
+            DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
           Python38 Cuda10.2:
             PythonVersion: '3.8'
-            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+            DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
           Python38 Cuda11.1:
             PythonVersion: '3.8'
-            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
+            DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
           # install_ubuntu.sh hangs with Python 3.9
           # Python39 Cuda10.2:
           #   PythonVersion: '3.9'
@@ -42,8 +42,8 @@ stages:
       - task: CmdLine@2
         inputs:
           script: |
-            docker build -f docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04 -t torchortci .
-        displayName: "docker build"
+            docker build -f $(DockerFile) -t torchortci .
+        displayName: "docker build -f $(DockerFile) -t torchortci"
 
       - task: CmdLine@2
         inputs:
