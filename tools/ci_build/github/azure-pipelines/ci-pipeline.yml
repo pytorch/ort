@@ -55,7 +55,7 @@ stages:
               -e BUILD_BUILDNUMBER \
               -w /torch_ort_src \
               torchortci \
-                bash -c " /usr/bin/python3 -m pip install /torch_ort_src/tests/requirements-text.txt "
+                bash -c " /usr/bin/python3 -m pip install /torch_ort_src/tests/requirements-test.txt "
           workingDirectory: $(Build.SourcesDirectory)
           displayName: "install requirements-text.txt"
 
