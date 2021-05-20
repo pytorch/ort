@@ -2,7 +2,12 @@ import os
 import pytest
 import tempfile
 import torch
-import torch_ort.experimental
+from torch_ort.experimental import set_log_level,\
+                                   LogLevel,\
+                                   save_intermediate_onnx_graphs,\
+                                   set_propagate_cast_ops_optimization,\
+                                   PropagateCastOpsStrategy,\
+                                   PropagateCastLevel
 from torch_ort import ORTModule
 
 
@@ -35,11 +40,11 @@ def test_save_onnx(enable):
 
     if enable is None:
         # Use implicit default value
-        torch_ort.experimental.save_intermediate_onnx_graphs(model=model, prefix=prefix)
+        save_intermediate_onnx_graphs(model=model, prefix=prefix)
         # But explicitly set default value for assertion below
         enable = True
     else:
-        torch_ort.experimental.save_intermediate_onnx_graphs(model=model, enable=enable, prefix=prefix)
+        save_intermediate_onnx_graphs(model=model, enable=enable, prefix=prefix)
 
     x = torch.randn(N, D_in, device=device)
     _ = model(x)
@@ -70,7 +75,7 @@ def test_save_onnx_with_bad_model(bad_model):
 
     prefix = os.path.join(tempfile.gettempdir(), 'prefix')
     with pytest.raises(TypeError) as runtime_error:
-        torch_ort.experimental.save_intermediate_onnx_graphs(model=bad_model, enable=True, prefix=prefix)
+        save_intermediate_onnx_graphs(model=bad_model, enable=True, prefix=prefix)
     assert "`model` must be a `ORTModule` object, but " in str(runtime_error.value)
 
 
@@ -86,22 +91,22 @@ def test_save_onnx_with_bad_prefix(bad_prefix, error_type):
 
     if error_type == 'folder_not_exist':
         with pytest.raises(NotADirectoryError) as runtime_error:
-            torch_ort.experimental.save_intermediate_onnx_graphs(model=model, prefix=bad_prefix)
+            save_intermediate_onnx_graphs(model=model, prefix=bad_prefix)
         assert "is not a valid directory to save ONNX graphs" in str(runtime_error.value)
     elif error_type == 'prefix_name_not_valid':
         with pytest.raises(NameError) as runtime_error:
-            torch_ort.experimental.save_intermediate_onnx_graphs(model=model, prefix=bad_prefix)
+            save_intermediate_onnx_graphs(model=model, prefix=bad_prefix)
         assert "is not a valid prefix name for the ONNX graph files" in str(runtime_error.value)
     elif error_type == 'prefix_type_not_valid':
         with pytest.raises(TypeError) as runtime_error:
-            torch_ort.experimental.save_intermediate_onnx_graphs(model=model, prefix=bad_prefix)
+            save_intermediate_onnx_graphs(model=model, prefix=bad_prefix)
         assert "`prefix` must be a non-empty string" in str(runtime_error.value)
 
-@pytest.mark.parametrize("level", [torch_ort.experimental.LogLevel.VERBOSE,
-                                   torch_ort.experimental.LogLevel.INFO,
-                                   torch_ort.experimental.LogLevel.WARNING,
-                                   torch_ort.experimental.LogLevel.ERROR,
-                                   torch_ort.experimental.LogLevel.FATAL,
+@pytest.mark.parametrize("level", [LogLevel.VERBOSE,
+                                   LogLevel.INFO,
+                                   LogLevel.WARNING,
+                                   LogLevel.ERROR,
+                                   LogLevel.FATAL,
                                    None])
 def test_set_loglevel(level):
     # Setting up ORTModule
@@ -112,11 +117,11 @@ def test_set_loglevel(level):
 
     if level is None:
         # Use implicit default value
-        torch_ort.experimental.set_log_level(model=model)
+        set_log_level(model=model)
         # But explicitly set default value for assertion below
-        level = torch_ort.experimental.LogLevel.WARNING
+        level = LogLevel.WARNING
     else:
-        torch_ort.experimental.set_log_level(model=model, level=level)
+        set_log_level(model=model, level=level)
 
     x = torch.randn(N, D_in, device=device)
     _ = model(x)
@@ -135,7 +140,7 @@ def test_set_loglevel_with_bad_loglevel(bad_level):
     model = ORTModule(model)
 
     with pytest.raises(TypeError) as runtime_error:
-        torch_ort.experimental.set_log_level(model=model, level=bad_level)
+        set_log_level(model=model, level=bad_level)
     assert "`level` must be a `LogLevel` object, but " in str(runtime_error.value)
 
 
@@ -143,14 +148,14 @@ def test_set_loglevel_with_bad_loglevel(bad_level):
 def test_set_loglevel_with_bad_model(bad_model):
 
     with pytest.raises(TypeError) as runtime_error:
-        torch_ort.experimental.set_log_level(model=bad_model, level=torch_ort.experimental.LogLevel.WARNING)
+        set_log_level(model=bad_model, level=LogLevel.WARNING)
     assert "`model` must be a `ORTModule` object, but " in str(runtime_error.value)
 
 
-@pytest.mark.parametrize("strategy, level", ([torch_ort.experimental.PropagateCastOpsStrategy.NONE, -1],
-                                             [torch_ort.experimental.PropagateCastOpsStrategy.INSERT_AND_REDUCE, 0],
-                                             [torch_ort.experimental.PropagateCastOpsStrategy.FLOOD_FILL, 1],
-                                             [torch_ort.experimental.PropagateCastOpsStrategy.REMOVE_INPUT_OUTPUT_UP_DOWN_CASTS, 2]))
+@pytest.mark.parametrize("strategy, level", ([PropagateCastOpsStrategy.NONE, PropagateCastLevel.NOT_USED],
+                                             [PropagateCastOpsStrategy.INSERT_AND_REDUCE, PropagateCastLevel.FASTER_KEEP_PRECISION],
+                                             [PropagateCastOpsStrategy.FLOOD_FILL, PropagateCastLevel.FASTER_KEEP_PRECISION],
+                                             [PropagateCastOpsStrategy.REMOVE_INPUT_OUTPUT_UP_DOWN_CASTS, PropagateCastLevel.AGGRRESSIVE_MIXED_PRECISION]))
 def test_set_propagate_cast(strategy, level):
     # Setting up ORTModule
     device = 'cuda'
@@ -158,7 +163,7 @@ def test_set_propagate_cast(strategy, level):
     model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
     model = ORTModule(model)
 
-    torch_ort.experimental.set_propagate_cast_ops_optimization(model=model, level=level, strategy=strategy)
+    set_propagate_cast_ops_optimization(model=model, level=level, strategy=strategy)
     for mode in [True, False]:
         assert model._execution_manager(is_training=mode)._propagate_cast_ops_strategy == strategy
         assert model._execution_manager(is_training=mode)._propagate_cast_ops_level == level
@@ -169,7 +174,7 @@ def test_set_propagate_cast(strategy, level):
 def test_set_propagate_cast_with_bad_model(bad_model):
 
     with pytest.raises(TypeError) as runtime_error:
-        torch_ort.experimental.set_propagate_cast_ops_optimization(model=bad_model)
+        set_propagate_cast_ops_optimization(model=bad_model)
     assert "`model` must be a `ORTModule` object, but " in str(runtime_error.value)
 
 @pytest.mark.parametrize("bad_strategy", [None, bool])
@@ -181,7 +186,7 @@ def test_set_propagate_cast_with_bad_strategy(bad_strategy):
     model = ORTModule(model)
 
     with pytest.raises(TypeError) as runtime_error:
-        torch_ort.experimental.set_propagate_cast_ops_optimization(model=model, strategy=bad_strategy)
+        set_propagate_cast_ops_optimization(model=model, strategy=bad_strategy)
     assert "`strategy` must be a `PropagateCastOpsStrategy` object, but" in str(runtime_error.value)
 
 @pytest.mark.parametrize("bad_level", [None, -2, 3])
@@ -192,7 +197,7 @@ def test_set_propagate_cast_with_bad_level(bad_level):
     model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
     model = ORTModule(model)
 
-    strategy = torch_ort.experimental.PropagateCastOpsStrategy.INSERT_AND_REDUCE
+    strategy = PropagateCastOpsStrategy.INSERT_AND_REDUCE
     with pytest.raises(TypeError) as runtime_error:
-        torch_ort.experimental.set_propagate_cast_ops_optimization(model=model, strategy=strategy, level=bad_level)
-    assert "`level` must be an integer between (-1, 2)" in str(runtime_error.value)
+        set_propagate_cast_ops_optimization(model=model, strategy=strategy, level=bad_level)
+    assert "`level` must be a `PropagateCastLevel` object" in str(runtime_error.value)

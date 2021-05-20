@@ -4,5 +4,7 @@ DO NOT use these APIs for any production code as they can be removed at any time
 """
 
 from .debug import save_intermediate_onnx_graphs, set_log_level
-from .graph_config import PropagateCastOpsStrategy, set_propagate_cast_ops_optimization
+from .graph_config import set_propagate_cast_ops_optimization,\
+                          PropagateCastOpsStrategy,\
+                          PropagateCastLevel
 from onnxruntime.training.ortmodule._logger import LogLevel
