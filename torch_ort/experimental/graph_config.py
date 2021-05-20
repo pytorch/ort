@@ -9,7 +9,7 @@ class PropagateCastLevel(Enum):
      AGGRRESSIVE_MIXED_PRECISION  = 2
 
 def set_propagate_cast_ops_optimization(model: ORTModule,
-                                        strategy : PropagateCastOpsStrategy=PropagateCastOpsStrategy.NONE,
+                                        strategy : PropagateCastOpsStrategy=PropagateCastOpsStrategy.FLOOD_FILL,
                                         level: PropagateCastLevel=PropagateCastLevel.NOT_USED) -> None:
     '''Set Cast Op propagation strategy for ONNX graph optimization in an attempt to achieve higher throughput
 
@@ -20,7 +20,7 @@ def set_propagate_cast_ops_optimization(model: ORTModule,
 
     Args:
         model (ORTModule): ORTModule instance to apply the cast propagation configuration
-        strategy (PropagateCastOpsStrategy, default is NONE): specify the choice of the cast propagation optimization.
+        strategy (PropagateCastOpsStrategy, default is FLOOD_FILL): specify the choice of cast propagation optimization.
             It must be one of NONE, INSERT_AND_REDUCE, FLOOD_FILL or REMOVE_INPUT_OUTPUT_UP_DOWN_CASTS.
             NONE strategy doesn't perform any cast propagation transformation on the graph, although other optimizations
             locally change cast operations. For example, in order to fuse Transpose and MatMul nodes,
