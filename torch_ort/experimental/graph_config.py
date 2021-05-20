@@ -1,10 +1,16 @@
+from enum import Enum
 from onnxruntime.capi._pybind_state import PropagateCastOpsStrategy
 from torch_ort import ORTModule
 
 
+class PropagateCastLevel(Enum):
+     NOT_USED = -1
+     FASTER_KEEP_PRECISION = 1
+     AGGRRESSIVE_MIXED_PRECISION  = 2
+
 def set_propagate_cast_ops_optimization(model: ORTModule,
                                         strategy : PropagateCastOpsStrategy=PropagateCastOpsStrategy.NONE,
-                                        level: int=-1) -> None:
+                                        level: PropagateCastLevel=PropagateCastLevel.NOT_USED) -> None:
     '''Set Cast Op propagation strategy for ONNX graph optimization in an attempt to achieve higher throughput
 
     Cast Op propagation allows ONNX graph to be optimized by replacing float32 nodes by their 16-bit counterpart
@@ -30,14 +36,15 @@ def set_propagate_cast_ops_optimization(model: ORTModule,
             requiring the Add operation to be performed in float instead of float16, then it is possible to remove casts
             on inputs and output to perform the Add operation in float16 to increase throughput.
             The pattern of up/down casts on inputs/outputs could be due to other cast propagation optimizations.
-        level (int, default is -1): Level -1 does not optimize the graph by moving Cast operations.
-            Level 1 and 2 use predetermined list of nodes considered safe to move before/after cast operation. While
-            level 1 guarantees precision is not affected, level 2 usually affects final precision.
+        level (PropagateCastLevel, default is NOT_USED): NOT_USED does not optimize the graph.
+            FASTER_KEEP_PRECISION and AGGRRESSIVE_MIXED_PRECISION use predetermined list of nodes considered safe to
+            move before/after cast operation. While FASTER_KEEP_PRECISION guarantees precision is not affected,
+            AGGRRESSIVE_MIXED_PRECISION usually affects final precision.
 
     Raises:
         TypeError: if :attr:`model` is not a :class:`ORTModule` object
         TypeError: if :attr:`strategy` is not a :class:`PropagateCastOpsStrategy` object
-        TypeError: if :attr:`level` is not a :class:`int` object
+        TypeError: if :attr:`level` is not a :class:`PropagateCastLevel` object
 
     '''
 
@@ -47,8 +54,8 @@ def set_propagate_cast_ops_optimization(model: ORTModule,
     if not isinstance(strategy, PropagateCastOpsStrategy):
         raise TypeError(f'`strategy` must be a `PropagateCastOpsStrategy` object, but `{type(model)}` object was specified.')
 
-    if not isinstance(level, int) or level < -1 or level > 2:
-        raise TypeError(f'`level` must be an integer between (-1, 2).')
+    if not isinstance(level, PropagateCastLevel):
+        raise TypeError(f'`level` must be a `PropagateCastLevel` object.')
 
     # Set flags for both eval and training mode
     for mode in [True, False]:
