@@ -67,7 +67,7 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
     - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_rocm41.html`
     - `pip install torch-ort`
 
-## Run using Docker
+## Run using Docker for NVIDIA CUDA 11.1
 
 The [docker](docker) directory contains dockerfiles for the NVIDIA CUDA 11.1 configuration.
 
@@ -80,6 +80,30 @@ The [docker](docker) directory contains dockerfiles for the NVIDIA CUDA 11.1 con
 2. Run the docker container using the image you have just built
 
     `docker run -it --gpus all --name my-experiments ort.cu111:latest /bin/bash`
+
+## Run using Docker for AMD Rocm 4.1
+
+The [docker](docker) directory contains dockerfiles for the NVIDIA CUDA 11.1 configuration.
+
+- [docker/Dockerfile.ort-rocm4.1.1-devel-ubuntu18.04](docker/Dockerfile.ort-rocm4.1.1-devel-ubuntu18.04)
+
+1. Build the docker image
+
+    `docker build -f Dockerfile.ort-rocm4.1.1-devel-ubuntu18.04 -t ort.rocm411 .`
+
+2. Run the docker container using the image you have just built
+
+    ```
+    docker run -it --rm \
+      --privileged \
+      --device=/dev/kfd \
+      --device=/dev/dri \
+      --group-add video \
+      --cap-add=SYS_PTRACE \
+      --security-opt seccomp=unconfined \
+      --name my-experiments \
+      ort.rocm411:latest /bin/bash
+    ```
 
 ## Test your installation
 
