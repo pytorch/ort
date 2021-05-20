@@ -24,18 +24,18 @@ def main():
     source_dir = os.path.realpath(os.path.dirname(__file__))
     cwd = os.path.normpath(os.path.join(source_dir, ".."))
 
-    print("installing requirements-test.txt")
-    requirements_path = os.path.join(source_dir, 'tests', 'requirements-test.txt')
-    run_subprocess([sys.executable, "-m", "pip", "install", "-r", requirements_path], cwd)
-
     build_wheel(source_dir, source_dir)
 
-    print("installing torch-ort wheel")
+    # installing torch-ort wheel
     dist_path = os.path.join(source_dir, 'dist')
     wheel_file = os.listdir(dist_path)[0]
     run_subprocess([sys.executable, "-m", "pip", "install", "--upgrade", os.path.join(dist_path, wheel_file)], cwd)
 
-    print("testing torch-ort")
+    # installing requirements-test.txt
+    requirements_path = os.path.join(source_dir, 'tests', 'requirements-test.txt')
+    run_subprocess([sys.executable, "-m", "pip", "install", "-r", requirements_path], cwd)
+
+    # testing torch-ort
     run_ort_module_tests(source_dir, source_dir)
 
 if __name__ == "__main__":
