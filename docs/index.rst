@@ -1,15 +1,19 @@
-.. torch-ort documentation master file, created by
-   sphinx-quickstart on Fri May 21 14:27:34 2021.
+.. ORTModule documentation master file, created by
+   sphinx-quickstart on Thu Mar 11 10:21:00 2021.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to torch-ort's documentation!
-=====================================
+ORTModule documentation
+=======================
+
+ORTModule is a PyTorch frontend API for `ONNX Runtime <https://www.onnxruntime.ai/docs/>`_,
+a cross-platform inferencing and training accelerator.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   content
 
 
 Indices and tables
