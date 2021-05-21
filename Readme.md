@@ -53,18 +53,18 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
     - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu111.html`
     - `pip install torch-ort`
 
-### Explicitly install for AMD ROCm 4.1
+### Explicitly install for AMD ROCm 4.2
 
-1. Install ROCm 4.1 base package ([instructions](https://rocmdocs.amd.com/en/latest/Installation_Guide/Installation-Guide.html))
+1. Install ROCm 4.2 base package ([instructions](https://rocmdocs.amd.com/en/latest/Installation_Guide/Installation-Guide.html))
 
-2. Install ROCm 4.1 libraries ([instructions](https://rocmdocs.amd.com/en/latest/Installation_Guide/Software-Stack-for-AMD-GPU.html#machine-learning-and-high-performance-computing-software-stack-for-amd-gpu-v4-1))
+2. Install ROCm 4.2 libraries ([instructions](https://rocmdocs.amd.com/en/latest/Installation_Guide/Software-Stack-for-AMD-GPU.html#machine-learning-and-high-performance-computing-software-stack-for-amd-gpu-v4-1))
 
-3. Install ROCm 4.1 RCCL ([instructions](https://github.com/ROCmSoftwarePlatform/rccl/tree/rocm-4.1.0))
+3. Install ROCm 4.2 RCCL ([instructions](https://github.com/ROCmSoftwarePlatform/rccl/tree/rocm-4.2.0))
 
 4. Install torch-ort and dependencies
     - `pip install ninja`
-    - `pip install --pre torch -f https://download.pytorch.org/whl/nightly/rocm4.1/torch_nightly.html`
-    - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_rocm41.html`
+    - `pip install --pre torch -f https://download.pytorch.org/whl/nightly/rocm4.2/torch_nightly.html`
+    - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_rocm42.html`
     - `pip install torch-ort`
 
 ## Run using Docker 
@@ -83,15 +83,15 @@ The [docker](docker) directory contains dockerfiles for the NVIDIA CUDA 11.1 con
 
     `docker run -it --gpus all --name my-experiments ort.cu111:latest /bin/bash`
 
-###  On AMD Rocm 4.1
+###  On AMD Rocm 4.2
 
 The [docker](docker) directory contains dockerfiles for the NVIDIA CUDA 11.1 configuration.
 
-- [docker/Dockerfile.ort-rocm4.1.1-devel-ubuntu18.04](docker/Dockerfile.ort-rocm4.1.1-devel-ubuntu18.04)
+- [docker/Dockerfile.ort-rocm4.2-pytorch1.8.1-ubuntu18.04](docker/Dockerfile.ort-rocm4.2-pytorch1.8.1-ubuntu18.04)
 
 1. Build the docker image
 
-    `docker build -f Dockerfile.ort-rocm4.1.1-devel-ubuntu18.04 -t ort.rocm411 .`
+    `docker build -f Dockerfile.ort-rocm4.2-pytorch1.8.1-ubuntu18.04 -t ort.rocm42 .`
 
 2. Run the docker container using the image you have just built
 
@@ -104,7 +104,7 @@ The [docker](docker) directory contains dockerfiles for the NVIDIA CUDA 11.1 con
       --cap-add=SYS_PTRACE \
       --security-opt seccomp=unconfined \
       --name my-experiments \
-      ort.rocm411:latest /bin/bash
+      ort.rocm42:latest /bin/bash
     ```
 
 ## Test your installation
