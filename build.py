@@ -10,7 +10,7 @@ def run_subprocess(args, cwd=None, capture_stdout=False, shell=False):
     if isinstance(args, str):
         raise ValueError("args should be a sequence of strings, not a string")
 
-    return subprocess.run(args, cwd=cwd, shell=shell)
+    return subprocess.run(args, capture_stdout=capture_stdout, cwd=cwd, shell=shell, check=True)
 
 def run_ort_module_tests(cwd, source_dir):
     args = [sys.executable, os.path.join(source_dir, 'tests/bert_for_sequence_classification.py')]
