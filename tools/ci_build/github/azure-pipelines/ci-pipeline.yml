@@ -45,6 +45,16 @@ stages:
             docker build -f $(DockerFile) -t torchortci .
         displayName: "docker build -f $(DockerFile) -t torchortci"
 
+      # dockerfile has torch-ort. uninstall it to prepare for new install from current build
+      - task: CmdLine@2
+        inputs:
+          script: |
+            docker run --rm \
+              torchortci \
+                /usr/bin/python3 -m pip uninstall torch-ort
+          workingDirectory: $(Build.SourcesDirectory)
+        displayName: "uninstall torch-ort"
+
       - task: CmdLine@2
         inputs:
           script: |
