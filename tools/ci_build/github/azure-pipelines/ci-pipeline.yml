@@ -29,13 +29,11 @@ stages:
             DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
           Python39 Cuda10.2:
             PythonVersion: '3.9'
-            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+            DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
           Python39 Cuda11.1:
             PythonVersion: '3.9'
-            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
+            DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
       steps:
-      - script: sudo rm -rf /agent/_work/2/s
-        displayName: Clean build files (POSIX)
 
       - checkout: self
         clean: true
@@ -53,7 +51,7 @@ stages:
           script: |
             docker run --rm \
               torchortci \
-                /usr/bin/python3 -m pip uninstall torch-ort
+                /usr/bin/python3 -m pip uninstall -y torch-ort
           workingDirectory: $(Build.SourcesDirectory)
         displayName: "uninstall torch-ort"
 
