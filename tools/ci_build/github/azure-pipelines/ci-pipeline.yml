@@ -15,25 +15,24 @@ stages:
           # Python36 Cuda11.1:
           #   PythonVersion: '3.6'
           #   DockerFile: 'Dockerfile.ubuntu_cuda11_1'
-          Python37 Cuda10.2:
-            PythonVersion: '3.7'
-            DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
-          Python37 Cuda11.1:
-            PythonVersion: '3.7'
-            DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
-          Python38 Cuda10.2:
-            PythonVersion: '3.8'
-            DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
+          # Python37 Cuda10.2:
+          #   PythonVersion: '3.7'
+          #   DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
+          # Python37 Cuda11.1:
+          #   PythonVersion: '3.7'
+          #   DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
+          # Python38 Cuda10.2:
+          #   PythonVersion: '3.8'
+          #   DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
           Python38 Cuda11.1:
             PythonVersion: '3.8'
             DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
-          # install_ubuntu.sh hangs with Python 3.9
-          # Python39 Cuda10.2:
-          #   PythonVersion: '3.9'
-          #   DockerFile: 'Dockerfile.ubuntu_cuda10_2'
-          # Python39 Cuda11.1:
-          #   PythonVersion: '3.9'
-          #   DockerFile: 'Dockerfile.ubuntu_cuda11_1'
+          Python39 Cuda10.2:
+            PythonVersion: '3.9'
+            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
+          Python39 Cuda11.1:
+            PythonVersion: '3.9'
+            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
       steps:
       - checkout: self
         clean: true
