@@ -4,7 +4,7 @@ steps:
 - script: rd /S /Q $(Agent.BuildDirectory)
   displayName: Clean build files (Windows)
   condition: eq(variables['Agent.OS'], 'Windows_NT') # and always()
-- script: rm -rf $(Agent.BuildDirectory)
-  displayName: Clean build files (POSIX)
+- script: sudo rm -rf $(Agent.BuildDirectory)
+  displayName: Clean build files (POSIX) sudo rm -rf $(Agent.BuildDirectory)
   condition: not(eq(variables['Agent.OS'], 'Windows_NT')) # and always()
   continueOnError: true  # continuing on error for this step, since linux build folder is somehow getting permission issue

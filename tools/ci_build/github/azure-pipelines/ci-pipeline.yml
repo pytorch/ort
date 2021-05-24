@@ -24,12 +24,12 @@ stages:
           # Python38 Cuda10.2:
           #   PythonVersion: '3.8'
           #   DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
-          Python38 Cuda11.1:
-            PythonVersion: '3.8'
-            DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
-          Python39 Cuda10.2:
-            PythonVersion: '3.9'
-            DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
+          # Python38 Cuda11.1:
+          #   PythonVersion: '3.8'
+          #   DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
+          # Python39 Cuda10.2:
+          #   PythonVersion: '3.9'
+          #   DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
           Python39 Cuda11.1:
             PythonVersion: '3.9'
             DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
