@@ -6,11 +6,11 @@ import subprocess
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
-def run_subprocess(args, cwd=None, capture_stdout=False, shell=False):
+def run_subprocess(args, cwd=None):
     if isinstance(args, str):
         raise ValueError("args should be a sequence of strings, not a string")
 
-    return subprocess.run(args, capture_stdout=capture_stdout, cwd=cwd, shell=shell, check=True)
+    return subprocess.run(args, capture_output=True, cwd=cwd, shell=True, check=True)
 
 def run_ort_module_tests(cwd, source_dir):
     args = [sys.executable, os.path.join(source_dir, 'tests/bert_for_sequence_classification.py')]
