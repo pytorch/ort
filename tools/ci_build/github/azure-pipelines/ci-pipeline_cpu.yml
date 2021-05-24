@@ -1,0 +1,58 @@
+stages:
+- stage: CI_Stage
+
+  jobs:
+    - job: CI_Job
+      timeoutInMinutes: 180
+      workspace:
+        clean: all
+      pool: Linux-CPU-2019
+      strategy:
+        matrix:
+          Python38:
+            PythonVersion: '3.8'
+            DockerFile: 'Dockerfile.ubuntu'
+      steps:
+      - checkout: self
+        clean: true
+        submodules: recursive
+
+      - template: templates/get-docker-image-steps.yml
+        parameters:
+          Dockerfile: tools/ci_build/github/linux/docker/$(DockerFile)
+          Context: tools/ci_build/github/linux/docker
+          DockerBuildArgs: >-
+            --build-arg PYTHON_VERSION=$(PythonVersion)
+            --build-arg BUILD_UID=$(id -u)
+          Repository: torchortci
+
+      - task: CmdLine@2
+        inputs:
+          script: |
+            docker run --rm --gpus all \
+              --volume $(Build.SourcesDirectory):/torch_ort_src \
+              -e NVIDIA_VISIBLE_DEVICES=all \
+              -e NIGHTLY_BUILD \
+              -e BUILD_BUILDNUMBER \
+              -w /torch_ort_src \
+              torchortci \
+                /usr/bin/python3 build.py
+          workingDirectory: $(Build.SourcesDirectory)
+
+      - task: CopyFiles@2
+        displayName: 'Copy Python Wheel to: $(Build.ArtifactStagingDirectory)'
+        inputs:
+          SourceFolder: '$(Build.SourcesDirectory)'
+          Contents: 'dist/*.whl'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact: torch-ort python wheel'
+        inputs:
+          ArtifactName: torch-ort
+
+      - template: templates/component-governance-component-detection-steps.yml
+        parameters:
+          condition: 'succeeded'
+
+      - template: templates/clean-agent-build-directory-step.yml
