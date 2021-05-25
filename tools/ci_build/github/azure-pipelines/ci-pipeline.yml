@@ -3,7 +3,7 @@ stages:
 
   jobs:
     - job: CI_Job
-      timeoutInMinutes: 60
+      timeoutInMinutes: 20
       workspace:
         clean: all
       pool: Linux-Single-GPU-V100
