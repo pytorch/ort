@@ -3,35 +3,15 @@ stages:
 
   jobs:
     - job: CI_Job
-      timeoutInMinutes: 180
+      timeoutInMinutes: 60
       workspace:
         clean: all
       pool: Linux-Single-GPU-V100
       strategy:
         matrix:
-          # Python36 Cuda10.2:
-          #   PythonVersion: '3.6'
-          #   DockerFile: 'Dockerfile.ubuntu_cuda10_2'
-          # Python36 Cuda11.1:
-          #   PythonVersion: '3.6'
-          #   DockerFile: 'Dockerfile.ubuntu_cuda11_1'
-          # Python37 Cuda10.2:
-          #   PythonVersion: '3.7'
-          #   DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
-          # Python37 Cuda11.1:
-          #   PythonVersion: '3.7'
-          #   DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
-          # Python38 Cuda10.2:
-          #   PythonVersion: '3.8'
-          #   DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
-          # Python38 Cuda11.1:
-          #   PythonVersion: '3.8'
-          #   DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
-          # Python39 Cuda10.2:
-          #   PythonVersion: '3.9'
-          #   DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
-          Python39 Cuda11.1:
-            PythonVersion: '3.9'
+          Cuda10.2:
+            DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
+          Cuda11.1:
             DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
       steps:
 
@@ -60,9 +40,6 @@ stages:
           script: |
             docker run --rm --gpus all \
               --volume $(Build.SourcesDirectory):/torch_ort_src \
-              -e NVIDIA_VISIBLE_DEVICES=all \
-              -e NIGHTLY_BUILD \
-              -e BUILD_BUILDNUMBER \
               -w /torch_ort_src \
               torchortci \
                 /usr/bin/python3 build.py
