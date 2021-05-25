@@ -3,63 +3,48 @@ stages:
 
   jobs:
     - job: CI_Job
-      timeoutInMinutes: 180
+      timeoutInMinutes: 20
       workspace:
         clean: all
       pool: Linux-Single-GPU-V100
       strategy:
         matrix:
-          Python36 Cuda10.2:
-            PythonVersion: '3.6'
-            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
-          Python36 Cuda11.1:
-            PythonVersion: '3.6'
-            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
-          Python37 Cuda10.2:
-            PythonVersion: '3.7'
-            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
-          Python37 Cuda11.1:
-            PythonVersion: '3.7'
-            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
-          Python38 Cuda10.2:
-            PythonVersion: '3.8'
-            DockerFile: 'Dockerfile.ubuntu_cuda10_2'
-          Python38 Cuda11.1:
-            PythonVersion: '3.8'
-            DockerFile: 'Dockerfile.ubuntu_cuda11_1'
-          # install_ubuntu.sh hangs with Python 3.9
-          # Python39 Cuda10.2:
-          #   PythonVersion: '3.9'
-          #   DockerFile: 'Dockerfile.ubuntu_cuda10_2'
-          # Python39 Cuda11.1:
-          #   PythonVersion: '3.9'
-          #   DockerFile: 'Dockerfile.ubuntu_cuda11_1'
+          Cuda10.2:
+            DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
+          Cuda11.1:
+            DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
       steps:
+
       - checkout: self
         clean: true
         submodules: recursive
 
-      - template: templates/get-docker-image-steps.yml
-        parameters:
-          Dockerfile: tools/ci_build/github/linux/docker/$(DockerFile)
-          Context: tools/ci_build/github/linux/docker
-          DockerBuildArgs: >-
-            --build-arg PYTHON_VERSION=$(PythonVersion)
-            --build-arg BUILD_UID=$(id -u)
-          Repository: torchortci
+      - task: CmdLine@2
+        inputs:
+          script: |
+            docker build -f $(DockerFile) -t torchortci .
+        displayName: "docker build -f $(DockerFile) -t torchortci"
+
+      # dockerfile has torch-ort. uninstall it to prepare for new install from current build
+      - task: CmdLine@2
+        inputs:
+          script: |
+            docker run --rm \
+              torchortci \
+                /usr/bin/python3 -m pip uninstall -y torch-ort
+          workingDirectory: $(Build.SourcesDirectory)
+        displayName: "uninstall torch-ort"
 
       - task: CmdLine@2
         inputs:
           script: |
             docker run --rm --gpus all \
               --volume $(Build.SourcesDirectory):/torch_ort_src \
-              -e NVIDIA_VISIBLE_DEVICES=all \
-              -e NIGHTLY_BUILD \
-              -e BUILD_BUILDNUMBER \
               -w /torch_ort_src \
               torchortci \
                 /usr/bin/python3 build.py
           workingDirectory: $(Build.SourcesDirectory)
+        displayName: "docker run build.py"
 
       - task: CopyFiles@2
         displayName: 'Copy Python Wheel to: $(Build.ArtifactStagingDirectory)'
