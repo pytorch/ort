@@ -416,7 +416,7 @@ def main():
         test_time, validation_accuracy = test(model, validation_dataloader, device, args)
         total_test_time += test_time
 
-    assert validation_accuracy > 1.0
+    assert validation_accuracy > 0.5
 
     print('\n======== Global stats ========')
     if not args.pytorch_only:
