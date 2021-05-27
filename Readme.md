@@ -67,6 +67,13 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
     - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_rocm42.html`
     - `pip install torch-ort`
 
+### Use torch-ort from nightly build
+#### to use torch-ort from nightly build, replace
+   - `pip install torch-ort`
+
+with
+   - `pip install -U --pre torch-ort -f https://onnxruntimepackages.z14.web.core.windows.net/torch_ort_nightly.html`
+
 ## Run using Docker 
 
 ### On NVIDIA CUDA 11.1
