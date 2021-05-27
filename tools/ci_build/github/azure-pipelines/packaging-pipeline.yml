@@ -97,8 +97,7 @@ stages:
         displayName: "docker run build.py --wheel_file /torch_ort_src/dist/$whlfilename"
 
       - task: AzureCLI@2
-        # condition: and(succeeded(), eq(variables['UploadWheel'], 'yes'))
-        condition: eq(variables['UploadWheel'], 'yes')
+        condition: and(succeeded(), eq(variables['UploadWheel'], 'yes'))
         inputs:
           azureSubscription: 'AIInfraBuildOnnxRuntimeOSS'
           scriptType: 'bash'
