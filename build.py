@@ -48,8 +48,6 @@ def main():
     # testing torch-ort
     run_ort_module_tests(source_dir, source_dir)
 
-    # upload wheel. ask for conformation if it is for stable build - nightly build can be uploaded from pipelines.
-    # release/stable build can only be uploaded manually
 
 if __name__ == "__main__":
     sys.exit(main())

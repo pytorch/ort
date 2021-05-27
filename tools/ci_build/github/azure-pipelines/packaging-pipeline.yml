@@ -43,7 +43,6 @@ stages:
         inputs:
           script: |
             docker run --rm --gpus all \
-              --user 0 \
               --volume $(Build.SourcesDirectory):/torch_ort_src \
               -e NVIDIA_VISIBLE_DEVICES=all \
               -e NIGHTLY_BUILD \
@@ -90,7 +89,6 @@ stages:
             whlfilename=$(basename ${files[0]}) && \
             echo $whlfilename && \
             docker run --rm --gpus all \
-              --user 0 \
               --volume $(Build.SourcesDirectory):/torch_ort_src \
               -w /torch_ort_src \
               torchortpackagingtest \
@@ -114,7 +112,7 @@ stages:
                 --account_name onnxruntimepackages \
                 --account_key $(orttrainingpackagestorageaccountkey) \
                 --container_name '$web'
-          displayName: 
+          displayName: "upload to nightly package channel"
 
       - template: templates/component-governance-component-detection-steps.yml
         parameters:
