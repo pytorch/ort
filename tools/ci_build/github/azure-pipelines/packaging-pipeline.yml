@@ -9,10 +9,17 @@ stages:
       pool: Onnxruntime-Linux-GPU
       strategy:
         matrix:
-          Python38 Cuda10.2 Nightly:
+          Python38 Cuda10.2 TorchAndOrtNightly:
+            PythonVersion: '3.8'
+            PublicDockerFile: 'docker/Dockerfile.torch-and-ort-nightly-cu102-cudnn7-devel-ubuntu18.04'
+          Python38 Cuda11.1 TorchAndOrtNightly:
+            PythonVersion: '3.8'
+            PublicDockerFile: 'docker/Dockerfile.torch-and-ort-nightly-cu111-cudnn8-devel-ubuntu18.04'
+            UploadWheel: 'yes'
+          Python38 Cuda10.2 OrtNightly:
             PythonVersion: '3.8'
             PublicDockerFile: 'docker/Dockerfile.ort-nightly-cu102-cudnn7-devel-ubuntu18.04'
-          Python38 Cuda11.1 Nightly:
+          Python38 Cuda11.1 OrtNightly:
             PythonVersion: '3.8'
             PublicDockerFile: 'docker/Dockerfile.ort-nightly-cu111-cudnn8-devel-ubuntu18.04'
             UploadWheel: 'yes'
@@ -32,13 +39,18 @@ stages:
 
       - template: templates/get-docker-image-steps.yml
         parameters:
-          Dockerfile: tools/ci_build/github/linux/docker/Dockerfile.manylinux2014_gpu
+          # torch-ort is device neutral, we just pick randomely cuda11.1
+          Dockerfile: tools/ci_build/github/linux/docker/Dockerfile.manylinux2014_cuda11_1
           Context: tools/ci_build/github/linux/docker
           DockerBuildArgs: >-
             --build-arg PYTHON_VERSION=$(PythonVersion)
             --build-arg BUILD_UID=$(id -u)
           Repository: torchortpackaging
 
+      # TODO: because the docker image (torchortpackaging) is cached,
+      # it may keep failing if the onnxruntime-training or torch installation
+      # that are cached with the image is causing the failure. 
+      # in such case, we need to clearn the cache (onnxruntimebuildcache) 
       - task: CmdLine@2
         inputs:
           script: |
