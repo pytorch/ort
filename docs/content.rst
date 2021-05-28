@@ -47,7 +47,7 @@ in the simple case where the entire model can be offloaded to ONNX Runtime:
 API
 ===
 
-.. automodule:: torch_ort.ORTModule
+.. autoclass:: torch_ort.ORTModule
     :members:
     :show-inheritance:
     :member-order: bysource
