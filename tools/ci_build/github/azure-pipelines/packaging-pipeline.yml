@@ -15,7 +15,6 @@ stages:
           Python38 Cuda11.1 TorchAndOrtNightly:
             PythonVersion: '3.8'
             PublicDockerFile: 'docker/Dockerfile.torch-and-ort-nightly-cu111-cudnn8-devel-ubuntu18.04'
-            UploadWheel: 'yes'
           Python38 Cuda10.2 OrtNightly:
             PythonVersion: '3.8'
             PublicDockerFile: 'docker/Dockerfile.ort-nightly-cu102-cudnn7-devel-ubuntu18.04'
