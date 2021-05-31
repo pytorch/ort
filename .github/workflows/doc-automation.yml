@@ -1,4 +1,5 @@
 
+# This action is based on the automation in pytorch/serve. Edit as appropriate
 # TODO: Uncomment this when the automation should run on commits to main
 #on:
 #  push:
