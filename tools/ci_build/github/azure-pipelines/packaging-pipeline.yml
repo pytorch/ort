@@ -38,7 +38,7 @@ stages:
 
       - template: templates/get-docker-image-steps.yml
         parameters:
-          # torch-ort is device neutral, we just pick randomely cuda11.1
+          # torch-ort is device neutral, we just pick randomly cuda11.1
           Dockerfile: tools/ci_build/github/linux/docker/Dockerfile.manylinux2014_cuda11_1
           Context: tools/ci_build/github/linux/docker
           DockerBuildArgs: >-
@@ -81,16 +81,6 @@ stages:
           script: |
             docker build -f $(PublicDockerFile) -t torchortpackagingtest .
         displayName: "docker build -f $(PublicDockerFile) -t torchortpackagingtest"
-
-      # dockerfile has torch-ort. uninstall it to prepare for new install from current build
-      - task: CmdLine@2
-        inputs:
-          script: |
-            docker run \
-              torchortpackagingtest \
-                /usr/bin/python3 -m pip uninstall -y torch-ort
-          workingDirectory: $(Build.SourcesDirectory)
-        displayName: "uninstall torch-ort"
 
       - task: CmdLine@2
         inputs:

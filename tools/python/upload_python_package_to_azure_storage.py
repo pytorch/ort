@@ -44,9 +44,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Upload python whl to azure storage.")
 
     parser.add_argument("--python_wheel_path", type=str, help="path to python wheel")
-    parser.add_argument("--account_name", type=str, help="account name")
-    parser.add_argument("--account_key", type=str, help="account key")
-    parser.add_argument("--container_name", type=str, help="container name")
+    parser.add_argument("--account_name", type=str, help="name of the Azure storage account that is used to store package files")
+    parser.add_argument("--account_key", type=str, help="Azure storage account access key")
+    parser.add_argument("--container_name", type=str, help="the container name within the storage account for the packages")
 
     # TODO: figure out a way to secure args.account_key to prevent later code changes
     # that may accidentally print out it to the console.
