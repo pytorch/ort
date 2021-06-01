@@ -86,7 +86,7 @@ stages:
       - task: CmdLine@2
         inputs:
           script: |
-            docker run --rm \
+            docker run \
               torchortpackagingtest \
                 /usr/bin/python3 -m pip uninstall -y torch-ort
           workingDirectory: $(Build.SourcesDirectory)
