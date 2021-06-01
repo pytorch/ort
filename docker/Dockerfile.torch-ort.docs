@@ -14,4 +14,8 @@ RUN pip install sphinx
 RUN pip install pytorch_sphinx_theme
 RUN pip install torch
 
+# Uncomment these when the packages are available
+#RUN pip install onnxruntime-training+cpu
+#RUN pip install torch-ort+cpu
+
 
