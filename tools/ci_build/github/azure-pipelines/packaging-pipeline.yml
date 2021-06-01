@@ -9,8 +9,26 @@ stages:
       pool: Onnxruntime-Linux-GPU
       strategy:
         matrix:
-          Python38:
+          Python38 Cuda10.2 TorchAndOrtNightly:
             PythonVersion: '3.8'
+            PublicDockerFile: 'docker/Dockerfile.torch-and-ort-nightly-cu102-cudnn7-devel-ubuntu18.04'
+          Python38 Cuda11.1 TorchAndOrtNightly:
+            PythonVersion: '3.8'
+            PublicDockerFile: 'docker/Dockerfile.torch-and-ort-nightly-cu111-cudnn8-devel-ubuntu18.04'
+          Python38 Cuda10.2 OrtNightly:
+            PythonVersion: '3.8'
+            PublicDockerFile: 'docker/Dockerfile.ort-nightly-cu102-cudnn7-devel-ubuntu18.04'
+          Python38 Cuda11.1 OrtNightly:
+            PythonVersion: '3.8'
+            PublicDockerFile: 'docker/Dockerfile.ort-nightly-cu111-cudnn8-devel-ubuntu18.04'
+            UploadWheel: 'yes'
+          Python38 Cuda10.2 Stable:
+            PythonVersion: '3.8'
+            PublicDockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
+          Python38 Cuda11.1 Stable:
+            PythonVersion: '3.8'
+            PublicDockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
+
       steps:
       - checkout: self
         clean: true
@@ -20,13 +38,18 @@ stages:
 
       - template: templates/get-docker-image-steps.yml
         parameters:
-          Dockerfile: tools/ci_build/github/linux/docker/Dockerfile.manylinux2014_gpu
+          # torch-ort is device neutral, we just pick randomly cuda11.1
+          Dockerfile: tools/ci_build/github/linux/docker/Dockerfile.manylinux2014_cuda11_1
           Context: tools/ci_build/github/linux/docker
           DockerBuildArgs: >-
             --build-arg PYTHON_VERSION=$(PythonVersion)
             --build-arg BUILD_UID=$(id -u)
           Repository: torchortpackaging
 
+      # TODO: because the docker image (torchortpackaging) is cached,
+      # it may keep failing if the onnxruntime-training or torch installation
+      # that are cached with the image is causing the failure. 
+      # in such case, we need to clearn the cache (onnxruntimebuildcache) 
       - task: CmdLine@2
         inputs:
           script: |
@@ -52,37 +75,44 @@ stages:
         inputs:
           ArtifactName: torch-ort
 
-      - script: |
-          sudo apt-get update
-          sudo apt-get install python3-pip python-dev
-        condition: succeededOrFailed()
-        displayName: 'sudo apt-get install python3-pip python-dev'
+      # now we have wheel from manylinux, test it with public dockers
+      - task: CmdLine@2
+        inputs:
+          script: |
+            docker build -f $(PublicDockerFile) -t torchortpackagingtest .
+        displayName: "docker build -f $(PublicDockerFile) -t torchortpackagingtest"
 
-      - script: |
-          python3 -m pip install twine
-        displayName: 'python3 -m pip install twine'
-        condition: succeededOrFailed()
-        timeoutInMinutes: 20
+      - task: CmdLine@2
+        inputs:
+          script: |
+            files=($(Build.SourcesDirectory)/dist/*.whl) && \
+            echo ${files[0]} && \
+            whlfilename=$(basename ${files[0]}) && \
+            echo $whlfilename && \
+            docker run --rm --gpus all \
+              --volume $(Build.SourcesDirectory):/torch_ort_src \
+              -w /torch_ort_src \
+              torchortpackagingtest \
+                /usr/bin/python3 build.py --wheel_file /torch_ort_src/dist/$whlfilename
+          workingDirectory: $(Build.SourcesDirectory)
+        displayName: "docker run build.py --wheel_file /torch_ort_src/dist/$whlfilename"
 
       - task: AzureCLI@2
+        condition: and(succeeded(), eq(variables['UploadWheel'], 'yes'))
         inputs:
           azureSubscription: 'AIInfraBuildOnnxRuntimeOSS'
           scriptType: 'bash'
           scriptLocation: 'inlineScript'
           inlineScript: |
-            files=($(Build.ArtifactStagingDirectory)/dist/*.whl) && \
-            tools/ci_build/upload_python_package_to_pypi.py \
+            python3 -m pip install azure-storage-blob==2.1.0 && \
+            files=($(Build.SourcesDirectory)/dist/*.whl) && \
+            echo ${files[0]} && \
+            python3 tools/python/upload_python_package_to_azure_storage.py \
                 --python_wheel_path ${files[0]} \
-                --account_name $(ortpypitrainingnightlyusername) \
-                --account_token $(ortpypitrainingnightlypassword)
-          condition: succeededOrFailed()
-          displayName:
-
-      # - script: |
-      #     python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password $(ortpypitrainingnightlypassword) $(Build.ArtifactStagingDirectory)/dist/*.whl
-      #   displayName: 'python3 -m twine upload --username $(ortpypitrainingnightlyusername) --password ??? $(Build.ArtifactStagingDirectory)/dist/*.whl'
-      #   condition: succeededOrFailed()
-      #   timeoutInMinutes: 20
+                --account_name onnxruntimepackages \
+                --account_key $(orttrainingpackagestorageaccountkey) \
+                --container_name '$web'
+          displayName: "upload to nightly package channel"
 
       - template: templates/component-governance-component-detection-steps.yml
         parameters:
