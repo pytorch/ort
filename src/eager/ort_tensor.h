@@ -54,6 +54,8 @@ class ORTTensorImpl final : public c10::TensorImpl {
 
   bool has_storage() const override;
 
+  at::IntArrayRef strides() const override;  
+
  private:
   void cacheSizeMetadata();
   OrtValue tensor_;

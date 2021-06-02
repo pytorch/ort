@@ -4,11 +4,35 @@
 import os
 import subprocess
 import sys
+import getopt
 
 from glob import glob
 from shutil import which
 
+def print_usage():
+  print('Usage: python setup.py [--build_config=Debug|Release] [--additional_libs=<libraries to link against>]'
+        '[--compiler_args=<extra args>] install')
+
+opts, args = getopt.getopt(sys.argv[1:], shortopts='h', longopts=['build_config=', 'additional_libs=', 'compiler_args='])
+
 build_config = 'Debug'
+additional_libs = ''
+compiler_args = ''
+
+for opt, arg in opts:
+  if opt == '-h':
+    print_usage()    
+    sys.exit(0)
+  elif opt == '--additional_libs':
+    additional_libs = arg.split(':')
+  elif opt == '--compiler_args':
+    compiler_args = arg
+  elif opt == '--build_config':
+    build_config=arg
+
+# replace any remaining args
+sys.argv[1:] = args
+
 def is_debug_build():
   return build_config != 'Release'
 
@@ -85,10 +109,12 @@ def build_ort():
     '--parallel',
     '--enable_training',
     '--disable_nccl',
-    '--use_mpi', 'false'
+    '--use_mpi', 'true',
+    '--cmake_extra_defines', 'onnxruntime_ENABLE_EAGER_MODE=ON'
   ]
   if which('ninja'):
     args += ['--cmake_generator', 'Ninja']
+  print("Invoking:", str(args))
   subprocess.check_call(args)
 
 def gen_ort_aten_ops():
@@ -111,6 +137,10 @@ else:
 build_ort()
 gen_ort_aten_ops()
 
+for file in additional_libs:
+    print("Adding following to ort_staticlibs:", file)
+    ort_static_libs.append(file)
+
 extra_compile_args = [
   '-std=c++14',
   '-fsized-deallocation',
@@ -124,6 +154,9 @@ if is_debug_build():
     '-g',
     '-DONNX_DEBUG'
   ]
+
+if len(compiler_args) > 0:
+  extra_compile_args += [compiler_args]
 
 from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension
