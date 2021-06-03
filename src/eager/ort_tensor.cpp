@@ -100,5 +100,10 @@ bool ORTTensorImpl::has_storage() const {
   return false;
 }
 
+at::IntArrayRef ORTTensorImpl::strides() const {
+  const_cast<ORTTensorImpl*>(this)->cacheSizeMetadata();
+  return sizes_and_strides_.strides_arrayref(); 
+}
+
 } // namespace eager
 } // namespace torch_ort

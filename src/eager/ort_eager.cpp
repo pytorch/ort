@@ -12,16 +12,13 @@ namespace eager {
 PYBIND11_MODULE(torch_ort, torch_ort_module) {
   ORT_LOG_DEBUG << "pybind11 module init";
 
-  auto device_module = torch_ort_module.def_submodule("device");
-  for (auto const& entry : GetORTBackendsManager().GetBackendKinds()) {
-    device_module.def(
-      entry.second.c_str(),
-      [entry](int device_index) {
-        return py::cast<py::object>(
-          THPDevice_New(at::Device(at::DeviceType::ORT, device_index)));
-      },
-      py::arg("device_index") = 0);
-  }
+  torch_ort_module.def(
+    "device",
+    [](int device_index) {
+      return py::cast<py::object>(
+        THPDevice_New(at::Device(at::DeviceType::ORT, device_index)));
+    },
+    py::arg("device_index") = 0);
 }
 
 } // namespace eager

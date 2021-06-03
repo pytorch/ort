@@ -3,7 +3,7 @@
 ## Dependencies & Environment
 
 ```bash
-conda install numpy ninja pyyaml mkl mkl-include setuptools cmake cffi typing_extensions future six requests dataclasses pkg-config libuv llvm-openmp
+conda install numpy ninja pyyaml mkl mkl-include setuptools cmake cffi typing_extensions future six requests dataclasses pkg-config libuv flake8 llvm-openmp
 ```
 
 ```bash
@@ -12,13 +12,12 @@ export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
 
 ## Build
 
-Build pytorch first from root of this repo:
-
-```bash
-python setup.py install
+Run the following:
+```
+git submodule update --init --recursive
 ```
 
-Then go to this folder and build the torch_ort extension:
+From this folder (src/eager) build the torch_ort extension:
 ```bash
 python setup.py install
 ```

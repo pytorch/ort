@@ -8,7 +8,7 @@ import numpy as np
 
 class OrtOpTests(unittest.TestCase):
   def get_device(self):
-    return torch_ort.device.cpu()
+    return torch_ort.device()
 
   def test_add(self):
     device = self.get_device()

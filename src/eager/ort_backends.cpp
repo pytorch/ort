@@ -6,6 +6,12 @@
 #include "ort_backends.h"
 #include "ort_log.h"
 
+#ifdef USE_MSNPU
+  namespace onnxruntime {
+    std::unique_ptr<onnxruntime::IExecutionProvider> CreateMSNPU_ExecutionProvider();
+  }
+#endif
+
 namespace torch_ort {
 namespace eager {
 
@@ -14,7 +20,7 @@ using namespace onnxruntime;
 std::unique_ptr<Environment> CreateEnvironment() {
     std::unique_ptr<Environment> env;    
     const std::string logger_id{"torch_ort"};
-    auto logging_manager = onnxruntime::make_unique<logging::LoggingManager>(
+    auto logging_manager = std::make_unique<logging::LoggingManager>(
         std::unique_ptr<logging::ISink>{new logging::CLogSink{}},
         logging::Severity::kVERBOSE, false,
         logging::LoggingManager::InstanceType::Default,
@@ -49,11 +55,15 @@ onnxruntime::ORTInvoker& ORTBackendsManager::GetInvoker(const at::Device device)
     return *lookup->second;
   }
 
-  auto ep = onnxruntime::make_unique<onnxruntime::CPUExecutionProvider>(
+#ifdef USE_MSNPU
+  auto ep = onnxruntime::CreateMSNPU_ExecutionProvider();
+#else
+  auto ep = std::make_unique<onnxruntime::CPUExecutionProvider>(
     onnxruntime::CPUExecutionProviderInfo(false));
+#endif
 
   auto invoker = 
-    onnxruntime::make_unique<onnxruntime::ORTInvoker>(
+    std::make_unique<onnxruntime::ORTInvoker>(
       std::move(ep),
       logger_);
 
