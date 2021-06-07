@@ -11,10 +11,11 @@ RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 RUN pip install --upgrade pip
 
 RUN pip install sphinx
+RUN pip install recommonmark
 RUN pip install pytorch_sphinx_theme
 RUN pip install torch
 
-# Uncomment these when the packages are available
-# Until then, download the wheel artifacts and install them manually
+# TODO: Uncomment these when the packages are available
+# TODO: Until then, download the wheel artifacts and install them manually
 #RUN pip install onnxruntime-training+cpu
 #RUN pip install torch-ort+cpu

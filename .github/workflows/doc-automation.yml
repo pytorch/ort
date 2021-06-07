@@ -30,7 +30,7 @@ jobs:
         python3 -m pip install katex
         python3 -m pip install sphinxcontrib.katex
         python3 -m pip install sphinx_markdown_tables
-# Uncomment these lines when the CPU packages are available
+# TODO: Uncomment these lines when the CPU packages are available
 #        python3 -m pip install onnxruntime-training+cpu
 #        python3 -m pip install torch-ort+cpu
     - name: Build the docset
