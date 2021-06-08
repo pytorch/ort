@@ -92,7 +92,8 @@ def build_pytorch():
   subprocess.check_call([
     python_exe,
     'setup.py',
-    'develop'
+    'develop',
+    '--user'
   ], cwd=pytorch_src_dir, env=env)
 
 def build_ort():
