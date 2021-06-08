@@ -1,0 +1,9 @@
+# Python
+__pycache__/
+*.egg-info/
+*.egg
+
+# Misc
+*.swp
+*.orig
+*.rej

@@ -1,0 +1,9 @@
+[submodule "external/pytorch"]
+	path = external/pytorch
+	url = https://github.com/abock/pytorch
+	branch = dev/abock/ort-backend
+
+[submodule "external/onnxruntime"]
+	path = external/onnxruntime
+	url = https://github.com/microsoft/onnxruntime
+	branch = master
