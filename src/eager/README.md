@@ -1,24 +1,28 @@
-# ONNX Runtime Eager Mode Support
+# ONNX Runtime Eager Mode Support for PyTorch
 
 ## Dependencies & Environment
 
-```bash
-conda install numpy ninja pyyaml mkl mkl-include setuptools cmake cffi typing_extensions future six requests dataclasses pkg-config libuv flake8 llvm-openmp
-```
+### Ubuntu 20.04
 
-```bash
-export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
-```
+  * Run the [`provision-ubuntu-20.04.sh`](provision-ubuntu-20.04.sh) script.
 
 ## Build
 
-Run the following:
-```
-git submodule update --init --recursive
-```
+### Ensure Submodules are Current
 
-From this folder (src/eager) build the torch_ort extension:
 ```bash
-python setup.py install
+git submodule update --recursive --init
 ```
 
+### Build All Components
+
+Within this `/src/eager` directory, the `setup.py` script can drive the initial
+bootstrapping build of all components:
+
+* PyTorch (`/external/pytorch`)
+* ONNX Runtime (`/external/onnxruntime`)
+* Eager Mode Extension (`/src/eager`)
+
+```bash
+python setup.py develop --user
+```
