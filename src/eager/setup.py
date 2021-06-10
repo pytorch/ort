@@ -5,33 +5,28 @@ import os
 import subprocess
 import sys
 import getopt
+import argparse
 
 from glob import glob
 from shutil import which
 
-def print_usage():
-  print('Usage: python setup.py [--build_config=Debug|Release] [--additional_libs=<libraries to link against>]'
-        '[--compiler_args=<extra args>] install')
+parser = argparse.ArgumentParser(description='Build Torch_ORT eager')
+parser.add_argument('--build_config', default='Debug', type=str,
+                    choices=['Debug', 'Release'], help='Build Config')
+parser.add_argument('--additional_libs', default=None, type=str, help='Additional libraries to link against')
+parser.add_argument('--compiler_args', default=None, type=str, help='Additional compiler args to use')
+parser.add_argument('--skip_tests', action='store_true', help='Skips running unit tests as part of the build tests')
+parser.add_argument('free_args', nargs='*')
 
-opts, args = getopt.getopt(sys.argv[1:], shortopts='h', longopts=['build_config=', 'additional_libs=', 'compiler_args='])
+args = parser.parse_args()
 
 build_config = 'Debug'
-additional_libs = ''
-compiler_args = ''
 
-for opt, arg in opts:
-  if opt == '-h':
-    print_usage()    
-    sys.exit(0)
-  elif opt == '--additional_libs':
-    additional_libs = arg.split(':')
-  elif opt == '--compiler_args':
-    compiler_args = arg
-  elif opt == '--build_config':
-    build_config=arg
+if args.build_config:
+  build_config = args.build_config
 
 # replace any remaining args
-sys.argv[1:] = args
+sys.argv[1:] = args.free_args
 
 def is_debug_build():
   return build_config != 'Release'
@@ -45,8 +40,14 @@ pytorch_src_dir = os.path.join(
 pytorch_compile_commands_path = os.path.join(
   pytorch_src_dir, 'compile_commands.json')
 
+if not os.path.exists(os.path.join(pytorch_src_dir, '.git')):
+  raise Exception('pytorch submodule does not exist. Run git submodule update --init --recursive')
+
 ort_src_dir = os.path.join(repo_root_dir, 'external', 'onnxruntime')
 ort_build_dir = os.path.join(self_dir, 'ort_build', build_config)
+
+if not os.path.exists(os.path.join(ort_src_dir, '.git')):
+  raise Exception('onnxruntime submodule does not exist. Run git submodule update --init --recursive')
 
 ort_lib_dirs = [
   ort_build_dir
@@ -138,8 +139,9 @@ else:
 build_ort()
 gen_ort_aten_ops()
 
-for file in additional_libs:
-    print("Adding following to ort_staticlibs:", file)
+if args.additional_libs:
+  for file in args.additional_libs.split(':'):
+    print('Adding following to ort_staticlibs:', file)
     ort_static_libs.append(file)
 
 extra_compile_args = [
@@ -156,8 +158,8 @@ if is_debug_build():
     '-DONNX_DEBUG'
   ]
 
-if len(compiler_args) > 0:
-  extra_compile_args += [compiler_args]
+if args.compiler_args:
+  extra_compile_args += [args.compiler_args]
 
 from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension
@@ -177,7 +179,8 @@ setup(
     'build_ext': BuildExtension
   })
 
-subprocess.check_call([
-  python_exe,
-  os.path.join(self_dir, 'test')
-])
+if not args.skip_tests:
+  subprocess.check_call([
+    python_exe,
+    os.path.join(self_dir, 'test')
+  ])
