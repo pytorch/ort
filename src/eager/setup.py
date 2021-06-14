@@ -16,6 +16,7 @@ parser.add_argument('--build_config', default='Debug', type=str,
 parser.add_argument('--additional_libs', default=None, type=str, help='Additional libraries to link against')
 parser.add_argument('--compiler_args', default=None, type=str, help='Additional compiler args to use')
 parser.add_argument('--skip_tests', action='store_true', help='Skips running unit tests as part of the build tests')
+parser.add_argument('--user', action='store_true', help='Install to user')
 parser.add_argument('free_args', nargs='*')
 
 args = parser.parse_args()
@@ -27,6 +28,8 @@ if args.build_config:
 
 # replace any remaining args
 sys.argv[1:] = args.free_args
+if args.user:
+  sys.argv += ['--user']
 
 def is_debug_build():
   return build_config != 'Release'
