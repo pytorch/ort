@@ -1,7 +1,12 @@
+# Python
+__pycache__/
+*.egg-info/
+*.egg
+dist
+docs/sphinx/src
+# Misc
+*.swp
+*.orig
+*.rej
 build
 .DS_Store
-docs/sphinx/src
-dist
-*.egg-info
-__pycache__
-
