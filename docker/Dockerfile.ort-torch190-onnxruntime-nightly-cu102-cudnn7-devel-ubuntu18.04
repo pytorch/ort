@@ -16,7 +16,6 @@ ARG TORCH_CUDA_VERSION=cu102
 ARG ONNXRUNTIME_TRAINING_VERSION=1.8.1
 ARG TORCH_VERSION=1.9.0
 ARG TORCHVISION_VERSION=0.10.0
-ARG TORCHAUDIO_VERSION=0.10.0
 
 # Install and update tools to minimize security vulnerabilities
 RUN apt-get update
@@ -33,7 +32,7 @@ RUN pip install --upgrade pip
 # PyTorch
 RUN pip install onnx ninja
 # Uncomment one of the lines below. First one gets stable version. Second gets nightly build.
-RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TORCHVISION_VERSION}+${TORCH_CUDA_VERSION} torchaudio==${TORCHAUDIO_VERSION} -f https://download.pytorch.org/whl/torch_stable.html
+RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TORCHVISION_VERSION}+${TORCH_CUDA_VERSION} -f https://download.pytorch.org/whl/torch_stable.html
 # RUN pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html
 
 # ORT Module
