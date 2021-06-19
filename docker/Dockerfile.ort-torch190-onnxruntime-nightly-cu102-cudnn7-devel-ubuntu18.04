@@ -12,6 +12,12 @@
 # CUDA development image for building sources
 FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04 as builder
 
+ARG CUDA_VERSION=cu102
+ARG ONNXRUNTIME_TRAINING_VERSION=1.8.1
+ARG TORCH_VERSION=1.9.0
+ARG TORCHVISION_VERSION=0.10.0
+ARG TORCHAUDIO_VERSION=0.10.0
+
 # Install and update tools to minimize security vulnerabilities
 RUN apt-get update
 RUN apt-get install -y software-properties-common wget apt-utils patchelf git libprotobuf-dev protobuf-compiler cmake
@@ -27,7 +33,7 @@ RUN pip install --upgrade pip
 # PyTorch
 RUN pip install onnx ninja
 # Uncomment one of the lines below. First one gets stable version. Second gets nightly build.
-RUN pip install torch==1.8.1+cu102 torchvision==0.9.1+cu102 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
+RUN pip install torch==${TORCH_VERSION}+${CUDA_VERSION} torchvision==${TORCHVISION_VERSION}+${CUDA_VERSION} torchaudio==${TORCHAUDIO_VERSION} -f https://download.pytorch.org/whl/torch_stable.html
 # RUN pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html
 
 # ORT Module

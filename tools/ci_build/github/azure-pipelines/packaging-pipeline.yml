@@ -9,25 +9,38 @@ stages:
       pool: Onnxruntime-Linux-GPU
       strategy:
         matrix:
-          Python38 Cuda10.2 TorchAndOrtNightly:
+          Python38 TorchAndOrtNightly Cuda10.2:
             PythonVersion: '3.8'
-            PublicDockerFile: 'docker/Dockerfile.torch-and-ort-nightly-cu102-cudnn7-devel-ubuntu18.04'
-          Python38 Cuda11.1 TorchAndOrtNightly:
+            PublicDockerFile: 'docker/Dockerfile.ort-torch-and-onnxruntime-nightly-cu102-cudnn7-devel-ubuntu18.04'
+          Python38 TorchAndOrtNightly Cuda11.1:
             PythonVersion: '3.8'
-            PublicDockerFile: 'docker/Dockerfile.torch-and-ort-nightly-cu111-cudnn8-devel-ubuntu18.04'
-          Python38 Cuda10.2 OrtNightly:
+            PublicDockerFile: 'docker/Dockerfile.ort-torch-and-onnxruntime-nightly-cu111-cudnn8-devel-ubuntu18.04'
+          Python38 Torch181 onnxruntimeNightly Cuda10.2:
             PythonVersion: '3.8'
-            PublicDockerFile: 'docker/Dockerfile.ort-nightly-cu102-cudnn7-devel-ubuntu18.04'
-          Python38 Cuda11.1 OrtNightly:
+            PublicDockerFile: 'docker/Dockerfile.ort-torch181-onnxruntime-nightly-cu102-cudnn7-devel-ubuntu18.04'
+          Python38 Torch181 onnxruntimeNightly Cuda11.1:
             PythonVersion: '3.8'
-            PublicDockerFile: 'docker/Dockerfile.ort-nightly-cu111-cudnn8-devel-ubuntu18.04'
+            PublicDockerFile: 'docker/Dockerfile.ort-torch181-onnxruntime-nightly-cu111-cudnn8-devel-ubuntu18.04'
             UploadWheel: 'yes'
-          Python38 Cuda10.2 Stable:
+          Python38 Torch190 onnxruntimeNightly Cuda10.2:
             PythonVersion: '3.8'
-            PublicDockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
-          Python38 Cuda11.1 Stable:
+            PublicDockerFile: 'docker/Dockerfile.ort-torch190-onnxruntime-nightly-cu102-cudnn7-devel-ubuntu18.04'
+          Python38 Torch190 onnxruntimeNightly Cuda11.1:
             PythonVersion: '3.8'
-            PublicDockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
+            PublicDockerFile: 'docker/Dockerfile.ort-torch190-onnxruntime-nightly-cu111-cudnn8-devel-ubuntu18.04'
+            UploadWheel: 'yes'
+          Python38 Torch181 onxruntime181 Cuda10.2:
+            PythonVersion: '3.8'
+            PublicDockerFile: 'docker/Dockerfile.ort-torch181-onnxruntime181-cu102-cudnn7-devel-ubuntu18.04'
+          Python38 Torch181 onxruntime181 Cuda11.1:
+            PythonVersion: '3.8'
+            PublicDockerFile: 'docker/Dockerfile.ort-torch181-onnxruntime181-cu111-cudnn8-devel-ubuntu18.04'
+          Python38 Torch190 onxruntime181 Cuda10.2:
+            PythonVersion: '3.8'
+            PublicDockerFile: 'docker/Dockerfile.ort-torch190-onnxruntime181-cu102-cudnn7-devel-ubuntu18.04'
+          Python38 Torch190 onxruntime181 Cuda11.1:
+            PythonVersion: '3.8'
+            PublicDockerFile: 'docker/Dockerfile.ort-torch190-onnxruntime181-cu111-cudnn8-devel-ubuntu18.04'
 
       steps:
       - checkout: self
@@ -64,6 +77,7 @@ stages:
           workingDirectory: $(Build.SourcesDirectory)
 
       - task: CopyFiles@2
+        condition: and(succeeded(), eq(variables['UploadWheel'], 'yes'))
         displayName: 'Copy Python Wheel to: $(Build.ArtifactStagingDirectory)'
         inputs:
           SourceFolder: '$(Build.SourcesDirectory)'
