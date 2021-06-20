@@ -61,11 +61,12 @@ onnxruntime::ORTInvoker& ORTBackendsManager::GetInvoker(const at::Device device)
   auto ep = std::make_unique<onnxruntime::CPUExecutionProvider>(
     onnxruntime::CPUExecutionProviderInfo(false));
 #endif
-
+  
   auto invoker = 
     std::make_unique<onnxruntime::ORTInvoker>(
       std::move(ep),
-      logger_);
+      logger_,
+      custom_op_schema_);
 
   backends_[device_index] = std::move(invoker);
   return *backends_[device_index];
