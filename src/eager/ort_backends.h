@@ -8,6 +8,7 @@
 #include <core/eager/ort_kernel_invoker.h>
 #include <core/graph/schema_registry.h>
 #include "onnx/defs/schema.h"
+#include <core/graph/model.h>
 
 namespace torch_ort {
 namespace eager {
