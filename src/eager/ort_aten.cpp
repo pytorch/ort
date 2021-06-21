@@ -95,6 +95,11 @@ const OrtValue create_ort_value(
   return ort_tensor;
 }
 
+const OrtValue create_ort_value(const at::Tensor& tensor){
+  auto& invoker = GetORTInvoker(tensor.device());
+  return create_ort_value(invoker, tensor);
+}
+
 const onnx::AttributeProto create_ort_attribute(
   const char* name,
   at::Scalar value) {
