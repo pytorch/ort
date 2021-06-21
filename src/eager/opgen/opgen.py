@@ -20,6 +20,16 @@ class ReluGrad(ONNXOp):
     super().__init__('ReluGrad', 1, dY, X)
     self.domain = kMSDomain
 
+class Gelu(ONNXOp):
+  def __init__(self, X):
+    super().__init__('Gelu', 1, X)
+    self.domain = kMSDomain
+
+class GeluGrad(ONNXOp):
+  def __init__(self, dY, X):
+    super().__init__('GeluGrad', 1, dY, X)
+    self.domain = kMSDomain
+
 ops = {
   # Hand-Implemented Ops
   'aten::empty.memory_format': SignatureOnly(),
@@ -42,6 +52,8 @@ ops = {
 
   'aten::softshrink': Shrink('self', bias='lambd', lambd='lambd'), #yes, bias is set to 'lambd'
   'aten::hardshrink': Shrink('self', bias=0, lambd='lambd'),
+  'aten::gelu' : Gelu('self'),
+  'aten::gelu_backward' : GeluGrad('grad', 'self')
 }
 
 for binary_op, onnx_op in {
