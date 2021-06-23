@@ -115,7 +115,7 @@ def build_ort():
     '--enable_training',
     '--disable_nccl',
     '--use_mpi', 'true',
-    '--cmake_extra_defines', 'onnxruntime_ENABLE_EAGER_MODE=ON'
+    '--build_eager_mode',
   ]
   if which('ninja'):
     args += ['--cmake_generator', 'Ninja']
