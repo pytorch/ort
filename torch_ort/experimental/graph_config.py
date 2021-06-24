@@ -1,3 +1,8 @@
+# -------------------------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+# --------------------------------------------------------------------------
+
 from enum import Enum
 from onnxruntime.capi._pybind_state import PropagateCastOpsStrategy
 from torch_ort import ORTModule
