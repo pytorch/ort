@@ -19,12 +19,13 @@ class NeuralNetSinglePositionalArgument(torch.nn.Module):
         self.fc1 = torch.nn.Linear(input_size, hidden_size)
         self.relu = torch.nn.ReLU()
         self.fc2 = torch.nn.Linear(hidden_size, num_classes)
+        self.dropout = torch.nn.Dropout(p=0.5)
 
     def forward(self, input1):
         out = self.fc1(input1)
         out = self.relu(out)
         out = self.fc2(out)
-        return out
+        return self.dropout(out)
 
 def test_set_seed():
     device = 'cuda'
