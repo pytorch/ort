@@ -31,14 +31,10 @@ RUN pip install --upgrade pip
 
 # PyTorch
 RUN pip install onnx ninja
-# Uncomment one of the lines below. First one gets stable version. Second gets nightly build.
 RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TORCHVISION_VERSION}+${TORCH_CUDA_VERSION} -f https://download.pytorch.org/whl/torch_stable.html
-# RUN pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html
 
 # ORT Module
-# Uncomment one of the lines below. First one gets stable version. Second gets nightly build.
-RUN pip install onnxruntime-training==${ONNXRUNTIME_TRAINING_VERSION}
-# RUN pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu102.html
+RUN pip install --pre onnxruntime-training==1.8.1 -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_stable_torch181.cu102.html
 
 RUN pip install torch-ort
 
