@@ -3,7 +3,12 @@
 # Licensed under the MIT License.
 
 # CUDA development image for building sources
-FROM nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04 as builder
+FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04 as builder
+
+ARG TORCH_CUDA_VERSION=cu102
+ARG ONNXRUNTIME_TRAINING_VERSION=1.8.1
+ARG TORCH_VERSION=1.9.0
+ARG TORCHVISION_VERSION=0.10.0
 
 # Install and update tools to minimize security vulnerabilities
 RUN apt-get update
@@ -19,16 +24,11 @@ RUN pip install --upgrade pip
 
 # PyTorch
 RUN pip install onnx ninja
-RUN pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu111/torch_nightly.html
+RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TORCHVISION_VERSION}+${TORCH_CUDA_VERSION} -f https://download.pytorch.org/whl/torch_stable.html
 
 # ORT Module
-RUN pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_torch190.cu111.html
+RUN pip install onnxruntime-training==${ONNXRUNTIME_TRAINING_VERSION}
 
 RUN pip install torch-ort
 
 WORKDIR /workspace
-
-# Basic testing
-#   git clone https://github.com/pytorch/ort.git
-#   pip install wget pandas transformers sklearn
-#   python ./ort/tests/bert_for_sequence_classification.py
