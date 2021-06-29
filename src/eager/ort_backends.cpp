@@ -12,26 +12,21 @@
   }
 #endif
 
+//use the environment from python module
+namespace onnxruntime{
+namespace python{
+  onnxruntime::Environment& GetEnv();
+}
+}
+
 namespace torch_ort {
 namespace eager {
 
 using namespace onnxruntime;
 
-std::unique_ptr<Environment> CreateEnvironment() {
-    std::unique_ptr<Environment> env;    
-    const std::string logger_id{"torch_ort"};
-    auto logging_manager = std::make_unique<logging::LoggingManager>(
-        std::unique_ptr<logging::ISink>{new logging::CLogSink{}},
-        logging::Severity::kVERBOSE, false,
-        logging::LoggingManager::InstanceType::Default,
-        &logger_id); 
-    Environment::Create(std::move(logging_manager), env);
-    return env;
-}
-
 ORTBackendsManager& GetORTBackendsManager() {
-  static auto env = CreateEnvironment();
-  static ORTBackendsManager instance {env->GetLoggingManager()->DefaultLogger()};
+  auto& env = onnxruntime::python::GetEnv();
+  static ORTBackendsManager instance {env.GetLoggingManager()->DefaultLogger()};
   return instance;
 }
 
@@ -61,11 +56,12 @@ onnxruntime::ORTInvoker& ORTBackendsManager::GetInvoker(const at::Device device)
   auto ep = std::make_unique<onnxruntime::CPUExecutionProvider>(
     onnxruntime::CPUExecutionProviderInfo(false));
 #endif
-
+  
   auto invoker = 
     std::make_unique<onnxruntime::ORTInvoker>(
       std::move(ep),
-      logger_);
+      logger_,
+      custom_op_schema_);
 
   backends_[device_index] = std::move(invoker);
   return *backends_[device_index];
