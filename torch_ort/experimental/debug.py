@@ -1,3 +1,8 @@
+# -------------------------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+# --------------------------------------------------------------------------
+
 import os
 from torch_ort import ORTModule
 from onnxruntime.training.ortmodule._logger import LogLevel
