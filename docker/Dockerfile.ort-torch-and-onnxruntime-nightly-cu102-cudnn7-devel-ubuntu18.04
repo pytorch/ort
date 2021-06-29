@@ -25,6 +25,7 @@ RUN pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu102/to
 RUN pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_torch190.cu102.html
 
 RUN pip install torch-ort
+RUN python -m torch_ort.configure
 
 WORKDIR /workspace
 

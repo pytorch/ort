@@ -30,5 +30,6 @@ RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TOR
 RUN pip install onnxruntime-training==${ONNXRUNTIME_TRAINING_VERSION}
 
 RUN pip install torch-ort
+RUN python -m torch_ort.configure
 
 WORKDIR /workspace

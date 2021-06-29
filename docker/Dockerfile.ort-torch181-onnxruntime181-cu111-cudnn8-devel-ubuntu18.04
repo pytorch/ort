@@ -30,6 +30,7 @@ RUN pip install onnxruntime-training==1.8.1 -f https://onnxruntimepackages.z14.w
 
 
 RUN pip install torch-ort
+RUN python -m torch_ort.configure
 
 WORKDIR /workspace
 
