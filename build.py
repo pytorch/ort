@@ -37,10 +37,12 @@ def main():
         dist_path = os.path.join(source_dir, 'dist')
         wheel_file = os.listdir(dist_path)[0]
         run_subprocess([sys.executable, "-m", "pip", "install", "--upgrade", os.path.join(dist_path, wheel_file)], cwd)
+        run_subprocess([sys.executable, "-m", "torch_ort.configure"], cwd)
     else:
         print("cmd_line_args.wheel_file: ", cmd_line_args.wheel_file)
         print("With Devops pipeline, please confirm that the wheel file matches the one being built from a previous step.")
         run_subprocess([sys.executable, "-m", "pip", "install", "--upgrade", cmd_line_args.wheel_file], cwd)
+        run_subprocess([sys.executable, "-m", "torch_ort.configure"], cwd)
 
     # installing requirements-test.txt
     requirements_path = os.path.join(source_dir, 'tests', 'requirements-test.txt')
