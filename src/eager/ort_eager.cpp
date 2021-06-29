@@ -27,15 +27,13 @@ using namespace onnxruntime::training;
 
 py::object ORTTensor_toDLPack(const at::Tensor& data)
 {
-  //const at::Tensor& ort_at_tensor = THPVariable_Unpack(data);
   OrtValue ort_value = create_ort_value(data);
-  return py::reinterpret_steal<py::object>(onnxruntime::training::framework::torch::ToDlpack(ort_value));
+  return py::reinterpret_steal<py::object>(framework::torch::ToDlpack(ort_value));
 }
 
-at::Tensor ORTTensor_FromDLPack(py::object dlpack_tensor)
+at::Tensor ORTTensor_FromDLPack(const py::object& dlpack_tensor)
 {
-  //const at::Tensor& ort_at_tensor = THPVariable_Unpack(data);
-  OrtValue ort_value = onnxruntime::training::framework::torch::FromDlpack(dlpack_tensor.ptr(), false);
+  OrtValue ort_value = framework::torch::FromDlpack(dlpack_tensor.ptr(), false);
   return aten_tensor_from_ort(
     std::move(ort_value),
     at::TensorOptions()
