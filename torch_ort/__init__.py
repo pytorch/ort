@@ -4,3 +4,4 @@
 # --------------------------------------------------------------------------
 
 from onnxruntime.training.ortmodule import ORTModule
+from onnxruntime import set_seed
