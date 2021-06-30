@@ -63,8 +63,8 @@ stages:
 
       # TODO: because the docker image (torchortpackaging) is cached,
       # it may keep failing if the onnxruntime-training or torch installation
-      # that are cached with the image is causing the failure. 
-      # in such case, we need to clearn the cache (onnxruntimebuildcache) 
+      # that are cached with the image is causing the failure.
+      # in such case, we need to clean the cache (onnxruntimebuildcache)
       - task: CmdLine@2
         inputs:
           script: |
