@@ -7,7 +7,12 @@ FROM nvcr.io/nvidia/cuda:11.1-cudnn8-devel-centos7
 #2. The resulting application is packaged as a Docker container and distributed to users on Docker Hub or the NVIDIA GPU Cloud only.
 #So we use CUDA as the base image then add manylinux on top of it.
 
-#Build manylinux2014 docker image begin
+# Add non-root user
+ARG BUILD_UID=1001
+ARG BUILD_USER=onnxruntimedev
+RUN adduser --uid $BUILD_UID $BUILD_USER
+
+# Build manylinux2014 docker image begin
 ENV AUDITWHEEL_ARCH x86_64
 ENV AUDITWHEEL_PLAT manylinux2014_$AUDITWHEEL_ARCH
 ENV LC_ALL en_US.UTF-8
@@ -23,21 +28,24 @@ RUN bash /manylinux2014_build_scripts/build.sh 8 && rm -r manylinux2014_build_sc
 
 ENV SSL_CERT_FILE=/opt/_internal/certs.pem
 
-#Build manylinux2014 docker image end
+# Build manylinux2014 docker image end
 
 ARG PYTHON_VERSION=3.6
 ARG INSTALL_DEPS_EXTRA_ARGS
 
-#Add our own dependencies
+# Add our own dependencies
 ADD scripts /tmp/scripts
 RUN cd /tmp/scripts && \
     /tmp/scripts/install_centos.sh && \
     /tmp/scripts/install_deps.sh -d gpu -p $PYTHON_VERSION $INSTALL_DEPS_EXTRA_ARGS && \
     rm -rf /tmp/scripts
 
-ARG BUILD_UID=1001
-ARG BUILD_USER=onnxruntimedev
-RUN adduser --uid $BUILD_UID $BUILD_USER
+# Make /opt/python symlink (/opt/_internal/cpython-*) folders wriatable for onnxruntimedev user
+RUN chown -fRL onnxruntimedev:onnxruntimedev /opt/python
+RUN chmod 775 -fR /opt/_internal/cpython-*
+
+
+# Switching to no-root user
 WORKDIR /home/$BUILD_USER
 USER $BUILD_USER
 ENV PATH /usr/local/gradle/bin:/usr/local/dotnet:$PATH
