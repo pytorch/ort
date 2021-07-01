@@ -28,6 +28,8 @@ const OrtValue create_ort_value(
   onnxruntime::ORTInvoker& invoker,
   const at::Tensor& tensor);
 
+const OrtValue create_ort_value(const at::Tensor& tensor);
+
 template<typename T>
 const OrtValue create_ort_value(
   onnxruntime::ORTInvoker& invoker, 

@@ -10,9 +10,9 @@ stages:
       strategy:
         matrix:
           Cuda10.2:
-            DockerFile: 'docker/Dockerfile.ort-cu102-cudnn7-devel-ubuntu18.04'
+            DockerFile: 'docker/Dockerfile.ort-torch190-onnxruntime181-cu102-cudnn7-devel-ubuntu18.04'
           Cuda11.1:
-            DockerFile: 'docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04'
+            DockerFile: 'docker/Dockerfile.ort-torch190-onnxruntime181-cu111-cudnn8-devel-ubuntu18.04'
       steps:
 
       - checkout: self

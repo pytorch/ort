@@ -1,3 +1,9 @@
+# -------------------------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+# --------------------------------------------------------------------------
+
+from sys import settrace
 import setuptools
 from datetime import date
 
@@ -14,6 +20,8 @@ if 'dev' in version_str:
     version_str = version_str + date.today().strftime("%Y%m%d")
 
 install_requires = fetch_requirements('requirements.txt')
+
+packages=[*setuptools.find_packages(), 'torch_ort.configure']
 
 setuptools.setup(
     name="torch_ort",
@@ -32,6 +40,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    packages=setuptools.find_packages(),
+    packages=packages,
     python_requires=">=3.6",
 )

@@ -56,20 +56,28 @@ ort_lib_dirs = [
   ort_build_dir
 ]
 
+import numpy as np
+
 ort_include_dirs = [
   os.path.join(ort_src_dir, 'include', 'onnxruntime'),
+  os.path.join(ort_src_dir, 'include', 'onnxruntime', 'core', 'session'),
   os.path.join(ort_src_dir, 'onnxruntime'),
+  os.path.join(ort_src_dir, 'orttraining'),
   os.path.join(ort_build_dir),
   os.path.join(ort_src_dir, 'cmake', 'external', 'onnx'),
   os.path.join(ort_src_dir, 'cmake', 'external', 'SafeInt'),
   os.path.join(ort_src_dir, 'cmake', 'external', 'protobuf', 'src'),
   os.path.join(ort_src_dir, 'cmake', 'external', 'nsync', 'public'),
   os.path.join(ort_src_dir, 'cmake', 'external', 'mp11', 'include'),
-  os.path.join(ort_build_dir, 'external', 'onnx')
+  os.path.join(ort_src_dir, 'cmake', 'external', 'optional-lite', 'include'),
+  os.path.join(ort_src_dir, 'cmake', 'external', 'dlpack', 'include'),
+  os.path.join(ort_build_dir, 'external', 'onnx'),
+  np.get_include()
 ]
 
 ort_static_libs = [os.path.join(ort_build_dir, f'{l}.a') for l in [
   'libonnxruntime_eager',
+  'libonnxruntime_training',
   'libonnxruntime_session',
   'libonnxruntime_providers',
   'libonnxruntime_framework',
@@ -78,7 +86,8 @@ ort_static_libs = [os.path.join(ort_build_dir, f'{l}.a') for l in [
   'libonnxruntime_graph',
   'libonnxruntime_mlas',
   'libonnxruntime_flatbuffers',
-  'libonnxruntime_common'
+  'libonnxruntime_common',
+  'libonnxruntime_optimizer'
 ]] + [
   os.path.join(ort_build_dir, 'external', 'nsync', 'libnsync_cpp.a'),
   os.path.join(ort_build_dir, 'external', 'onnx', 'libonnx.a'),
@@ -115,7 +124,8 @@ def build_ort():
     '--enable_training',
     '--disable_nccl',
     '--use_mpi', 'true',
-    '--cmake_extra_defines', 'onnxruntime_ENABLE_EAGER_MODE=ON'
+    '--build_eager_mode',
+    '--enable_pybind'
   ]
   if which('ninja'):
     args += ['--cmake_generator', 'Ninja']
@@ -152,6 +162,7 @@ extra_compile_args = [
   '-fsized-deallocation',
   '-DONNX_ML',
   '-DONNX_NAMESPACE=onnx',
+  '-DENABLE_TRAINING',
   f'-DONNX_BUILD_CONFIG="{build_config}"',
 ]
 
@@ -167,12 +178,25 @@ if args.compiler_args:
 from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension
 
+ort_python_bind_path = os.path.join(ort_src_dir, 'onnxruntime', 'python')
+ort_python_bind_training_path = os.path.join(ort_src_dir, 'orttraining', 'orttraining', 'python')
+
+eager_src = (glob('*.cpp') + 
+             [os.path.join(ort_python_bind_path, 'onnxruntime_pybind_exceptions.cc'),
+             os.path.join(ort_python_bind_path, 'onnxruntime_pybind_iobinding.cc'), 
+             os.path.join(ort_python_bind_path, 'onnxruntime_pybind_mlvalue.cc'),
+             os.path.join(ort_python_bind_path, 'onnxruntime_pybind_ortvalue.cc'),
+             os.path.join(ort_python_bind_path, 'onnxruntime_pybind_state_common.cc'),
+             os.path.join(ort_python_bind_path, 'onnxruntime_pybind_state.cc'),
+             os.path.join(ort_python_bind_training_path, 'orttraining_pybind_state.cc'),
+             os.path.join(ort_src_dir, 'onnxruntime', 'core', 'dlpack', 'dlpack_python.cc')])
+
 setup(
   name='torch_ort',
   ext_modules=[
     CppExtension(
       name='torch_ort',
-      sources=glob('*.cpp'),
+      sources=eager_src,
       extra_compile_args=extra_compile_args,
       include_dirs=ort_include_dirs,
       library_dirs=ort_lib_dirs,

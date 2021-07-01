@@ -27,6 +27,10 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
     - `pip install ninja`
     - `pip install torch-ort`
 
+4. Run post-installation script for ORTModule
+
+    - `python -m torch_ort.configure`
+
 ### Explicitly install for NVIDIA CUDA 10.2
 
 1. Install CUDA 10.2
@@ -54,6 +58,7 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
     - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_stable_cu111.html`
     - (or `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_cu111.html` to use nightly build)
     - `pip install torch-ort`
+    - `python -m torch_ort.configure`
 
 ### Explicitly install for AMD ROCm 4.2
 
@@ -69,6 +74,7 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
     - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_stable_rocm42.html`
     - (or `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_rocm42.html` to use nightly build)
     - `pip install torch-ort`
+    - `python -m torch_ort.configure`
 
 ### Use torch-ort from nightly build
 #### to use torch-ort from nightly build, replace
