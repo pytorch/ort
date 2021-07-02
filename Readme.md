@@ -60,7 +60,7 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
     - `pip install torch-ort`
     - `python -m torch_ort.configure`
 
-### Explicitly install for AMD ROCm 4.2
+### Explicitly install for AMD ROCm 4.2 (preview)
 
 1. Install ROCm 4.2 base package ([instructions](https://rocmdocs.amd.com/en/latest/Installation_Guide/Installation-Guide.html))
 
@@ -71,9 +71,8 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
 4. Install torch-ort and dependencies
     - `pip install ninja`
     - `pip install --pre torch -f https://download.pytorch.org/whl/nightly/rocm4.2/torch_nightly.html`
-    - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_stable_rocm42.html`
-    - (or `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_rocm42.html` to use nightly build)
-    - `pip install torch-ort`
+    - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_torch181.rocm42.html`
+    - `pip install --pre torch-ort -f https://onnxruntimepackages.blob.core.windows.net/$web/torch_ort_nightly.html`
     - `python -m torch_ort.configure`
 
 ### Use torch-ort from nightly build
@@ -99,11 +98,11 @@ The [docker](docker) directory contains dockerfiles for the NVIDIA CUDA 11.1 con
 
     `docker run -it --gpus all --name my-experiments ort.cu111:latest /bin/bash`
 
-###  On AMD Rocm 4.2
+###  On AMD ROCm 4.2 (preview)
 
-The [docker](docker) directory contains dockerfiles for the NVIDIA CUDA 11.1 configuration.
+The [docker](docker) directory contains dockerfiles for the AMD ROCm 4.2 configuration.
 
-- [docker/Dockerfile.ort-rocm4.2-pytorch1.8.1-ubuntu18.04](docker/Dockerfile.ort-rocm4.2-pytorch1.8.1-ubuntu18.04)
+- [docker/Dockerfile.ort-torch181-onnxruntime-nightly-rocm4.2-ubuntu18.04](docker/Dockerfile.ort-torch181-onnxruntime-nightly-rocm4.2-ubuntu18.04)
 
 1. Build the docker image
 
