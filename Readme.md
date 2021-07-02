@@ -68,11 +68,14 @@ By default, torch-ort depends on PyTorch 1.8.1, ONNX Runtime 1.8 and CUDA 10.2.
 
 3. Install ROCm 4.2 RCCL ([instructions](https://github.com/ROCmSoftwarePlatform/rccl/tree/rocm-4.2.0))
 
-4. Install torch-ort and dependencies
+4. Install Open MPI 4.0 ([download](https://www.open-mpi.org/software/ompi/v4.0/) [instructions](https://www.open-mpi.org/faq/?category=building#easy-build)) 
+   The MPI requirement will be removed in future.
+
+5. Install torch-ort and dependencies
     - `pip install ninja`
     - `pip install --pre torch -f https://download.pytorch.org/whl/nightly/rocm4.2/torch_nightly.html`
     - `pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_torch181.rocm42.html`
-    - `pip install --pre torch-ort -f 'https://onnxruntimepackages.blob.core.windows.net/$web/torch_ort_nightly.html'`
+    - `pip install --pre torch-ort -f 'https://onnxruntimepackages.blob.core.windows.net/torch_ort_nightly.html'`
     - `python -m torch_ort.configure`
 
 ### Use torch-ort from nightly build
