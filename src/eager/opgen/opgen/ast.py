@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 import io
-from typing import TextIO, List
+from typing import TextIO, List, Union
 from opgen.lexer import Token
 
 class Node(object):
@@ -105,12 +105,16 @@ class ExpressionType(Type):
     self.expression.write(writer)
 
 class ConcreteType(Type):
-  def __init__(self, identifier_token: Token):
+  def __init__(self, identifier_tokens: Union[Token, List[Token]]):
     super().__init__()
-    self.identifier_token = identifier_token
+    if isinstance(identifier_tokens, Token):
+      self.identifier_tokens = [identifier_tokens]
+    else:
+      self.identifier_tokens = identifier_tokens
 
   def write(self, writer: TextIO):
-    writer.write(self.identifier_token.value)
+    for identifier_token in self.identifier_tokens:
+      writer.write(identifier_token.value)
 
 class ConstType(Type):
   def __init__(self, const_token: Token, inner_type: Type):
@@ -176,13 +180,20 @@ class ArrayType(ModifiedType):
     writer.write(self.close_token.value)
 
 class TemplateType(Type):
-  def __init__(self, identifier_token: Token, type_arguments: SyntaxList):
+  def __init__(
+    self,
+    identifier_tokens: Union[Token, List[Token]],
+    type_arguments: SyntaxList):
     super().__init__()
-    self.identifier_token = identifier_token
+    if isinstance(identifier_tokens, Token):
+      self.identifier_tokens = [identifier_tokens]
+    else:
+      self.identifier_tokens = identifier_tokens
     self.type_arguments = type_arguments
 
   def write(self, writer: TextIO):
-    writer.write(self.identifier_token.value)
+    for identifier_token in self.identifier_tokens:
+      writer.write(identifier_token.value)
     self.type_arguments.write(writer)
 
 class TupleMemberType(Type):

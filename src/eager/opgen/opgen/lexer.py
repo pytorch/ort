@@ -84,6 +84,14 @@ class Token(object):
       self.kind == TokenKind.SINGLE_LINE_COMMENT or
       self.kind == TokenKind.MULTI_LINE_COMMENT)
 
+  def has_trailing_trivia(self, trivia_kind: TokenKind) -> bool:
+    if not self.trailing_trivia:
+      return False
+    for trivia in self.trailing_trivia:
+      if trivia.kind == trivia_kind:
+        return True
+    return False
+
   def __str__(self) -> str:
     return f"{self.location}: [{self.kind}] '{self.value}'"
 
