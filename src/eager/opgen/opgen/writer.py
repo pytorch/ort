@@ -1,14 +1,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from typing import TextIO
+from typing import TextIO, List
 
 class SourceWriter:
   _writer: TextIO
   _indent_str: str
   _indent_depth: int
   _needs_indent: bool
-  _namespaces: [str]
+  _namespaces: List[str]
 
   def __init__(self, base_writer: TextIO, indent_str: str = '  '):
     self._writer = base_writer

@@ -1,9 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from enum import Enum
 from opgen.lexer import *
 from opgen.ast import *
+from typing import List, Tuple, Union, Optional
 
 class UnexpectedTokenError(RuntimeError):
   def __init__(self, expected: TokenKind, actual: Token):
@@ -16,9 +16,9 @@ class ExpectedSyntaxError(RuntimeError):
     super().__init__(f"expected {expected}; actual {actual}")
 
 class ParserBase(object):
-  _peek_queue: [Token]
+  _peek_queue: List[Token]
 
-  def __init__(self, lexer: Lexer or Reader):
+  def __init__(self, lexer: Union[Lexer, Reader]):
     self._own_lexer = False
     if isinstance(lexer, Reader):
       self._own_lexer = True
@@ -181,7 +181,7 @@ class CPPParser(ParserBase):
     return self.parse_type()
 
 class TorchParser(ParserBase):
-  def __init__(self, lexer: Lexer or Reader):
+  def __init__(self, lexer: Union[Lexer, Reader]):
     super().__init__(lexer)
     self._next_anonymous_alias_id = 0
 
@@ -216,7 +216,7 @@ class TorchParser(ParserBase):
       parsed_type = AliasInfoType(parsed_type, alias_info)
     return parsed_type
 
-  def _parse_type_and_alias(self) -> (Type, AliasInfo):
+  def _parse_type_and_alias(self) -> Tuple[Type, AliasInfo]:
     parsed_type: Type = None
     alias_info: AliasInfo = None
 
@@ -292,7 +292,7 @@ class TorchParser(ParserBase):
   def _parse_torch_alias_info(self) -> AliasInfo:
     alias_info = AliasInfo()
 
-    def parse_set(alias_set: [str]):
+    def parse_set(alias_set: List[str]):
       while True:
         if self._peek_token(TokenKind.MUL):
           alias_info.tokens.append(self._read_token())

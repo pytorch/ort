@@ -1,11 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import sys
 import io
-from typing import TextIO
-from enum import Enum
-from opgen.lexer import TokenKind, Token
+from typing import TextIO, List
+from opgen.lexer import Token
 
 class Node(object):
   def __init__(self):
@@ -35,7 +33,7 @@ class SyntaxListMember(Node):
 
 class SyntaxList(Node):
   open_token: Token
-  members: [SyntaxListMember]
+  members: List[SyntaxListMember]
   close_token: Token
 
   def __init__(self):
@@ -208,10 +206,10 @@ class TupleType(Type):
     self.elements.write(writer)
 
 class AliasInfo(Node):
-  before_set: [str]
-  after_set: [str]
-  contained_types: []
-  tokens: [Token]
+  before_set: List[str]
+  after_set: List[str]
+  contained_types: List[Type]
+  tokens: List[Token]
 
   def __init__(self):
     super().__init__()
@@ -328,7 +326,7 @@ class FunctionDecl(Decl):
     return None
 
 class TranslationUnitDecl(Decl):
-  def __init__(self, decls: [FunctionDecl]):
+  def __init__(self, decls: List[FunctionDecl]):
     super().__init__()
     self.decls = decls
 

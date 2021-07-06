@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from typing import TextIO, Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Union
 
 import sys
 import json
@@ -34,7 +34,7 @@ class ONNXAttr:
     self.type = type
 
 class ONNXOpEvalContext:
-  ops: ['ONNXOp']
+  ops: List['ONNXOp']
 
   def __init__(self):
     self.ops = []
@@ -47,8 +47,8 @@ class ONNXOp:
   def __init__(self,
     name: str,
     outputs: int,
-    *inputs: str or Outputs,
-    **attributes: Optional[str or Outputs]):
+    *inputs: Union[str, Outputs],
+    **attributes: Optional[Union[str, Outputs]]):
     self.name = name
     self.outputs = Outputs(outputs)
     self.inputs = inputs
@@ -375,7 +375,7 @@ class ORTGen:
     writer.writeline('}')
     writer.writeline()
 
-  def _get_alias_info(self, torch_type_or_param: ast.Type or ast.ParameterDecl):
+  def _get_alias_info(self, torch_type_or_param: Union[ast.Type, ast.ParameterDecl]):
     if isinstance(torch_type_or_param, ast.ParameterDecl):
       torch_type = torch_type_or_param.parameter_type
     else:
