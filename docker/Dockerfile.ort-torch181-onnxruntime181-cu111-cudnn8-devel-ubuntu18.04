@@ -30,7 +30,8 @@ RUN pip install onnxruntime-training==1.8.1 -f https://onnxruntimepackages.z14.w
 
 
 # RUN pip install torch-ort
-# RUN python -m torch_ort.configure
+RUN pip install https://onnxruntimepackages.z14.web.core.windows.net/torch_ort-1.8.1-py3-none-any.whl
+RUN python -m torch_ort.configure
 
 WORKDIR /workspace
 
