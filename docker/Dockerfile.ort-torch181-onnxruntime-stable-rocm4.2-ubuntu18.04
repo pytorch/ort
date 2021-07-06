@@ -1,0 +1,22 @@
+FROM rocm/pytorch:rocm4.2_ubuntu18.04_py3.6_pytorch_1.8.1
+ENV ROCM_HOME=/opt/rocm
+
+# Install and update tools to minimize security vulnerabilities
+RUN apt-get update
+RUN apt-get install -y software-properties-common wget apt-utils patchelf git libprotobuf-dev protobuf-compiler cmake unattended-upgrades
+RUN unattended-upgrade
+RUN apt-get autoremove -y
+
+# ORT Module
+RUN CC=mpicc MPICC=mpicc pip install mpi4py --no-binary mpi4py
+RUN pip install onnx ninja
+RUN pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_stable_torch181.rocm42.html
+RUN pip install --pre torch-ort -f 'https://onnxruntimepackages.blob.core.windows.net/$web/torch_ort_nightly.html'
+RUN python -m torch_ort.configure
+
+WORKDIR /workspace
+
+# Basic testing
+#   git clone https://github.com/pytorch/ort.git
+#   pip install wget pandas transformers sklearn
+#   python ./ort/tests/bert_for_sequence_classification.py
