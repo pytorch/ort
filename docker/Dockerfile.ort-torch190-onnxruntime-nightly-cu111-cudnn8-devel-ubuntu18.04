@@ -29,8 +29,8 @@ RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TOR
 # ORT Module
 RUN pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_torch190.cu111.html
 
-# RUN pip install torch-ort
-# RUN python -m torch_ort.configure
+RUN pip install torch-ort
+RUN python -m torch_ort.configure
 
 WORKDIR /workspace
 
