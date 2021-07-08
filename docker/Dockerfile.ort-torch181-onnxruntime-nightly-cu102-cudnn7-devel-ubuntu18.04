@@ -6,7 +6,6 @@
 FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04 as builder
 
 ARG TORCH_CUDA_VERSION=cu102
-ARG ONNXRUNTIME_TRAINING_VERSION=1.8.1
 ARG TORCH_VERSION=1.8.1
 ARG TORCHVISION_VERSION=0.9.1
 
@@ -27,7 +26,7 @@ RUN pip install onnx ninja
 RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TORCHVISION_VERSION}+${TORCH_CUDA_VERSION} -f https://download.pytorch.org/whl/torch_stable.html
 
 # ORT Module
-RUN pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_torch190.cu102.html
+RUN pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_nightly_torch181.cu102.html
 
 RUN pip install torch-ort
 RUN python -m torch_ort.configure
