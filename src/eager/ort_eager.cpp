@@ -8,7 +8,7 @@
 #include "ort_aten.h"
 #include "orttraining/core/framework/ortmodule_graph_builder.h"
 #include "python/onnxruntime_pybind_state_common.h"
-#include "orttraining/core/framework/torch/dlpack_python.h"
+#include "core/dlpack/dlpack_python.h"
 
 namespace onnxruntime{
 namespace python{
@@ -28,12 +28,12 @@ using namespace onnxruntime::training;
 py::object ORTTensor_toDLPack(const at::Tensor& data)
 {
   OrtValue ort_value = create_ort_value(data);
-  return py::reinterpret_steal<py::object>(framework::torch::ToDlpack(ort_value));
+  return py::reinterpret_steal<py::object>(onnxruntime::dlpack::ToDlpack(ort_value));
 }
 
 at::Tensor ORTTensor_FromDLPack(const py::object& dlpack_tensor)
 {
-  OrtValue ort_value = framework::torch::FromDlpack(dlpack_tensor.ptr(), false);
+  OrtValue ort_value = onnxruntime::dlpack::FromDlpack(dlpack_tensor.ptr(), false);
   return aten_tensor_from_ort(
     std::move(ort_value),
     at::TensorOptions()
