@@ -88,11 +88,11 @@ with
 
 The [docker](docker) directory contains dockerfiles for the NVIDIA CUDA 11.1 configuration.
 
-- [docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04](docker/Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04)
+- [docker/Dockerfile.ort-torch190-onnxruntime181-cu111-cudnn8-devel-ubuntu18.04](docker/Dockerfile.ort-torch190-onnxruntime181-cu111-cudnn8-devel-ubuntu18.04)
 
 1. Build the docker image
 
-    `docker build -f Dockerfile.ort-cu111-cudnn8-devel-ubuntu18.04 -t ort.cu111 .`
+    `docker build -f Dockerfile.ort-torch190-onnxruntime181-cu111-cudnn8-devel-ubuntu18.04 -t ort.cu111 .`
 
 2. Run the docker container using the image you have just built
 

@@ -32,3 +32,8 @@ RUN pip install torch-ort
 RUN python -m torch_ort.configure
 
 WORKDIR /workspace
+
+# Basic testing
+#   git clone https://github.com/pytorch/ort.git
+#   pip install wget pandas transformers sklearn
+#   python ./ort/tests/bert_for_sequence_classification.py
