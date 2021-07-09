@@ -1,4 +1,4 @@
-# Accelerate PyTorch models with ONNX Runtime
+# Run torch-ort with Docker
 
 Instructions below assume you are entering commands from the `docker` folder in this repository. Docker files available for CUDA and ROCm configurations.
 
