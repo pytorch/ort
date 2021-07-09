@@ -13,7 +13,7 @@ Instructions below assume you are entering commands from the `docker` folder in 
 
     `docker run -it --gpus all --name my-experiments ort.cu111:latest /bin/bash`
 
-### On AMD ROCm 4.2 (preview)
+## On AMD ROCm 4.2 (preview)
 
 1. Build the docker image
 
