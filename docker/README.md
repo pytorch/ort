@@ -3,7 +3,7 @@
 Instructions below assume you are entering commands from the `docker` folder in this repository. Docker files available for CUDA and ROCm configurations.
 
 
-### On NVIDIA CUDA 11.1
+## On NVIDIA CUDA 11.1
 
 1. Build the docker image
 
