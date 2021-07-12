@@ -14,7 +14,7 @@ This is the default dependency for torch-ort.
 
 2. Run the container using the image you have just built
 
-    ``docker run -it --gpus all --name my-experiments ort.cu102:latest /bin/bash`
+    `docker run -it --gpus all --name my-experiments ort.cu102:latest /bin/bash`
 ## NVIDIA CUDA 11.1
 
 1. Build the docker image
@@ -25,7 +25,7 @@ This is the default dependency for torch-ort.
 
     `docker run -it --gpus all --name my-experiments ort.cu111:latest /bin/bash`
 
-## On AMD ROCm 4.2 (preview)
+## AMD ROCm 4.2 (preview)
 
 1. Build the docker image
 

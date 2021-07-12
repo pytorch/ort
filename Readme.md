@@ -54,6 +54,11 @@ model = ORTModule(model)
 
 # PyTorch training script follows
 ```
+
+## Samples
+
+To see torch-ort in action, see https://github.com/microsoft/onnxruntime-training-examples, which shows you how to train the most popular HuggingFace models.
+
 ## License
 
 This project has an MIT license, as found in the [LICENSE](LICENSE) file.
