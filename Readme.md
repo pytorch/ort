@@ -4,13 +4,13 @@ ONNX Runtime for PyTorch accelerates PyTorch model training using ONNX Runtime.
 
 It is available via the torch-ort python package.
 
-This repository contains the source code for the package as well as instructions for running the package and samples demonstrating how to do so.
+This repository contains the source code for the package, as well as instructions for running the package.
 
 ## Pre-requisites
 
 You need a machine with at least one NVIDIA or AMD GPU to run ONNX Runtime for PyTorch.
 
-You can install and run torch-ort in your local environment, or with Docker (see instructions in the [Docker folder](docker/README.md)).
+You can install and run torch-ort in your local environment, or with [Docker](docker/README.md).
 
 ## Install in a local Python environment
 
@@ -22,9 +22,8 @@ By default, torch-ort depends on PyTorch 1.9.0, ONNX Runtime 1.8.1 and CUDA 10.2
 
 2. Install CuDNN 7.6
 
-3. Install torch-ort and dependencies
+3. Install torch-ort
 
-    - `pip install ninja`
     - `pip install torch-ort`
 
 4. Run post-installation script for ORTModule
@@ -55,7 +54,6 @@ model = ORTModule(model)
 
 # PyTorch training script follows
 ```
-
 ## License
 
 This project has an MIT license, as found in the [LICENSE](LICENSE) file.
