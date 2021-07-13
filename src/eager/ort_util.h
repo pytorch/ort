@@ -18,13 +18,33 @@ void CreateMLValue(onnxruntime::AllocatorPtr alloc,
 void CreateMLValue(void* data_ptr, onnxruntime::MLDataType element_type, const std::vector<int64_t>& dims, OrtValue* p_mlvalue);
 
 template <typename T>
-inline void CopyVectorToTensor(const std::vector<T>& value, onnxruntime::Tensor& tensor) {
-  gsl::copy(gsl::make_span(value), tensor.MutableDataAsSpan<T>());
+inline void CopyVectorToTensor(onnxruntime::ORTInvoker& invoker,
+                               const std::vector<T>& value,
+                               onnxruntime::Tensor& tensor) {
+  const auto& execution_provider = invoker.GetCurrentExecutionProvider();
+
+  OrtValue* ort_value;
+  int64_t shape = value.size();
+
+  Ort::ThrowOnError(Ort::GetApi().CreateTensorWithDataAsOrtValue(
+    &execution_provider.GetAllocator(0, OrtMemTypeDefault)->Info(),
+    const_cast<void*>(reinterpret_cast<const void*>(value.data())),
+    value.size() * sizeof(T),
+    &shape,
+    1,
+    Ort::TypeToTensorType<T>::type,
+    &ort_value));
+
+  execution_provider.GetDataTransfer()->CopyTensor(
+    ort_value->Get<onnxruntime::Tensor>(),
+    tensor);
 }
 
 // vector<bool> is specialized so we need to handle it separately
 template <>
-inline void CopyVectorToTensor<bool>(const std::vector<bool>& value, onnxruntime::Tensor& tensor) {
+inline void CopyVectorToTensor<bool>(onnxruntime::ORTInvoker& invoker,
+                                     const std::vector<bool>& value,
+                                     onnxruntime::Tensor& tensor) {
   auto output_span = tensor.MutableDataAsSpan<bool>();
   for (size_t i = 0, end = value.size(); i < end; ++i) {
     output_span[i] = value[i];
