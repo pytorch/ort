@@ -3,6 +3,7 @@
 
 from enum import Enum
 from abc import ABC
+from typing import List, Optional, Union, Tuple
 
 class SourceLocation(object):
   def __init__(self,
@@ -63,11 +64,11 @@ class TokenKind(Enum):
 
 class Token(object):
   def __init__(self,
-    location: SourceLocation,
+    location: Union[SourceLocation, Tuple[int, int, int]],
     kind: TokenKind,
     value: str,
-    leading_trivia = None,
-    trailing_trivia = None):
+    leading_trivia: Optional[List["Token"]] = None,
+    trailing_trivia: Optional[List["Token"]] = None):
     if isinstance(location, tuple) or isinstance(location, list):
       location = SourceLocation(location[0], location[1], location[2])
 
@@ -82,6 +83,14 @@ class Token(object):
       self.kind == TokenKind.WHITESPACE or
       self.kind == TokenKind.SINGLE_LINE_COMMENT or
       self.kind == TokenKind.MULTI_LINE_COMMENT)
+
+  def has_trailing_trivia(self, trivia_kind: TokenKind) -> bool:
+    if not self.trailing_trivia:
+      return False
+    for trivia in self.trailing_trivia:
+      if trivia.kind == trivia_kind:
+        return True
+    return False
 
   def __str__(self) -> str:
     return f"{self.location}: [{self.kind}] '{self.value}'"
@@ -143,7 +152,7 @@ class StringReader(Reader):
 class Lexer(object):
   _peek: str
   _next_token: Token
-  _first_token_leading_trivia: [Token]
+  _first_token_leading_trivia: List[Token]
 
   char_to_token_kind = {
     '(': TokenKind.OPEN_PAREN,
@@ -210,8 +219,8 @@ class Lexer(object):
     attached to it.
     """
     token: Token
-    leading_trivia: [Token] = None
-    trailing_trivia: [Token] = None
+    leading_trivia: Optional[List[Token]] = None
+    trailing_trivia: Optional[List[Token]] = None
 
     while True:
       token = self._lex_core()

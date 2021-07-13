@@ -1,9 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from enum import Enum
 from opgen.lexer import *
 from opgen.ast import *
+from typing import List, Tuple, Union, Optional
 
 class UnexpectedTokenError(RuntimeError):
   def __init__(self, expected: TokenKind, actual: Token):
@@ -16,9 +16,9 @@ class ExpectedSyntaxError(RuntimeError):
     super().__init__(f"expected {expected}; actual {actual}")
 
 class ParserBase(object):
-  _peek_queue: [Token]
+  _peek_queue: List[Token]
 
-  def __init__(self, lexer: Lexer or Reader):
+  def __init__(self, lexer: Union[Lexer, Reader]):
     self._own_lexer = False
     if isinstance(lexer, Reader):
       self._own_lexer = True
@@ -42,20 +42,25 @@ class ParserBase(object):
 
   def _peek_token(
     self,
-    kind: TokenKind = None,
+    kinds: Union[TokenKind, List[TokenKind]] = None,
     value: str = None,
-    look_ahead: int = 1) -> Token:
+    look_ahead: int = 1) -> Optional[Token]:
     if look_ahead < 1:
       raise IndexError("look_ahead must be at least 1")
     if look_ahead >= len(self._peek_queue):
       for _ in range(look_ahead - len(self._peek_queue)):
         self._peek_queue = [self._lexer.lex()] + self._peek_queue
     peek = self._peek_queue[-look_ahead]
-    if kind:
-      if value:
-        return peek if peek.kind == kind and peek.value == value else None
-      return peek if peek.kind == kind else None
-    return peek
+    if not kinds:
+      return peek
+    if not isinstance(kinds, list):
+      kinds = [kinds]
+    for kind in kinds:
+      if peek.kind == kind:
+        if value:
+          return peek if peek.value == value else None
+        return peek
+    return None
 
   def _read_token(self) -> Token:
     return self._peek_queue.pop() if self._peek_queue else self._lexer.lex()
@@ -151,19 +156,27 @@ class CPPParser(ParserBase):
       parsed_type = ConstType(
         self._read_token(),
         self.parse_type())
-    elif self._peek_token(TokenKind.IDENTIFIER):
-      identifier = self._read_token()
+    elif self._peek_token([TokenKind.IDENTIFIER, TokenKind.DOUBLECOLON]):
+      identifiers = []
+      while True:
+        token = self._peek_token([TokenKind.IDENTIFIER, TokenKind.DOUBLECOLON])
+        if not token:
+          break
+        identifiers.append(self._read_token())
+        if token.has_trailing_trivia(TokenKind.WHITESPACE):
+          break
       if self._peek_token(TokenKind.LESS_THAN):
         parsed_type = TemplateType(
-          identifier,self._parse_list(
-          TokenKind.LESS_THAN,
-          TokenKind.COMMA,
-          TokenKind.GREATER_THAN,
-          self._parse_template_type_argument))
-      elif identifier.value == "TensorOptions":
-        parsed_type = TensorOptionsType(identifier)
+          identifiers,
+          self._parse_list(
+            TokenKind.LESS_THAN,
+            TokenKind.COMMA,
+            TokenKind.GREATER_THAN,
+            self._parse_template_type_argument))
+      elif identifiers[-1].value == "TensorOptions":
+        parsed_type = TensorOptionsType(identifiers)
       else:
-        parsed_type = ConcreteType(identifier)
+        parsed_type = ConcreteType(identifiers)
     else:
       raise ExpectedSyntaxError("type", self._peek_token())
 
@@ -181,7 +194,7 @@ class CPPParser(ParserBase):
     return self.parse_type()
 
 class TorchParser(ParserBase):
-  def __init__(self, lexer: Lexer or Reader):
+  def __init__(self, lexer: Union[Lexer, Reader]):
     super().__init__(lexer)
     self._next_anonymous_alias_id = 0
 
@@ -216,7 +229,7 @@ class TorchParser(ParserBase):
       parsed_type = AliasInfoType(parsed_type, alias_info)
     return parsed_type
 
-  def _parse_type_and_alias(self) -> (Type, AliasInfo):
+  def _parse_type_and_alias(self) -> Tuple[Type, AliasInfo]:
     parsed_type: Type = None
     alias_info: AliasInfo = None
 
@@ -292,7 +305,7 @@ class TorchParser(ParserBase):
   def _parse_torch_alias_info(self) -> AliasInfo:
     alias_info = AliasInfo()
 
-    def parse_set(alias_set: [str]):
+    def parse_set(alias_set: List[str]):
       while True:
         if self._peek_token(TokenKind.MUL):
           alias_info.tokens.append(self._read_token())
