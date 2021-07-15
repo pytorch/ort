@@ -25,9 +25,10 @@ inline void CopyVectorToTensor(onnxruntime::ORTInvoker& invoker,
 
   OrtValue* ort_value;
   int64_t shape = value.size();
+  OrtMemoryInfo cpuMemoryInfo;
 
   Ort::ThrowOnError(Ort::GetApi().CreateTensorWithDataAsOrtValue(
-    &execution_provider.GetAllocator(0, OrtMemTypeDefault)->Info(),
+    &cpuMemoryInfo,
     const_cast<void*>(reinterpret_cast<const void*>(value.data())),
     value.size() * sizeof(T),
     &shape,
