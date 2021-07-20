@@ -6,9 +6,11 @@
 #include "ort_backends.h"
 #include "ort_log.h"
 #include "ort_aten.h"
+#include "ort_backends.h"
 #include "orttraining/core/framework/ortmodule_graph_builder.h"
 #include "python/onnxruntime_pybind_state_common.h"
 #include "core/dlpack/dlpack_python.h"
+#include <core/framework/provider_bridge_ort.h>
 
 namespace onnxruntime{
 namespace python{
@@ -65,6 +67,18 @@ PYBIND11_MODULE(torch_ort, torch_ort_module) {
   torch_ort_module.def("ort_from_dlpack", [](py::object dlpack_tensor) {
     return ORTTensor_FromDLPack(dlpack_tensor);
   });
+
+  torch_ort_module.def("set_device", [](size_t device_index, 
+                                        const std::string& provider_type,
+                                        const std::unordered_map<std::string, std::string>& arguments){
+    auto status = GetORTBackendsManager().set_device(device_index, provider_type, arguments);
+    if (!status.IsOK())
+      throw std::runtime_error(status.ErrorMessage());
+  });
+  // TODO: need to copy the provider_shared.so to the python pacakge
+  // if (!onnxruntime::InitProvidersSharedLibrary()) {
+  //   throw std::runtime_error("Init shared execution provider bridege failed");
+  // }
 }
 
 } // namespace eager

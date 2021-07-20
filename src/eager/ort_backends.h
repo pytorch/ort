@@ -5,6 +5,8 @@
 
 #include <torch/extension.h>
 #include <core/framework/ml_value.h>
+#include "core/common/status.h"
+#include <core/framework/provider_options.h>
 #include <core/eager/ort_kernel_invoker.h>
 #include <core/graph/schema_registry.h>
 #include "onnx/defs/schema.h"
@@ -15,8 +17,10 @@ namespace eager {
 
 class ORTBackendsManager {
 public:
-  ORTBackendsManager(const onnxruntime::logging::Logger& logger) : logger_(logger) {
-  }
+  ORTBackendsManager(const onnxruntime::logging::Logger& logger);
+
+  onnxruntime::Status set_device(size_t device_index, const std::string& provider_type,
+                                 const onnxruntime::ProviderOptions& provider_options);
 
   onnxruntime::ORTInvoker& GetInvoker(const at::Device device);
 
