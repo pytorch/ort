@@ -198,6 +198,7 @@ setup(
       name='torch_ort',
       sources=eager_src,
       extra_compile_args=extra_compile_args,
+      runtime_library_dirs=[ort_build_dir],
       include_dirs=ort_include_dirs,
       library_dirs=ort_lib_dirs,
       extra_objects=ort_static_libs)

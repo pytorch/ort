@@ -76,9 +76,9 @@ PYBIND11_MODULE(torch_ort, torch_ort_module) {
       throw std::runtime_error(status.ErrorMessage());
   });
   // TODO: need to copy the provider_shared.so to the python pacakge
-  // if (!onnxruntime::InitProvidersSharedLibrary()) {
-  //   throw std::runtime_error("Init shared execution provider bridege failed");
-  // }
+  if (!onnxruntime::InitProvidersSharedLibrary()) {
+    throw std::runtime_error("Init shared execution provider bridege failed");
+  }
 }
 
 } // namespace eager
