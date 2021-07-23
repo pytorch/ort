@@ -71,6 +71,7 @@ ort_include_dirs = [
   os.path.join(ort_src_dir, 'cmake', 'external', 'mp11', 'include'),
   os.path.join(ort_src_dir, 'cmake', 'external', 'optional-lite', 'include'),
   os.path.join(ort_src_dir, 'cmake', 'external', 'dlpack', 'include'),
+  os.path.join(ort_src_dir, 'cmake', 'external', 'optional-lite', 'include'),
   os.path.join(ort_build_dir, 'external', 'onnx'),
   np.get_include()
 ]
