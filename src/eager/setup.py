@@ -16,6 +16,9 @@ parser.add_argument('--build_config', default='Debug', type=str,
 parser.add_argument('--additional_libs', default=None, type=str, help='Additional libraries to link against')
 parser.add_argument('--compiler_args', default=None, type=str, help='Additional compiler args to use')
 parser.add_argument('--skip_tests', action='store_true', help='Skips running unit tests as part of the build tests')
+parser.add_argument('--use_preinstalled_torch', action='store_true', help='Use pre-installed torch from the python environment')
+parser.add_argument('--ort_path', default=None, type=str, help='Use pre-built Onnxruntime from this path')
+parser.add_argument('--build_torch_wheel', action='store_true', help='Build PyTorch wheel')
 parser.add_argument('--user', action='store_true', help='Install to user')
 parser.add_argument('free_args', nargs='*')
 
@@ -31,6 +34,7 @@ sys.argv[1:] = args.free_args
 if args.user:
   sys.argv += ['--user']
 
+
 def is_debug_build():
   return build_config != 'Release'
 
@@ -43,39 +47,56 @@ pytorch_src_dir = os.path.join(
 pytorch_compile_commands_path = os.path.join(
   pytorch_src_dir, 'compile_commands.json')
 
-if not os.path.exists(os.path.join(pytorch_src_dir, '.git')):
+if not args.use_preinstalled_torch and not os.path.exists(os.path.join(pytorch_src_dir, '.git')):
   raise Exception('pytorch submodule does not exist. Run git submodule update --init --recursive')
 
 ort_src_dir = os.path.join(repo_root_dir, 'external', 'onnxruntime')
 ort_build_dir = os.path.join(self_dir, 'ort_build', build_config)
 
-if not os.path.exists(os.path.join(ort_src_dir, '.git')):
+if not args.ort_path and not os.path.exists(os.path.join(ort_src_dir, '.git')):
   raise Exception('onnxruntime submodule does not exist. Run git submodule update --init --recursive')
 
-ort_lib_dirs = [
-  ort_build_dir
-]
+ort_lib_dirs = [ort_build_dir] if not args.ort_path else []
 
 import numpy as np
 
-ort_include_dirs = [
-  os.path.join(ort_src_dir, 'include', 'onnxruntime'),
-  os.path.join(ort_src_dir, 'include', 'onnxruntime', 'core', 'session'),
-  os.path.join(ort_src_dir, 'onnxruntime'),
-  os.path.join(ort_src_dir, 'orttraining'),
-  os.path.join(ort_build_dir),
-  os.path.join(ort_src_dir, 'cmake', 'external', 'onnx'),
-  os.path.join(ort_src_dir, 'cmake', 'external', 'SafeInt'),
-  os.path.join(ort_src_dir, 'cmake', 'external', 'protobuf', 'src'),
-  os.path.join(ort_src_dir, 'cmake', 'external', 'nsync', 'public'),
-  os.path.join(ort_src_dir, 'cmake', 'external', 'mp11', 'include'),
-  os.path.join(ort_src_dir, 'cmake', 'external', 'optional-lite', 'include'),
-  os.path.join(ort_src_dir, 'cmake', 'external', 'dlpack', 'include'),
-  os.path.join(ort_build_dir, 'external', 'onnx'),
-  np.get_include()
-]
+if not args.ort_path:
+  ort_include_dirs = [
+    os.path.join(ort_src_dir, 'include', 'onnxruntime'),
+    os.path.join(ort_src_dir, 'include', 'onnxruntime', 'core', 'session'),
+    os.path.join(ort_src_dir, 'onnxruntime'),
+    os.path.join(ort_src_dir, 'orttraining'),
+    os.path.join(ort_build_dir),
+    os.path.join(ort_src_dir, 'cmake', 'external', 'onnx'),
+    os.path.join(ort_src_dir, 'cmake', 'external', 'SafeInt'),
+    os.path.join(ort_src_dir, 'cmake', 'external', 'protobuf', 'src'),
+    os.path.join(ort_src_dir, 'cmake', 'external', 'nsync', 'public'),
+    os.path.join(ort_src_dir, 'cmake', 'external', 'mp11', 'include'),
+    os.path.join(ort_src_dir, 'cmake', 'external', 'optional-lite', 'include'),
+    os.path.join(ort_src_dir, 'cmake', 'external', 'dlpack', 'include'),
+    os.path.join(ort_build_dir, 'external', 'onnx'),
+    np.get_include()
+  ]
+else:
+  # Use headers from pre-built Onnxruntime
+  ort_include_base_dir = os.path.join(args.ort_path, 'include')
+  ort_include_dirs = [
+    os.path.join(ort_include_base_dir, 'onnxruntime'),
+    os.path.join(ort_include_base_dir, 'onnxruntime', 'core', 'session'),
+    os.path.join(ort_include_base_dir, 'orttraining'),
+    os.path.join(ort_include_base_dir),
+    os.path.join(ort_include_base_dir, 'onnxruntime', 'external', 'onnx'),
+    os.path.join(ort_include_base_dir, 'onnxruntime', 'external', 'SafeInt'),
+    os.path.join(ort_include_base_dir, 'onnxruntime', 'external', 'protobuf', 'src'),
+    os.path.join(ort_include_base_dir, 'onnxruntime', 'external', 'nsync', 'public'),
+    os.path.join(ort_include_base_dir, 'onnxruntime', 'external', 'mp11', 'include'),
+    os.path.join(ort_include_base_dir, 'onnxruntime', 'external', 'optional-lite', 'include'),
+    os.path.join(ort_include_base_dir, 'onnxruntime', 'external', 'dlpack', 'include'),
+    np.get_include()
+  ]
 
-ort_static_libs = [os.path.join(ort_build_dir, f'{l}.a') for l in [
+ort_libs_base_dir = ort_build_dir if not args.ort_path else os.path.join(args.ort_path, 'lib')
+ort_static_libs = [os.path.join(ort_libs_base_dir, f'{l}.a') for l in [
   'libonnxruntime_eager',
   'libonnxruntime_training',
   'libonnxruntime_session',
@@ -88,26 +109,46 @@ ort_static_libs = [os.path.join(ort_build_dir, f'{l}.a') for l in [
   'libonnxruntime_flatbuffers',
   'libonnxruntime_common',
   'libonnxruntime_optimizer'
-]] + [
-  os.path.join(ort_build_dir, 'external', 'nsync', 'libnsync_cpp.a'),
-  os.path.join(ort_build_dir, 'external', 'onnx', 'libonnx.a'),
-  os.path.join(ort_build_dir, 'external', 'onnx', 'libonnx_proto.a'),
-  os.path.join(ort_build_dir, 'external', 'protobuf', 'cmake',
-    'libprotobufd.a' if is_debug_build() else 'libprotobuf.a'),
-  os.path.join(ort_build_dir, 'external', 're2', 'libre2.a'),
-  os.path.join(ort_build_dir, 'tensorboard', 'libtensorboard.a')
-]
+]]
+
+if not args.ort_path:
+  ort_static_libs = ort_static_libs + [
+    os.path.join(ort_build_dir, 'external', 'nsync', 'libnsync_cpp.a'),
+    os.path.join(ort_build_dir, 'external', 'onnx', 'libonnx.a'),
+    os.path.join(ort_build_dir, 'external', 'onnx', 'libonnx_proto.a'),
+    os.path.join(ort_build_dir, 'external', 'protobuf', 'cmake',
+                 'libprotobufd.a' if is_debug_build() else 'libprotobuf.a'),
+    os.path.join(ort_build_dir, 'external', 're2', 'libre2.a'),
+    os.path.join(ort_build_dir, 'tensorboard', 'libtensorboard.a')
+  ]
+else:
+  ort_libs_base_dir = os.path.join(args.ort_path, 'debug', 'lib') if is_debug_build() else os.path.join(args.ort_path, 'lib')
+  ort_static_libs = ort_static_libs + [os.path.join(ort_libs_base_dir, f'{l}.a') for l in [
+    'libnsync_cpp',
+    'libonnx',
+    'libonnx_proto',
+    'libprotobufd' if is_debug_build() else 'libprotobuf',
+    'libre2',
+    'libtensorboard',
+    'onnxruntime_pybind11_state'
+  ]]
 
 def build_pytorch():
   env = dict(os.environ)
   if is_debug_build():
     env['DEBUG'] = '1'
-  subprocess.check_call([
-    python_exe,
-    'setup.py',
-    'develop',
-    '--user'
-  ], cwd=pytorch_src_dir, env=env)
+    if args.build_torch_wheel:
+      subprocess.check_call([
+        python_exe,
+        'setup.py',
+        'bdist_wheel',
+      ], cwd=pytorch_src_dir, env=env)
+    subprocess.check_call([
+      python_exe,
+      'setup.py',
+      'develop',
+      '--user'
+    ], cwd=pytorch_src_dir, env=env)
 
 def build_ort():
   if not os.path.exists(ort_build_dir):
@@ -136,20 +177,24 @@ def gen_ort_aten_ops():
   gen_cpp_name = "ort_aten.g.cpp"
   if os.path.exists(gen_cpp_name):
     os.remove(gen_cpp_name)
-  subprocess.check_call([
-    python_exe,
-    os.path.join(self_dir, 'opgen', 'opgen.py'),
-    gen_cpp_name
-  ])
+  cmd = [python_exe, os.path.join(self_dir, 'opgen', 'opgen.py'), '--output_file', gen_cpp_name]
+  if args.use_preinstalled_torch:
+    cmd.append('--use_preinstalled_torch')
+  subprocess.check_call(cmd)
 
-if os.path.isfile(pytorch_compile_commands_path):
-  print('Skipping PyTorch Build (remove compile_commands.json to build it):')
-  print(f'  {pytorch_compile_commands_path}')
-else:
-  print('Building PyTorch...')
-  build_pytorch()
 
-build_ort()
+if not args.use_preinstalled_torch:
+  if os.path.isfile(pytorch_compile_commands_path):
+    print('Skipping PyTorch Build (remove compile_commands.json to build it):')
+    print(f'  {pytorch_compile_commands_path}')
+  else:
+    print('Building PyTorch...')
+    build_pytorch()
+
+if not args.ort_path:
+  print("***** Should not come here")
+  build_ort()
+
 gen_ort_aten_ops()
 
 if args.additional_libs:
@@ -181,15 +226,17 @@ from torch.utils.cpp_extension import BuildExtension, CppExtension
 ort_python_bind_path = os.path.join(ort_src_dir, 'onnxruntime', 'python')
 ort_python_bind_training_path = os.path.join(ort_src_dir, 'orttraining', 'orttraining', 'python')
 
-eager_src = (glob('*.cpp') + 
-             [os.path.join(ort_python_bind_path, 'onnxruntime_pybind_exceptions.cc'),
-             os.path.join(ort_python_bind_path, 'onnxruntime_pybind_iobinding.cc'), 
-             os.path.join(ort_python_bind_path, 'onnxruntime_pybind_mlvalue.cc'),
-             os.path.join(ort_python_bind_path, 'onnxruntime_pybind_ortvalue.cc'),
-             os.path.join(ort_python_bind_path, 'onnxruntime_pybind_state_common.cc'),
-             os.path.join(ort_python_bind_path, 'onnxruntime_pybind_state.cc'),
-             os.path.join(ort_python_bind_training_path, 'orttraining_pybind_state.cc'),
-             os.path.join(ort_src_dir, 'onnxruntime', 'core', 'dlpack', 'dlpack_python.cc')])
+eager_src = glob('*.cpp')
+if not args.ort_path:
+  eager_src = eager_src \
+              + [os.path.join(ort_python_bind_path, 'onnxruntime_pybind_exceptions.cc'),
+                 os.path.join(ort_python_bind_path, 'onnxruntime_pybind_iobinding.cc'),
+                 os.path.join(ort_python_bind_path, 'onnxruntime_pybind_mlvalue.cc'),
+                 os.path.join(ort_python_bind_path, 'onnxruntime_pybind_ortvalue.cc'),
+                 os.path.join(ort_python_bind_path, 'onnxruntime_pybind_state_common.cc'),
+                 os.path.join(ort_python_bind_path, 'onnxruntime_pybind_state.cc'),
+                 os.path.join(ort_python_bind_training_path, 'orttraining_pybind_state.cc'),
+                 os.path.join(ort_src_dir, 'onnxruntime', 'core', 'dlpack', 'dlpack_python.cc')]
 
 setup(
   name='torch_ort',
@@ -206,7 +253,8 @@ setup(
     'build_ext': BuildExtension
   })
 
-if not args.skip_tests:
+building_wheel = 'bdist_wheel' in sys.argv
+if not args.skip_tests and not building_wheel:
   subprocess.check_call([
     python_exe,
     os.path.join(self_dir, 'test')
