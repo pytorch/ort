@@ -9,8 +9,8 @@
 #include "ort_backends.h"
 #include "orttraining/core/framework/ortmodule_graph_builder.h"
 #include "python/onnxruntime_pybind_state_common.h"
-#include "core/dlpack/dlpack_python.h"
-#include <core/framework/provider_bridge_ort.h>
+#include "orttraining/core/framework/torch/dlpack_python.h"
+#include <core/session/provider_bridge_ort.h>
 
 namespace onnxruntime{
 namespace python{
@@ -30,12 +30,12 @@ using namespace onnxruntime::training;
 py::object ORTTensor_toDLPack(const at::Tensor& data)
 {
   OrtValue ort_value = create_ort_value(data);
-  return py::reinterpret_steal<py::object>(onnxruntime::dlpack::ToDlpack(ort_value));
+  return py::reinterpret_steal<py::object>(onnxruntime::training::framework::torch::ToDlpack(ort_value));
 }
 
 at::Tensor ORTTensor_FromDLPack(const py::object& dlpack_tensor)
 {
-  OrtValue ort_value = onnxruntime::dlpack::FromDlpack(dlpack_tensor.ptr(), false);
+  OrtValue ort_value = onnxruntime::training::framework::torch::FromDlpack(dlpack_tensor.ptr(), false);
   return aten_tensor_from_ort(
     std::move(ort_value),
     at::TensorOptions()
@@ -68,6 +68,10 @@ PYBIND11_MODULE(torch_ort, torch_ort_module) {
     return ORTTensor_FromDLPack(dlpack_tensor);
   });
 
+  torch_ort_module.def("_register_provider_lib", [](const std::string& name, const std::string& provider_shared_lib_path ) {
+    GetORTBackendsManager().RegisterProviderLib(name, provider_shared_lib_path);
+  });
+
   torch_ort_module.def("set_device", [](size_t device_index, 
                                         const std::string& provider_type,
                                         const std::unordered_map<std::string, std::string>& arguments){
@@ -75,6 +79,7 @@ PYBIND11_MODULE(torch_ort, torch_ort_module) {
     if (!status.IsOK())
       throw std::runtime_error(status.ErrorMessage());
   });
+  
   // TODO: need to copy the provider_shared.so to the python pacakge
   if (!onnxruntime::InitProvidersSharedLibrary()) {
     throw std::runtime_error("Init shared execution provider bridege failed");

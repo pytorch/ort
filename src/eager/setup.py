@@ -8,6 +8,7 @@ import getopt
 import argparse
 
 from glob import glob
+import shutil
 from shutil import which
 
 parser = argparse.ArgumentParser(description='Build Torch_ORT eager')
@@ -188,8 +189,9 @@ eager_src = (glob('*.cpp') +
              os.path.join(ort_python_bind_path, 'onnxruntime_pybind_ortvalue.cc'),
              os.path.join(ort_python_bind_path, 'onnxruntime_pybind_state_common.cc'),
              os.path.join(ort_python_bind_path, 'onnxruntime_pybind_state.cc'),
+             os.path.join(ort_python_bind_path, 'onnxruntime_pybind_sparse_tensor.cc'),
              os.path.join(ort_python_bind_training_path, 'orttraining_pybind_state.cc'),
-             os.path.join(ort_src_dir, 'onnxruntime', 'core', 'dlpack', 'dlpack_python.cc')])
+             os.path.join(ort_src_dir, 'orttraining', 'orttraining', 'core', 'framework', 'torch', 'dlpack_python.cc')])
 
 setup(
   name='torch_ort',
@@ -208,7 +210,11 @@ setup(
   })
 
 if not args.skip_tests:
+  # copy the test_provider_lib to test_data folder
+  if not os.path.exists('test_data'):
+    os.makedirs('test_data')
+  shutil.copy2(os.path.join(ort_build_dir, 'libtest_execution_provider.so'), os.path.join(self_dir, 'test_data'))
   subprocess.check_call([
     python_exe,
     os.path.join(self_dir, 'test')
-  ])
+  ], cwd=os.path.join(self_dir, 'test'))

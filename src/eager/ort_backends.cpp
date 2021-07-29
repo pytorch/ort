@@ -29,8 +29,6 @@ namespace eager {
 
 using namespace onnxruntime;
 
-constexpr const char* kExecutionProviderSharedLibraryPath = "shared_lib_path";
-
 constexpr const char* kMSNPUExecutionProvider = "MSNPUExecutionProvider";
 
 ORTBackendsManager& GetORTBackendsManager() {
@@ -49,6 +47,10 @@ ORTBackendsManager::ORTBackendsManager(const onnxruntime::logging::Logger& logge
   if (!status.IsOK()){
     throw std::runtime_error("Init CPU device failed: " + status.ErrorMessage());
   }
+}
+
+void ORTBackendsManager::RegisterProviderLib(const std::string& provider_type, const std::string& lib_path){
+  additional_provider_libs_.insert({provider_type, lib_path});
 }
 
 onnxruntime::Status ORTBackendsManager::set_device(size_t device_index, const std::string& provider_type,
@@ -70,7 +72,7 @@ onnxruntime::Status ORTBackendsManager::set_device(size_t device_index, const st
     }
   }
   else{
-    auto shared_lib_path_it = provider_options.find(kExecutionProviderSharedLibraryPath);
+    auto shared_lib_path_it = additional_provider_libs_.find(provider_type);
     if (shared_lib_path_it == provider_options.end()){
       return onnxruntime::Status(common::StatusCategory::ONNXRUNTIME,
                           common::StatusCode::INVALID_ARGUMENT, 
