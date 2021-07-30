@@ -196,7 +196,7 @@ at::Tensor empty_strided(
   OrtValue ot;
   assert(device_opt.has_value());
   // TODO: how to support layout
-  assert(!layout_opt.has_value());
+  //assert(!layout_opt.has_value());
   at::ScalarType dtype = c10::dtype_or_default(dtype_opt);
   auto& invoker = GetORTInvoker(*device_opt);
   CreateMLValue(
