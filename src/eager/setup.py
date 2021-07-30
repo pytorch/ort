@@ -93,11 +93,10 @@ if not args.ort_path:
         os.path.join(ort_build_dir, 'external', 'onnx'),
     ])
 else:
-    # Use headers from pre-built Onnxruntime
-    ort_include_dirs = [
+    ort_include_dirs.extend([
         os.path.join(ort_include_base_dir, 'orttraining'),
         os.path.join(ort_include_base_dir),
-    ]
+    ])
 
 ort_libs_base_dir = ort_build_dir if not args.ort_path else os.path.join(args.ort_path, 'lib')
 ort_static_libs = [os.path.join(ort_libs_base_dir, f'{l}.a') for l in [
