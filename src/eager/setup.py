@@ -4,11 +4,10 @@
 import os
 import subprocess
 import sys
-import getopt
 import argparse
 
 from glob import glob
-from shutil import which
+from shutil import which, move
 
 parser = argparse.ArgumentParser(description='Build Torch_ORT eager')
 parser.add_argument('--build_config', default='Debug', type=str,
@@ -180,13 +179,19 @@ def build_ort():
 
 
 def gen_ort_aten_ops():
-    gen_cpp_name = "ort_aten.g.cpp"
-    if os.path.exists(gen_cpp_name):
-        os.remove(gen_cpp_name)
-    cmd = [python_exe, os.path.join(self_dir, 'opgen', 'opgen.py'), '--output_file', gen_cpp_name]
-    if args.use_preinstalled_torch:
-        cmd.append('--use_preinstalled_torch')
-    subprocess.check_call(cmd)
+  gen_cpp_name = os.path.join(self_dir, 'ort_aten.g.cpp')
+  gen_cpp_scratch_name = gen_cpp_name + '.working'
+  print(f'Generating ORT ATen overrides ({gen_cpp_name})...')
+  cmd = [python_exe, os.path.join(self_dir, 'opgen', 'opgen.py'), '--output_file', gen_cpp_scratch_name]
+  if args.use_preinstalled_torch:
+    cmd.append('--use_preinstalled_torch')
+  subprocess.check_call(cmd)
+  import filecmp
+  if not os.path.isfile(gen_cpp_name) \
+    or not filecmp.cmp(gen_cpp_name, gen_cpp_scratch_name, shallow=False):
+    os.rename(gen_cpp_scratch_name, gen_cpp_name)
+  else:
+    os.remove(gen_cpp_scratch_name)
 
 
 if not args.use_preinstalled_torch:

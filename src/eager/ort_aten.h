@@ -41,6 +41,7 @@ const OrtValue create_ort_value(
     {(int64_t)values.size(),},
     &ort_value);
   CopyVectorToTensor<T>(
+    invoker,
     values,
     *ort_value.GetMutable<onnxruntime::Tensor>());
   return ort_value;
