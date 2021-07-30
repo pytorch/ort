@@ -22,7 +22,7 @@ parser.add_argument('--skip_tests', action='store_true', help='Skips running uni
 parser.add_argument('--use_preinstalled_torch', action='store_true',
                     help='Use pre-installed torch (>= 1.9) from the python environment')
 parser.add_argument('--ort_path', default=None, type=str, help='Use pre-built Onnxruntime from this path')
-parser.add_argument('--build_torch_wheel', action='store_true', help='Build PyTorch wheel. Note, this will skip tests')
+parser.add_argument('--build_torch_wheel', action='store_true', help='Build PyTorch wheel')
 parser.add_argument('--user', action='store_true', help='Install to user')
 parser.add_argument('free_args', nargs='*')
 
