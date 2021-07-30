@@ -65,14 +65,26 @@ ort_lib_dirs = [ort_build_dir] if not args.ort_path else []
 
 import numpy as np
 
-ort_include_base_dir = os.path.join(args.ort_path, 'include')
-ort_external_include_base_dir = os.path.join(ort_include_base_dir, 'onnxruntime', 'external')
-
 if not args.ort_path:
     ort_include_base_dir = os.path.join(ort_src_dir, 'include')
     ort_external_include_base_dir = os.path.join(ort_src_dir, 'cmake', 'external')
 
-ort_include_dirs = [
+    ort_include_dirs = [
+        os.path.join(ort_src_dir, 'onnxruntime'),
+        os.path.join(ort_src_dir, 'orttraining'),
+        os.path.join(ort_build_dir),
+        os.path.join(ort_build_dir, 'external', 'onnx'),
+    ]
+else:
+    ort_include_base_dir = os.path.join(args.ort_path, 'include')
+    ort_external_include_base_dir = os.path.join(ort_include_base_dir, 'onnxruntime', 'external')
+
+    ort_include_dirs = [
+        os.path.join(ort_include_base_dir, 'orttraining'),
+        os.path.join(ort_include_base_dir),
+    ]
+
+ort_include_dirs.extend([
     os.path.join(ort_include_base_dir, 'onnxruntime'),
     os.path.join(ort_include_base_dir, 'onnxruntime', 'core', 'session'),
     os.path.join(ort_external_include_base_dir, 'onnx'),
@@ -83,20 +95,7 @@ ort_include_dirs = [
     os.path.join(ort_external_include_base_dir, 'optional-lite', 'include'),
     os.path.join(ort_external_include_base_dir, 'dlpack', 'include'),
     np.get_include()
-]
-
-if not args.ort_path:
-    ort_include_dirs.extend([
-        os.path.join(ort_src_dir, 'onnxruntime'),
-        os.path.join(ort_src_dir, 'orttraining'),
-        os.path.join(ort_build_dir),
-        os.path.join(ort_build_dir, 'external', 'onnx'),
-    ])
-else:
-    ort_include_dirs.extend([
-        os.path.join(ort_include_base_dir, 'orttraining'),
-        os.path.join(ort_include_base_dir),
-    ])
+])
 
 ort_libs_base_dir = ort_build_dir if not args.ort_path else os.path.join(args.ort_path, 'lib')
 ort_static_libs = [os.path.join(ort_libs_base_dir, f'{l}.a') for l in [
@@ -259,8 +258,16 @@ setup(
         'build_ext': BuildExtension
     })
 
-building_wheel = 'bdist_wheel' in sys.argv
-if not args.skip_tests and not building_wheel:
+if not args.skip_tests:
+    if 'bdist_wheel' in sys.argv:
+        paths = glob('dist/torch_ort*.whl')
+        if not paths:
+            raise RuntimeError("Could not find generated wheel file for torch_ort module to run tests")
+        subprocess.check_call([
+            python_exe,
+            '-m', 'pip', 'install', '--force-reinstall',
+            paths[0]
+        ])
     subprocess.check_call([
         python_exe,
         os.path.join(self_dir, 'test')
