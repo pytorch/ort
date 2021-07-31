@@ -3,6 +3,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+
+import argparse
+
+from pathlib import Path
+
 from copy import deepcopy
 
 from opgen.generator import \
@@ -14,6 +19,13 @@ from opgen.generator import \
 from opgen.onnxops import *
 
 kMSDomain = 'onnxruntime::kMSDomain'
+
+parser = argparse.ArgumentParser(description='Generate ORT ATen operations')
+parser.add_argument('--output_file', default=None, type=str, help='Output file [default to std out]')
+parser.add_argument('--use_preinstalled_torch', action='store_true', help='Use pre-installed torch from the python environment')
+
+args = parser.parse_args()
+
 
 class ReluGrad(ONNXOp):
   def __init__(self, dY, X):
@@ -85,22 +97,27 @@ import sys
 from opgen.parser import cpp_create_from_file as CPPParser
 from opgen.writer import SourceWriter as SourceWriter
 
-regdecs_path = os.path.realpath(os.path.join(
-  os.path.dirname(__file__),
-  '..',
-  '..',
-  '..',
-  'external',
-  'pytorch',
-  'build',
-  'aten',
-  'src',
-  'ATen',
-  'RegistrationDeclarations.h'))
-print(regdecs_path)
+if args.use_preinstalled_torch:
+  import torch
+  regdecs_path = Path(torch.__file__).parent.joinpath('include/ATen/RegistrationDeclarations.h')
+else:
+  regdecs_path = os.path.realpath(os.path.join(
+    os.path.dirname(__file__),
+    '..',
+    '..',
+    '..',
+    'external',
+    'pytorch',
+    'build',
+    'aten',
+    'src',
+    'ATen',
+    'RegistrationDeclarations.h'))
+
+print(f"INFO: Using ATen RegistrationDeclations from: {regdecs_path}")
 output = sys.stdout
-if len(sys.argv) >= 2:
-  output = open(sys.argv[1], 'wt')
+if not args.output_file is None:
+  output = open(args.output_file, 'wt')
 
 with CPPParser(regdecs_path) as parser, SourceWriter(output) as writer:
   ortgen.run(parser, writer)
