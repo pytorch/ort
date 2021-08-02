@@ -23,6 +23,8 @@ parser.add_argument('--use_preinstalled_torch', action='store_true',
 parser.add_argument('--ort_path', default=None, type=str, help='Use pre-built Onnxruntime from this path')
 parser.add_argument('--build_torch_wheel', action='store_true', help='Build PyTorch wheel during the build of torch_ort')
 parser.add_argument('--user', action='store_true', help='Install to user')
+parser.add_argument('--customop_module', default=None, help='Module containing custom op mapping')
+parser.add_argument('--customop_header', default=None, help='Header containing custom op.')
 parser.add_argument('free_args', nargs='*')
 
 args = parser.parse_args()
@@ -37,6 +39,10 @@ sys.argv[1:] = args.free_args
 if args.user:
     sys.argv += ['--user']
 
+if args.customop_module and not args.customop_header:
+  raise Exception('customop_header must be provided when customop_module is')
+elif args.customop_header and not args.customop_module:
+  raise Exception('customop_module must be provided when customop_header is')
 
 def is_debug_build():
     return build_config != 'Release'
@@ -178,13 +184,18 @@ def build_ort():
     subprocess.check_call(args)
 
 
-def gen_ort_aten_ops():
-  gen_cpp_name = os.path.join(self_dir, 'ort_aten.g.cpp')
+def gen_ops(gen_cpp_name: str, header_file: str, ops_module: str, custom_ops: bool):
   gen_cpp_scratch_name = gen_cpp_name + '.working'
-  print(f'Generating ORT ATen overrides ({gen_cpp_name})...')
-  cmd = [python_exe, os.path.join(self_dir, 'opgen', 'opgen.py'), '--output_file', gen_cpp_scratch_name]
-  if args.use_preinstalled_torch:
-    cmd.append('--use_preinstalled_torch')
+  print(f'Generating ORT ATen overrides (output_file: {gen_cpp_name}, header_file: {header_file}, ops_module: {ops_module}), custom_ops: {custom_ops}')
+
+  cmd = [python_exe, os.path.join(self_dir, 'opgen', 'opgen.py'), 
+  '--output_file', gen_cpp_scratch_name,
+  '--ops_module', ops_module,
+  '--header_file', header_file]
+
+  if custom_ops:
+    cmd += ["--custom_ops"]
+
   subprocess.check_call(cmd)
   import filecmp
   if not os.path.isfile(gen_cpp_name) \
@@ -193,6 +204,39 @@ def gen_ort_aten_ops():
   else:
     os.remove(gen_cpp_scratch_name)
 
+
+def gen_ort_aten_ops():
+  # generate aten ops
+  if args.use_preinstalled_torch:
+    import torch
+    regdecs_path = os.Path(torch.__file__).parent.joinpath('include/ATen/RegistrationDeclarations.h')
+  else:
+    regdecs_path = os.path.realpath(os.path.join(
+      os.path.dirname(__file__),
+      '..',
+      '..',
+      'external',
+      'pytorch',
+      'build',
+      'aten',
+      'src',
+      'ATen',
+      'RegistrationDeclarations.h'))
+
+  ops_module = os.path.join(self_dir, 'opgen/opgen/atenops.py')
+  gen_ops(os.path.join(self_dir, 'ort_aten.g.cpp'), regdecs_path, ops_module, False)
+
+  # generate custom ops
+  if not args.customop_header:
+    args.customop_header = os.path.realpath(os.path.join(
+        os.path.dirname(__file__),
+        "opgen",
+        "CustomOpDeclarations.h"))
+
+  if not args.customop_module:
+    args.customop_module = os.path.join(self_dir, 'opgen/opgen/custom_ops.py')
+
+  gen_ops(os.path.join(self_dir, 'ort_customops.g.cpp'), args.customop_header, args.customop_module, True)
 
 if not args.use_preinstalled_torch:
     if os.path.isfile(pytorch_compile_commands_path):

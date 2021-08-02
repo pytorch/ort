@@ -17,6 +17,10 @@ const at::Tensor aten_tensor_from_ort(
   OrtValue&& ot,
   const at::TensorOptions& options);
 
+const std::vector<at::Tensor> aten_tensor_from_ort(
+  std::vector<OrtValue>& ortvalues,
+  const at::TensorOptions& options);
+
 const onnxruntime::MLDataType ort_scalar_type_from_aten(
   at::ScalarType dtype);
 
