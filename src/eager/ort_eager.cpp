@@ -9,6 +9,7 @@
 #include "orttraining/core/framework/ortmodule_graph_builder.h"
 #include "python/onnxruntime_pybind_state_common.h"
 #include "core/dlpack/dlpack_python.h"
+#include "ort_customops.h"
 
 namespace onnxruntime{
 namespace python{
@@ -65,6 +66,9 @@ PYBIND11_MODULE(torch_ort, torch_ort_module) {
   torch_ort_module.def("ort_from_dlpack", [](py::object dlpack_tensor) {
     return ORTTensor_FromDLPack(dlpack_tensor);
   });
+
+  auto customop_module = torch_ort_module.def_submodule("custom_ops");
+  torch_ort::eager::GenerateCustomOpsBindings(customop_module);
 }
 
 } // namespace eager
