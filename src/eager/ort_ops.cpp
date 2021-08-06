@@ -22,7 +22,7 @@ OrtValue reshape_copy(
   CreateMLValue(invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
                 element_type, {(int64_t)new_shape.size(),}, &shape_tensor);
   auto* ort_shape_tensor = shape_tensor.GetMutable<onnxruntime::Tensor>();
-  CopyVectorToTensor<int64_t>(new_shape, *ort_shape_tensor);
+  CopyVectorToTensor<int64_t>(invoker, new_shape, *ort_shape_tensor);
   std::vector<OrtValue> result(1);
   auto status = invoker.Invoke("Reshape", {input, shape_tensor}, result, nullptr);
   if (!status.IsOK())

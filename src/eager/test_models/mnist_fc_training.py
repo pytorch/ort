@@ -15,6 +15,10 @@ from torchvision import datasets, transforms
 import numpy as np
 import os
 
+dataset_root_dir = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    'data')
+
 class NeuralNet(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
         super(NeuralNet, self).__init__()
@@ -76,14 +80,14 @@ def main():
 
     kwargs = {'num_workers': 0, 'pin_memory': True}
     train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('./data', train=True, download=True,
+        datasets.MNIST(dataset_root_dir, train=True, download=True,
                        transform=transforms.Compose([
                            transforms.ToTensor(),
                            transforms.Normalize((0.1307,), (0.3081,))
                        ])),
         batch_size=args.batch_size, shuffle=True, **kwargs)
     test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('./data', train=False, transform=transforms.Compose([
+        datasets.MNIST(dataset_root_dir, train=False, transform=transforms.Compose([
             transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])),
         batch_size=args.test_batch_size, shuffle=True, **kwargs)
 

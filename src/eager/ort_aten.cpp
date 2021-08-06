@@ -37,6 +37,19 @@ const at::Tensor aten_tensor_from_ort(
     options));
 }
 
+const std::vector<at::Tensor> aten_tensor_from_ort(
+  std::vector<OrtValue>& ortvalues,
+  const at::TensorOptions& options) {
+    const size_t num_outputs = ortvalues.size();
+    std::vector<at::Tensor> atvalues = std::vector<at::Tensor>(num_outputs);
+    for (size_t i = 0; i < num_outputs; i++) {
+      atvalues[i] = at::Tensor(c10::make_intrusive<ORTTensorImpl>(
+        std::move(ortvalues[i]),
+        options));
+    }
+    return atvalues;
+}
+
 const onnxruntime::MLDataType ort_scalar_type_from_aten(
   at::ScalarType dtype) {
   switch (dtype){
@@ -70,9 +83,8 @@ const OrtValue create_ort_value(
     ort_scalar_type_from_aten(at::kFloat),
     {},
     &ort_val);
-  // TODO: use EP's data transfer to copy the data into that tensor
   auto* ort_tensor = ort_val.GetMutable<onnxruntime::Tensor>();
-  CopyVectorToTensor<float>({val}, *ort_tensor);
+  CopyVectorToTensor<float>(invoker, {val}, *ort_tensor);
   return ort_val;
 }
 
@@ -266,7 +278,7 @@ at::Tensor& zero_(at::Tensor& self){
   CreateMLValue(invoker.GetCurrentExecutionProvider().GetAllocator(0, OrtMemTypeDefault),
                 element_type, {}, &flag_val);
   auto* ort_flag_tensor = flag_val.GetMutable<onnxruntime::Tensor>();
-  CopyVectorToTensor<int64_t>({1}, *ort_flag_tensor);
+  CopyVectorToTensor<int64_t>(invoker, {1}, *ort_flag_tensor);
 
   std::vector<OrtValue> ort_out(1);
 

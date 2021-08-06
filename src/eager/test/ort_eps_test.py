@@ -8,7 +8,7 @@ import os
 
 class OrtEPTests(unittest.TestCase):
   def get_test_execution_provider_path(self):
-      return os.path.join('..', 'test_data', 'libtest_execution_provider.so')
+      return os.path.join('.', 'test_data', 'libtest_execution_provider.so')
 
   def test_import_custom_eps(self):
     torch_ort.set_device(0, 'CPUExecutionProvider', {})
