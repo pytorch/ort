@@ -11,6 +11,7 @@
 #include "python/onnxruntime_pybind_state_common.h"
 #include "orttraining/core/framework/torch/dlpack_python.h"
 #include <core/session/provider_bridge_ort.h>
+#include "ort_customops.h"
 
 namespace onnxruntime{
 namespace python{
@@ -84,6 +85,9 @@ PYBIND11_MODULE(torch_ort, torch_ort_module) {
   if (!onnxruntime::InitProvidersSharedLibrary()) {
     throw std::runtime_error("Init shared execution provider bridege failed");
   }
+
+  auto customop_module = torch_ort_module.def_submodule("custom_ops");
+  torch_ort::eager::GenerateCustomOpsBindings(customop_module);
 }
 
 } // namespace eager

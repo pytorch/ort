@@ -12,6 +12,7 @@ APT_DEPENDENCIES=(
 	python3-dev
 	python3-numpy
 	python3-typing-extensions
+	python3-pip
 )
 
 function elevated_exec() {
@@ -37,6 +38,7 @@ function update_alternatives() {
 }
 
 update_alternatives /usr/bin/python /usr/bin/python3
+update_alternatives /usr/bin/pip /usr/bin/pip3
 update_alternatives /usr/bin/cc "/usr/bin/clang-${CLANG_VERSION_MAJOR}"
 update_alternatives /usr/bin/c++ "/usr/bin/clang++-${CLANG_VERSION_MAJOR}"
 update_alternatives /usr/bin/clang "/usr/bin/clang-${CLANG_VERSION_MAJOR}"
@@ -53,3 +55,7 @@ for prefix in "" /usr/bin/; do
 		fi
 	done
 done
+
+set -x
+
+pip install torchvision

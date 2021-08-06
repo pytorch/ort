@@ -10,3 +10,5 @@ docs/sphinx/src
 *.rej
 build
 .DS_Store
+# VS Code
+.vscode/c_cpp_properties.json

@@ -38,7 +38,7 @@ class ORTLog {
 
   ORTLog& operator<<(const at::Device device) {
     *this << "Device:" << c10::DeviceTypeName(device.type(), true);
-    *this << ":" << device.index();
+    *this << ":" << (int)device.index();
     return *this;
   }
 
