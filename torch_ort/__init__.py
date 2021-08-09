@@ -3,5 +3,5 @@
 # Licensed under the MIT License.
 # --------------------------------------------------------------------------
 
-from onnxruntime.training.ortmodule import ORTModule
+from onnxruntime.training.ortmodule import ORTModule, DebugOptions, LogLevel
 from onnxruntime import set_seed
