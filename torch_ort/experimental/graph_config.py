@@ -64,5 +64,5 @@ def set_propagate_cast_ops_optimization(model: ORTModule,
 
     # Set flags for both eval and training mode
     for mode in [True, False]:
-        model._execution_manager(is_training=mode)._propagate_cast_ops_strategy = strategy
-        model._execution_manager(is_training=mode)._propagate_cast_ops_level = level
+        model._torch_module._execution_manager(is_training=mode)._propagate_cast_ops_strategy = strategy
+        model._torch_module._execution_manager(is_training=mode)._propagate_cast_ops_level = level

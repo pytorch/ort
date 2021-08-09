@@ -3,7 +3,4 @@
 # Licensed under the MIT License.
 # --------------------------------------------------------------------------
 
-"""Experimental APIs for ORTModule
-
-DO NOT use these APIs for any production code as they can be removed at any time
-"""
+from onnxruntime.training.ortmodule.experimental.json_config import load_from_json
