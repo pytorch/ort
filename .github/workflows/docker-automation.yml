@@ -16,5 +16,5 @@ jobs:
       run: docker build -f docker/Dockerfile.ort-torch190-onnxruntime181-cu102-cudnn7-devel-ubuntu18.04 -t torch-ort .
       id: build
     - name: Test
-      run: docker run -t torch-ort python test/bert_for_sequence_classification.py
+      run:  docker run -v `pwd`:/workspace -t torch-ort pip install wget pandas sklearn transformers && python tests/bert_for_sequence_classification.py
       id: test
