@@ -32,7 +32,7 @@ By default, torch-ort depends on PyTorch 1.9.0, ONNX Runtime 1.8.1 and CUDA 10.2
 
 Get install instructions for other combinations in the `Get Started Easily` section at <https://www.onnxruntime.ai/> under the `Optimize Training` tab.
 
-## Test your installation
+## Verify your installation
 
 1. Clone this repo
 
