@@ -1,0 +1,20 @@
+# TODO: Replace manual dispatch with push when ready
+#on:
+#  push:
+on: 
+  workflow_dispatch:
+jobs:
+  test_docker_image_build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Build dockerfile
+      run: docker build -f docker/Dockerfile.ort-torch190-onnxruntime181-cu102-cudnn7-devel-ubuntu18.04 -t torch-ort .
+      id: build
+    - name: Test dockerfile
+      run:  docker run -v `pwd`:/workspace -t torch-ort  /bin/bash -c "pip install wget pandas sklearn transformers; python tests/bert_for_sequence_classification.py --epochs 1 --train-steps 100"
+      id: test

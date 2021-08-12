@@ -10,8 +10,8 @@ RUN apt-get autoremove -y
 # ORT Module
 RUN CC=mpicc MPICC=mpicc pip install mpi4py --no-binary mpi4py
 RUN pip install onnx==1.9.0 ninja
-RUN pip install --pre onnxruntime-training -f https://onnxruntimepackages.z14.web.core.windows.net/onnxruntime_stable_torch181.rocm42.html
-RUN pip install --pre torch-ort -f 'https://onnxruntimepackages.blob.core.windows.net/$web/torch_ort_nightly.html'
+RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_stable_torch181.rocm42.html
+RUN pip install --pre torch-ort -f https://download.onnxruntime.ai/torch_ort_nightly.html
 RUN python -m torch_ort.configure
 
 WORKDIR /workspace
