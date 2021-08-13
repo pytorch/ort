@@ -4,5 +4,5 @@ torch==1.8.1+cu102
 torchvision==0.9.1+cu102
 torchtext==0.9.1
 --pre
--f https://download.onnxruntime.ai/onnxruntime_stable_torch181.cu102.html
+-f https://download.onnxruntime.ai/onnxruntime_nightly_torch181.cu102.html
 onnxruntime-training
