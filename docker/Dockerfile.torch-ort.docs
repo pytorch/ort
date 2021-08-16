@@ -5,9 +5,9 @@ RUN apt-get install -y software-properties-common wget apt-utils git cmake
 RUN unattended-upgrade
 RUN apt-get autoremove -y
 
-RUN apt install python3.8 -y
+RUN apt install python3 -y
 RUN apt-get install -y python3-pip
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 RUN pip install --upgrade pip
 
@@ -16,7 +16,6 @@ RUN pip install recommonmark
 RUN pip install pytorch_sphinx_theme
 RUN pip install torch
 
-# TODO: Uncomment these when the packages are available
-# TODO: Until then, download the wheel artifacts and install them manually
-#RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
-#RUN pip install torch-ort
+RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
+RUN pip install torch-ort
+RUN python -m torch_ort.configure
