@@ -30,9 +30,8 @@ jobs:
         python3 -m pip install katex
         python3 -m pip install sphinxcontrib.katex
         python3 -m pip install sphinx_markdown_tables
-# TODO: Uncomment these lines when the CPU packages are available
-#        python3 -m pip install onnxruntime-training+cpu
-#        python3 -m pip install torch-ort+cpu
+        python3 -m pip install onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
+        python3 -m pip install torch-ort
     - name: Build the docset
       run: cd ./docs/sphinx ; export PATH=$PATH:$(python3 -m site --user-base)/bin/ ; make html
       id: build
@@ -41,5 +40,4 @@ jobs:
       with:
           ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: docs/sphinx/build/html
           CLEAN_EXCLUDE: '["_config.yml"]'
