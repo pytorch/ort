@@ -5,7 +5,6 @@ RUN apt-get install -y software-properties-common wget apt-utils git cmake
 RUN unattended-upgrade
 RUN apt-get autoremove -y
 
-RUN apt install python3 -y
 RUN apt-get install -y python3-pip
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
