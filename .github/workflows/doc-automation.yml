@@ -13,10 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6]
+        python-version: [3.8]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
     - name: Dependencies
       run: |
         echo `python3 --version`
@@ -33,6 +31,8 @@ jobs:
         python3 -m pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
         python3 -m pip install torch-ort
         python3 -m torch_ort.configure
+    - name: Checkout
+      uses: actions/checkout@v2
     - name: Build the docset
       run: cd ./docs/sphinx ; export PATH=$PATH:$(python3 -m site --user-base)/bin/ ; make html
       id: build

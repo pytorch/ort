@@ -1,7 +1,11 @@
-FROM ubuntu
+FROM ubuntu:20.04
 
 RUN apt-get update
-RUN apt-get install -y software-properties-common wget apt-utils git cmake 
+RUN apt-get install -y software-properties-common
+RUN apt-get install -y wget
+RUN apt-get install -y apt-utils
+RUN apt-get install -y git
+RUN apt-get install -y cmake 
 RUN unattended-upgrade
 RUN apt-get autoremove -y
 
