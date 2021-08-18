@@ -1,0 +1,96 @@
+# calls tools/ci_build/get_docker_image.py
+
+parameters:
+- name: PythonVersion
+  type: string
+- name: PublicDockerFile
+  type: string
+- name: UploadWheel
+  type: string
+  default: ""
+- name: BuildType
+  type: string
+
+steps:
+
+- template: set-python-manylinux-variables-step.yml
+
+- template: get-docker-image-steps.yml
+  parameters:
+    # torch-ort is device neutral, we just pick randomly cuda11.1
+    Dockerfile: tools/ci_build/github/linux/docker/Dockerfile.manylinux2014_cuda11_1
+    Context: tools/ci_build/github/linux/docker
+    DockerBuildArgs: >-
+      --build-arg PYTHON_VERSION="${{ parameters.PythonVersion }}"
+      --build-arg BUILD_UID=$(id -u)
+      --build-arg BUILD_TYPE="${{ parameters.BuildType }}"
+    Repository: torchortpackaging
+
+# TODO: because the docker image (torchortpackaging) is cached,
+# it may keep failing if the onnxruntime-training or torch installation
+# that are cached with the image is causing the failure.
+# in such case, we need to clean the cache (onnxruntimebuildcache)
+- task: CmdLine@2
+  inputs:
+    script: |
+      docker run --rm --gpus all \
+        --volume $(Build.SourcesDirectory):/torch_ort_src \
+        -e NVIDIA_VISIBLE_DEVICES=all \
+        -e NIGHTLY_BUILD \
+        -e BUILD_BUILDNUMBER \
+        -w /torch_ort_src \
+        torchortpackaging \
+          $(PythonManylinuxDir)/bin/python3 build.py
+    workingDirectory: $(Build.SourcesDirectory)
+
+- task: CopyFiles@2
+  condition: and(succeeded(), eq(variables.UploadWheel, 'yes'))
+  displayName: 'Copy Python Wheel to: $(Build.ArtifactStagingDirectory)'
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)'
+    Contents: 'dist/*.whl'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: torch-ort python wheel'
+  inputs:
+    ArtifactName: torch-ort
+
+# now we have wheel from manylinux, test it with public dockers
+- task: CmdLine@2
+  inputs:
+    script: |
+      docker build -f ${{ parameters.PublicDockerFile }} -t torchortpackagingtest .
+  displayName: "docker build -f ${{ parameters.PublicDockerFile }} -t torchortpackagingtest"
+
+- task: CmdLine@2
+  inputs:
+    script: |
+      files=($(Build.SourcesDirectory)/dist/*.whl) && \
+      echo ${files[0]} && \
+      whlfilename=$(basename ${files[0]}) && \
+      echo $whlfilename && \
+      docker run --rm --gpus all \
+        --volume $(Build.SourcesDirectory):/torch_ort_src \
+        -w /torch_ort_src \
+        torchortpackagingtest \
+          /usr/bin/python3 build.py --wheel_file /torch_ort_src/dist/$whlfilename
+    workingDirectory: $(Build.SourcesDirectory)
+  displayName: "docker run build.py --wheel_file /torch_ort_src/dist/$whlfilename"
+
+- task: AzureCLI@2
+  condition: and(succeeded(), eq(variables.UploadWheel, 'yes'), eq(variables.BuildType, 'nightly'))
+  inputs:
+    azureSubscription: 'AIInfraBuildOnnxRuntimeOSS'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      python3 -m pip install azure-storage-blob==2.1.0 && \
+      files=($(Build.SourcesDirectory)/dist/*.whl) && \
+      echo ${files[0]} && \
+      python3 tools/python/upload_python_package_to_azure_storage.py \
+          --python_wheel_path ${files[0]} \
+          --account_name onnxruntimepackages \
+          --account_key $(orttrainingpackagestorageaccountkey) \
+          --container_name '$web'
+    displayName: "upload to nightly package channel"
