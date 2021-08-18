@@ -35,9 +35,7 @@ jobs:
         python3 -m pip install torch-ort
         python3 -m torch_ort.configure
     - name: Build the docset
-      run: |
-        pip list
-        cd ./docs/sphinx ; export PATH=$PATH:$(python3 -m site --user-base)/bin/ ; make html
+      run: cd ./docs/sphinx ; export PATH=$PATH:$(python3 -m site --user-base)/bin/ ; make html
       id: build
     - name: Deploy
       uses: JamesIves/github-pages-deploy-action@releases/v3
