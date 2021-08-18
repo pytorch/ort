@@ -30,13 +30,14 @@ jobs:
         python3 -m pip install sphinxcontrib.katex
         python3 -m pip install sphinx_markdown_tables
         python3 -m pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
-        python3 -m pip list
         python3 -m pip install torch-ort
         python3 -m torch_ort.configure
     - name: Checkout
       uses: actions/checkout@v2
     - name: Build the docset
-      run: cd ./docs/sphinx ; export PATH=$PATH:$(python3 -m site --user-base)/bin/ ; make html
+      run: |
+        pip list
+        cd ./docs/sphinx ; export PATH=$PATH:$(python3 -m site --user-base)/bin/ ; make html
       id: build
     - name: Deploy
       uses: JamesIves/github-pages-deploy-action@releases/v3
