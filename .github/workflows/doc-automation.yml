@@ -18,10 +18,9 @@ jobs:
     - name: Dependencies
       run: |
         echo `python3 --version`
-        echo `python3 -m pip --version`
-        echo `pip --version`
         sudo apt-get install -y python-setuptools
         python3 -m pip install --upgrade pip
+        python3 -m pip install --upgrade protobuf
         python3 -m pip install -U sphinx
         python3 -m pip install setuptools
         python3 -m pip install torch
