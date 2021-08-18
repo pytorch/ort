@@ -13,10 +13,12 @@ p) PYTHON_VER=${OPTARG};;
 d) DEVICE_TYPE=${OPTARG};;
 v) CU_VER=${OPTARG};;
 m) INSTALL_DEPS_DISTRIBUTED_SETUP=true;;
+b) BUILD_TYPE=${OPTARG}
 esac
 done
 
 echo "Python version=$PYTHON_VER"
+echo "Build type=$BUILD_TYPE"
 
 DEVICE_TYPE=${DEVICE_TYPE:=Normal}
 
@@ -127,7 +129,15 @@ ${PYTHON_EXE} -m pip install --upgrade pip
 export ONNX_ML=1
 export CMAKE_ARGS="-DONNX_GEN_PB_TYPE_STUBS=OFF -DONNX_WERROR=OFF"
 ${PYTHON_EXE} -m pip install -r ${0/%install_deps\.sh/requirements\.txt}
-${PYTHON_EXE} -m pip install -r ${0/%install_deps.sh/training\/ortmodule\/stage1\/requirements_torch_cu${CU_VER}.txt}
+if [ $BUILD_TYPE = "stable" ]; then
+  ${PYTHON_EXE} -m pip install -r ${0/%install_deps.sh/training\/ortmodule\/stage1\/requirements_torch_cu${CU_VER}_stable.txt}
+elif [ $BUILD_TYPE = "nightly" ]; then
+  ${PYTHON_EXE} -m pip install -r ${0/%install_deps.sh/training\/ortmodule\/stage1\/requirements_torch_cu${CU_VER}_nightly.txt}
+else
+  echo "ERROR: Build type must be either nightly or stable. Unrecognized build type $BUILD_TYPE"
+  exit 1
+fi
+
 # Due to a [bug on DeepSpeed](https://github.com/microsoft/DeepSpeed/issues/663), we install it separately through ortmodule/stage2/requirements.txt
 ${PYTHON_EXE} -m pip install -r ${0/%install_deps.sh/training\/ortmodule\/stage2\/requirements.txt}
 if [[ $INSTALL_DEPS_DISTRIBUTED_SETUP = true ]]; then
