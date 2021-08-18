@@ -22,7 +22,7 @@ stages:
             PythonVersion: '3.8'
             PublicDockerFile: 'docker/Dockerfile.ort-torch190-onnxruntime181-cu111-cudnn8-devel-ubuntu18.04'
             UploadWheel: 'yes'
-          Python38 Default Torch190 onxruntime181 Cuda11.1:
+          Python38 Default Torch190 onxruntime181 Cuda10.2:
             PythonVersion: '3.8'
             PublicDockerFile: 'docker/Dockerfile.ort-default-stable-torch190-onnxruntime181-cu102-cudnn7-devel-ubuntu18.04'
 
