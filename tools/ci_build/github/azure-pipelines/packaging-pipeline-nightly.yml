@@ -29,6 +29,9 @@ stages:
             PublicDockerFile: 'docker/Dockerfile.ort-torch190-onnxruntime-nightly-cu111-cudnn8-devel-ubuntu18.04'
             UploadWheel: 'yes'
 
+      variables:
+        BuildType: 'nightly'
+
       steps:
       - checkout: self
         clean: true
@@ -39,7 +42,7 @@ stages:
           PythonVersion: $(PythonVersion)
           PublicDockerFile: $(PublicDockerFile)
           UploadWheel: $(UploadWheel)
-          BuildType: 'nightly'
+          BuildType: $(BuildType)
 
       - template: templates/component-governance-component-detection-steps.yml
         parameters:
