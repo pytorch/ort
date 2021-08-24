@@ -26,6 +26,9 @@ stages:
             PythonVersion: '3.8'
             PublicDockerFile: 'docker/Dockerfile.ort-default-stable-torch190-onnxruntime181-cu102-cudnn7-devel-ubuntu18.04'
 
+      variables:
+        BuildType: 'stable'
+
       steps:
       - checkout: self
         clean: true
@@ -36,7 +39,7 @@ stages:
           PythonVersion: $(PythonVersion)
           PublicDockerFile: $(PublicDockerFile)
           UploadWheel: $(UploadWheel)
-          BuildType: 'stable'
+          BuildType: $(BuildType)
 
       - template: templates/component-governance-component-detection-steps.yml
         parameters:

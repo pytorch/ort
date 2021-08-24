@@ -10,6 +10,7 @@ parameters:
   default: ""
 - name: BuildType
   type: string
+  default: ""
 
 steps:
 
