@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6]
+        python-version: [3.8]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -22,6 +22,7 @@ jobs:
         echo `python3 --version`
         sudo apt-get install -y python-setuptools
         python3 -m pip install --upgrade pip
+        python3 -m pip install --upgrade protobuf
         python3 -m pip install -U sphinx
         python3 -m pip install setuptools
         python3 -m pip install torch
@@ -30,9 +31,9 @@ jobs:
         python3 -m pip install katex
         python3 -m pip install sphinxcontrib.katex
         python3 -m pip install sphinx_markdown_tables
-# TODO: Uncomment these lines when the CPU packages are available
-#        python3 -m pip install onnxruntime-training+cpu
-#        python3 -m pip install torch-ort+cpu
+        python3 -m pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
+        python3 -m pip install torch-ort
+        python3 -m torch_ort.configure
     - name: Build the docset
       run: cd ./docs/sphinx ; export PATH=$PATH:$(python3 -m site --user-base)/bin/ ; make html
       id: build
