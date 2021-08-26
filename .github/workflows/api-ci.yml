@@ -4,6 +4,8 @@ on:
 jobs:
   run-tests:
     runs-on: ubuntu-latest
+    env:
+      ENABLE_USER_SITE: TRUE
     steps:
     - name: Checkout
       uses: actions/checkout@v2
