@@ -5,5 +5,16 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: install
+      run:
+        python3 -m pip install . --no-index
+    - name: Run tests
+      run: |
+        echo `python3 --version`
+        python -m pytest -sv tests/torch-ort_test_api.py
+        python -m pytest -sv tests/experimental/torch_ort_graph_config_tests.py
+        python -m pytest -sv tests/experimental/torch_ort_json_config_tests.py
     - name: Print test message
       run: echo Running torch-ort API unit tests
