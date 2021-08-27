@@ -16,7 +16,7 @@ jobs:
       run: |
         python3 -m pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_training_cpu.html
         python3 setup.py install --prefix=/tmp
-        python3 -m torch-ort.configure
+        python3 -m torch_ort.configure
         python3 -m pip install pytest
     - name: Run tests
       run: |
