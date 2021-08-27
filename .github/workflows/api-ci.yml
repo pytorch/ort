@@ -5,7 +5,7 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
     env:
-      PYTHONPATH: /tmp/lib/python3.8/site-packages
+      PYTHONPATH: ${PYTHONPATH}:/tmp/lib/python3.8/site-packages
     steps:
     - name: Setup
       run:
