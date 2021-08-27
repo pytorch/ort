@@ -13,6 +13,7 @@ jobs:
       run: |
         python3 -m pip install onnxruntime-training
         python3 setup.py install --prefix=/tmp
+        python3 -m pip install pytest
     - name: Run tests
       run: |
         echo `python3 --version`
