@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
 jobs:
   run-tests:
-    runs-on: self-runner
+    runs-on: self-hosted
     env:
       PYTHONPATH: ${PYTHONPATH}:/tmp/lib/python3.8/site-packages
     steps:
