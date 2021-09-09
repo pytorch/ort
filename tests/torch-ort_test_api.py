@@ -29,10 +29,9 @@ class NeuralNetSinglePositionalArgument(torch.nn.Module):
         return self.dropout(out)
 
 def test_set_seed():
-    device = 'cuda'
     N, D_in, H, D_out = 64, 784, 500, 10
-    input = torch.randn(N, D_in, device=device)
-    orig_model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
+    input = torch.randn(N, D_in)
+    orig_model = NeuralNetSinglePositionalArgument(D_in, H, D_out)
     predictions = []
     for _ in range(10):
         set_seed(1)
@@ -47,16 +46,15 @@ def test_set_seed():
 @pytest.mark.parametrize("mode", ['training', 'inference'])
 def test_debug_options_save_onnx_models_os_environment(mode):
 
-    device = 'cuda'
     N, D_in, H, D_out = 64, 784, 500, 10
     # Create a temporary directory for the onnx_models
     with tempfile.TemporaryDirectory() as temporary_dir:
         os.environ['ORTMODULE_SAVE_ONNX_PATH'] = temporary_dir
-        model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
+        model = NeuralNetSinglePositionalArgument(D_in, H, D_out)
         ort_model = ORTModule(model, DebugOptions(save_onnx=True, onnx_prefix='my_model'))
         if mode == 'inference':
             ort_model.eval()
-        x = torch.randn(N, D_in, device=device)
+        x = torch.randn(N, D_in)
         _ = ort_model(x)
 
         # assert that the onnx models have been saved
@@ -67,21 +65,24 @@ def test_debug_options_save_onnx_models_os_environment(mode):
 @pytest.mark.parametrize("mode", ['training', 'inference'])
 def test_debug_options_save_onnx_models_cwd(mode):
 
-    device = 'cuda'
     N, D_in, H, D_out = 64, 784, 500, 10
-    model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
+    model = NeuralNetSinglePositionalArgument(D_in, H, D_out)
     ort_model = ORTModule(model, DebugOptions(save_onnx=True, onnx_prefix='my_cwd_model'))
     if mode == 'inference':
         ort_model.eval()
-    x = torch.randn(N, D_in, device=device)
+    x = torch.randn(N, D_in)
     _ = ort_model(x)
 
     # assert that the onnx models have been saved
     assert os.path.exists(os.path.join(os.getcwd(), f"my_cwd_model_torch_exported_{mode}.onnx"))
+    assert os.path.exists(os.path.join(os.getcwd(), f"my_cwd_model_optimized_pre_grad_{mode}.onnx"))
     assert os.path.exists(os.path.join(os.getcwd(), f"my_cwd_model_optimized_{mode}.onnx"))
+    assert os.path.exists(os.path.join(os.getcwd(), f"my_cwd_model_execution_model_{mode}.onnx"))
 
     os.remove(os.path.join(os.getcwd(), f"my_cwd_model_torch_exported_{mode}.onnx"))
+    os.remove(os.path.join(os.getcwd(), f"my_cwd_model_optimized_pre_grad_{mode}.onnx"))
     os.remove(os.path.join(os.getcwd(), f"my_cwd_model_optimized_{mode}.onnx"))
+    os.remove(os.path.join(os.getcwd(), f"my_cwd_model_execution_model_{mode}.onnx"))
 
 def test_debug_options_save_onnx_models_validate_fail_on_non_writable_dir():
 
@@ -109,11 +110,10 @@ def test_debug_options_save_onnx_models_validate_fail_on_no_prefix():
 def test_debug_options_log_level():
     # NOTE: This test will output verbose logging
 
-    device = 'cuda'
     N, D_in, H, D_out = 64, 784, 500, 10
-    model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
+    model = NeuralNetSinglePositionalArgument(D_in, H, D_out)
     ort_model = ORTModule(model, DebugOptions(log_level=LogLevel.VERBOSE))
-    x = torch.randn(N, D_in, device=device)
+    x = torch.randn(N, D_in)
     _ = ort_model(x)
 
     # assert that the logging is done in verbose mode
@@ -123,11 +123,10 @@ def test_debug_options_log_level_os_environment():
     # NOTE: This test will output info logging
 
     os.environ['ORTMODULE_LOG_LEVEL'] = 'INFO'
-    device = 'cuda'
     N, D_in, H, D_out = 64, 784, 500, 10
-    model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
+    model = NeuralNetSinglePositionalArgument(D_in, H, D_out)
     ort_model = ORTModule(model)
-    x = torch.randn(N, D_in, device=device)
+    x = torch.randn(N, D_in)
     _ = ort_model(x)
 
     # assert that the logging is done in info mode
