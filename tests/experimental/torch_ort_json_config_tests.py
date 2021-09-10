@@ -21,8 +21,7 @@ class Net(torch.nn.Module):
         return out
 
 def test_load_config_from_json_1():
-    device = 'cuda'
-    model = ORTModule(Net().to(device))
+    model = ORTModule(Net())
 
     # load from json once.
     path_to_json = os.path.join(os.getcwd(), 'tests/experimental/torch_ort_json_config_2.json')
@@ -67,8 +66,7 @@ def test_load_config_from_json_1():
         assert ort_model_attributes._debug_options.logging.log_level.name == "VERBOSE"
 
 def test_load_config_from_json_2():
-    device = 'cuda'
-    model = ORTModule(Net().to(device))
+    model = ORTModule(Net())
 
     # load from json once.
     path_to_json = os.path.join(os.getcwd(), 'tests/experimental/torch_ort_json_config_1.json')
