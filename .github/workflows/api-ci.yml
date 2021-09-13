@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
 jobs:
   run-tests:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     env:
       PYTHONPATH: ${PYTHONPATH}:/tmp/lib/python3.8/site-packages
     steps:
@@ -14,7 +14,7 @@ jobs:
       uses: actions/checkout@v2
     - name: install
       run: |
-        python3 -m pip install --pre onnxruntime-training --no-cache-dir -f https://download.onnxruntime.ai/onnxruntime_nightly_torch181.cu111.html
+        python3 -m pip install --pre onnxruntime-training --no-cache-dir -f https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
         python3 setup.py install --prefix=/tmp
         python3 -m torch_ort.configure
         python3 -m pip install pytest
