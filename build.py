@@ -8,6 +8,7 @@ def parse_arguments():
 
     parser.add_argument(
         "--wheel_file", help="wheel filename used to test. skip build wheel and install")
+
     return parser.parse_args()
 
 def run_subprocess(args, cwd=None):
@@ -32,12 +33,6 @@ def main():
 
     if not cmd_line_args.wheel_file:
         build_wheel(source_dir, source_dir)
-
-        # installing torch-ort wheel
-        dist_path = os.path.join(source_dir, 'dist')
-        wheel_file = os.listdir(dist_path)[0]
-        run_subprocess([sys.executable, "-m", "pip", "install", "--upgrade", os.path.join(dist_path, wheel_file)], cwd)
-        run_subprocess([sys.executable, "-m", "torch_ort.configure"], cwd)
     else:
         print("cmd_line_args.wheel_file: ", cmd_line_args.wheel_file)
         print("With Devops pipeline, please confirm that the wheel file matches the one being built from a previous step.")
