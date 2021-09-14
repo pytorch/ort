@@ -39,12 +39,12 @@ def main():
         run_subprocess([sys.executable, "-m", "pip", "install", "--upgrade", cmd_line_args.wheel_file], cwd)
         run_subprocess([sys.executable, "-m", "torch_ort.configure"], cwd)
 
-    # installing requirements-test.txt
-    requirements_path = os.path.join(source_dir, 'tests', 'requirements-test.txt')
-    run_subprocess([sys.executable, "-m", "pip", "install", "-r", requirements_path], cwd)
+        # installing requirements-test.txt
+        requirements_path = os.path.join(source_dir, 'tests', 'requirements-test.txt')
+        run_subprocess([sys.executable, "-m", "pip", "install", "-r", requirements_path], cwd)
 
-    # testing torch-ort
-    run_ort_module_tests(source_dir, source_dir)
+        # testing torch-ort
+        run_ort_module_tests(source_dir, source_dir)
 
 
 if __name__ == "__main__":
