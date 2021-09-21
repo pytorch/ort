@@ -16,7 +16,7 @@ You can install and run torch-ort in your local environment, or with [Docker](do
 
 ### Default dependencies
 
-By default, torch-ort depends on PyTorch 1.9.0, ONNX Runtime 1.8.1 and CUDA 10.2.
+By default, torch-ort depends on PyTorch 1.9.0, ONNX Runtime 1.9.0 and CUDA 10.2.
 
 1. Install CUDA 10.2
 
