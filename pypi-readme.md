@@ -4,7 +4,7 @@ The torch-ort packages uses the PyTorch APIs to accelerate PyTorch models using 
 
 The torch-ort package depends on the onnxruntime-training package, which depends on specific versions of GPU libraries such as NVIDIA CUDA.
 
-The default command`pip install torch-ort` installs the onnxruntime-training version that depends on CUDA 10.2.
+The default command `pip install torch-ort` installs the onnxruntime-training version that depends on CUDA 10.2.
 
 If you have a different version of CUDA installed, you can install a different version of onnxruntime-training explicitly:
 
