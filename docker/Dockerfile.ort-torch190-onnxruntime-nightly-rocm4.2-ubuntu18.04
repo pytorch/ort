@@ -1,4 +1,4 @@
-FROM rocm/pytorch:rocm4.2_ubuntu18.04_py3.6_pytorch_1.8.1
+FROM rocm/pytorch:rocm4.2_ubuntu18.04_py3.6_pytorch_1.9.0
 ENV ROCM_HOME=/opt/rocm
 
 # Install and update tools to minimize security vulnerabilities

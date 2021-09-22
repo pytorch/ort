@@ -1,4 +1,4 @@
-FROM rocm/pytorch:rocm4.2_ubuntu18.04_py3.6_pytorch_1.8.1
+FROM rocm/pytorch:rocm4.3.1_ubuntu18.04_py3.6_pytorch_1.9.0
 ENV ROCM_HOME=/opt/rocm
 
 # Install and update tools to minimize security vulnerabilities
@@ -10,7 +10,7 @@ RUN apt-get autoremove -y
 # ORT Module
 RUN CC=mpicc MPICC=mpicc pip install mpi4py --no-binary mpi4py
 RUN pip install onnx ninja
-RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_rocm42.html
+RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_rocm431.html
 RUN pip install --pre torch-ort -f https://download.onnxruntime.ai/torch_ort_nightly.html
 RUN python -m torch_ort.configure
 
