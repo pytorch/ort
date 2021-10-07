@@ -29,6 +29,7 @@ RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TOR
 RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cu111.html
 
 RUN pip install torch-ort
+RUN python -c "import torch; print('torch.cuda.device_count()): '); print(torch.cuda.device_count())"
 RUN python -m torch_ort.configure
 
 WORKDIR /workspace
