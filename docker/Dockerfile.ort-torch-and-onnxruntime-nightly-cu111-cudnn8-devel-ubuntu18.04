@@ -25,8 +25,8 @@ RUN pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu111/to
 RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cu111.html
 
 RUN pip install torch-ort
-RUN mkdir -p /scripts && echo "python -m torch_ort.configure; /bin/bash" > /scripts/bootstrap.sh
-ENTRYPOINT ["/bin/bash", "/scripts/bootstrap.sh"]
+ENV TORCH_CUDA_ARCH_LIST="5.2 6.0 6.1 7.0 7.5 8.0 8.6+PTX"
+RUN python -m torch_ort.configure
 
 WORKDIR /workspace
 
