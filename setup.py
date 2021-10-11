@@ -7,7 +7,7 @@ import setuptools
 from datetime import date
 import os
 
-with open("Readme.md", "r", encoding="utf-8") as fh:
+with open("pypi-readme.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 def fetch_requirements(path):
@@ -31,7 +31,7 @@ setuptools.setup(
     name="torch_ort",
     version=version_str,
     author="torch-ort contributors",
-    description="training Pytorch models with onnxruntime",
+    description="Accelerate PyTorch models with ONNX Runtime",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/pytorch/ort",
