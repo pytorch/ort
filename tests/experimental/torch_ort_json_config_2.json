@@ -1,7 +1,7 @@
 {
     "PropagateCastOps":
     {
-        "Strategy": "FLOOD_FILL",
+        "Strategy": "INSERT_AND_REDUCE",
         "Level": 5,
         "Allow": ["XYZ", "PQR"]
     },
