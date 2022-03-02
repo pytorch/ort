@@ -9,12 +9,14 @@ stages:
       pool: Onnxruntime-Linux-GPU
       strategy:
         matrix:
-          Python38 TorchAndOrtNightly Cuda10.2:
-            PythonVersion: '3.8'
-            PublicDockerFile: 'docker/Dockerfile.ort-torch-and-onnxruntime-nightly-cu102-cudnn7-devel-ubuntu18.04'
-          Python38 TorchAndOrtNightly Cuda11.1:
-            PythonVersion: '3.8'
-            PublicDockerFile: 'docker/Dockerfile.ort-torch-and-onnxruntime-nightly-cu111-cudnn8-devel-ubuntu18.04'
+          # TODO: Readd these two nightly pipelines after finding a solution that works for
+          # both torch stable and torch nightly when torch API changes.
+          # Python38 TorchAndOrtNightly Cuda10.2:
+          #   PythonVersion: '3.8'
+          #   PublicDockerFile: 'docker/Dockerfile.ort-torch-and-onnxruntime-nightly-cu102-cudnn7-devel-ubuntu18.04'
+          # Python38 TorchAndOrtNightly Cuda11.1:
+          #   PythonVersion: '3.8'
+          #   PublicDockerFile: 'docker/Dockerfile.ort-torch-and-onnxruntime-nightly-cu111-cudnn8-devel-ubuntu18.04'
           Python38 Torch181 onnxruntimeNightly Cuda10.2:
             PythonVersion: '3.8'
             PublicDockerFile: 'docker/Dockerfile.ort-torch181-onnxruntime-nightly-cu102-cudnn7-devel-ubuntu18.04'

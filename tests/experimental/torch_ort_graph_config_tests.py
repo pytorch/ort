@@ -27,9 +27,8 @@ class NeuralNetSinglePositionalArgument(torch.nn.Module):
                                              [PropagateCastOpsStrategy.REMOVE_INPUT_OUTPUT_UP_DOWN_CASTS, PropagateCastLevel.AGGRRESSIVE_MIXED_PRECISION]))
 def test_set_propagate_cast(strategy, level):
     # Setting up ORTModule
-    device = 'cuda'
     D_in, H, D_out = 784, 500, 10
-    model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
+    model = NeuralNetSinglePositionalArgument(D_in, H, D_out)
     model = ORTModule(model)
 
     set_propagate_cast_ops_optimization(model=model, level=level, strategy=strategy)
@@ -49,9 +48,8 @@ def test_set_propagate_cast_with_bad_model(bad_model):
 @pytest.mark.parametrize("bad_strategy", [None, bool])
 def test_set_propagate_cast_with_bad_strategy(bad_strategy):
     # Setting up ORTModule
-    device = 'cuda'
     D_in, H, D_out = 784, 500, 10
-    model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
+    model = NeuralNetSinglePositionalArgument(D_in, H, D_out)
     model = ORTModule(model)
 
     with pytest.raises(TypeError) as runtime_error:
@@ -61,9 +59,8 @@ def test_set_propagate_cast_with_bad_strategy(bad_strategy):
 @pytest.mark.parametrize("bad_level", [None, -2, 3])
 def test_set_propagate_cast_with_bad_level(bad_level):
     # Setting up ORTModule
-    device = 'cuda'
     D_in, H, D_out = 784, 500, 10
-    model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
+    model = NeuralNetSinglePositionalArgument(D_in, H, D_out)
     model = ORTModule(model)
 
     strategy = PropagateCastOpsStrategy.INSERT_AND_REDUCE
