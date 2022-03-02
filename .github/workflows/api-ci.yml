@@ -1,0 +1,29 @@
+name: Run API unit tests
+on:
+  [push, pull_request]
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${PYTHONPATH}:/tmp/lib/python3.8/site-packages
+    steps:
+    - name: Setup
+      run:
+        mkdir -p /tmp/lib/python3.8/site-packages
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: install
+      run: |
+        python3 -m pip install --upgrade protobuf
+        python3 -m pip install --pre onnxruntime-training --no-cache-dir -f https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
+        python3 setup.py install --prefix=/tmp
+        python3 -m torch_ort.configure
+        python3 -m pip install pytest
+    - name: Print test message
+      run: echo Running torch-ort API unit tests
+    - name: Run tests
+      run: |
+        echo `python3 --version`
+        python -m pytest -sv tests/torch-ort_test_api.py
+        python -m pytest -sv tests/experimental/torch_ort_graph_config_tests.py
+        python -m pytest -sv tests/experimental/torch_ort_json_config_tests.py
