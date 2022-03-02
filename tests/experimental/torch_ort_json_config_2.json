@@ -1,7 +1,7 @@
 {
     "PropagateCastOps":
     {
-        "Strategy": "REMOVE_INPUT_OUTPUT_UP_DOWN_CASTS",
+        "Strategy": "FLOOD_FILL",
         "Level": 5,
         "Allow": ["XYZ", "PQR"]
     },
