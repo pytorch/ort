@@ -23,7 +23,7 @@ class NeuralNetSinglePositionalArgument(torch.nn.Module):
 
 @pytest.mark.parametrize("strategy, level", ([PropagateCastOpsStrategy.NONE, PropagateCastLevel.NOT_USED],
                                              [PropagateCastOpsStrategy.INSERT_AND_REDUCE, PropagateCastLevel.FASTER_KEEP_PRECISION],
-                                             [PropagateCastOpsStrategy.FLOOD_FILL, PropagateCastLevel.FASTER_KEEP_PRECISION])
+                                             [PropagateCastOpsStrategy.FLOOD_FILL, PropagateCastLevel.FASTER_KEEP_PRECISION]))
 def test_set_propagate_cast(strategy, level):
     # Setting up ORTModule
     D_in, H, D_out = 784, 500, 10
