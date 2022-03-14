@@ -2,7 +2,8 @@
 
 Mixture of Experts layer implementation is available in the ort_moe folder. 
 - docs/moe.md provides brief overview of the implementation.
-- A simple MoE tutorial is provided in the docs/tutorials folder.
+- A simple MoE tutorial is provided [here](./docs/tutorials/moe_tutorial.py)
+- ONNX Runtime (following pre-requisites) is not required to run the MoE layer. It is intergrated in stand-alone Pytorch.
 
 # Accelerate PyTorch models with ONNX Runtime
 
