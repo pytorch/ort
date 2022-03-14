@@ -9,7 +9,7 @@ import pytest
 import os
 import tempfile
 
-from torch_ort.ort_moe.grids import DistributionGrid
+from ort_moe.grids import DistributionGrid
 
 assert torch.cuda.is_available()
 

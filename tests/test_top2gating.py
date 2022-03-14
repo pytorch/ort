@@ -17,10 +17,10 @@ import torch
 import math
 
 from mpi4py import MPI
-from torch_ort.ort_moe.topKgate import TopKGate, top2gating, top1gating, fast_one_hot, balance_ratio_to_dict
-from torch_ort.ort_moe.loss_functions import loss_functions
-from torch_ort.ort_moe.gate_logs import gate_logs
-from torch_ort.ort_moe.grids import DistributionGrid
+from ort_moe.topKgate import TopKGate, top2gating, top1gating, fast_one_hot, balance_ratio_to_dict
+from ort_moe.loss_functions import loss_functions
+from ort_moe.gate_logs import gate_logs
+from ort_moe.grids import DistributionGrid
 from tutel.jit_kernels.gating import fast_cumsum_sub_one
 
 import topKgate_old

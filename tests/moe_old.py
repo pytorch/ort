@@ -8,10 +8,10 @@ from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.distributed as dist
-from torch_ort.ort_moe import experts
 import math
 import os
-from torch_ort.ort_moe import utils
+from ort_moe import experts
+from ort_moe import utils
 
 class MixtureOfExperts(nn.Module):
     r"""MixtureOfExperts module implements mixture of experts.

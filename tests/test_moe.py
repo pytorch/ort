@@ -15,23 +15,23 @@ import random
 
 from torch import nn
 
-from torch_ort.ort_moe.custom_ops import einsum
-from torch_ort.ort_moe.experts import FFNExpert, MergedFFNExpert
-from torch_ort.ort_moe.moe import MixtureOfExpertsFunc, MixtureOfExperts, AllToAll, MixtureOfExpertsES
-from torch_ort.ort_moe.utils import broadcast_parameters, moe_module_all_reduce, apex_amp_scale_check_overflow_override, is_moe_parameter
-from torch_ort.ort_moe.utils import get_expert_parameters_state_dict, get_non_expert_parameters_state_dict
-from torch_ort.ort_moe.utils import get_expert_parameters_list, get_non_expert_parameters_list
-from torch_ort.ort_moe.utils import get_state_dict_for_local_expert_idx
-from torch_ort.ort_moe.utils import get_state_dict_partitions_for_saving, get_state_dict_partition_names_for_loading
-from torch_ort.ort_moe.utils import translate_state_dict_key_global_to_local, translate_state_dict_key_local_to_global
-from torch_ort.ort_moe.utils import translate_state_dict_global_to_local, translate_state_dict_local_to_global
-from torch_ort.ort_moe.utils import get_moe_loss, fsdp_wrap
-from torch_ort.ort_moe.topKgate import TopKGate
-from torch_ort.ort_moe.layers import LanguageExpertMoEEncoderLayer, LanguageExpertMoEDecoderLayer
-from torch_ort.ort_moe.layers import TransformerMoEEncoderLayer, TransformerMoEDecoderLayer
-from torch_ort.ort_moe.grids import DistributionGrid
-from torch_ort.ort_moe.loss_functions import loss_functions
-from torch_ort.ort_moe.gate_logs import gate_logs
+from ort_moe.custom_ops import einsum
+from ort_moe.experts import FFNExpert, MergedFFNExpert
+from ort_moe.moe import MixtureOfExpertsFunc, MixtureOfExperts, AllToAll, MixtureOfExpertsES
+from ort_moe.utils import broadcast_parameters, moe_module_all_reduce, apex_amp_scale_check_overflow_override, is_moe_parameter
+from ort_moe.utils import get_expert_parameters_state_dict, get_non_expert_parameters_state_dict
+from ort_moe.utils import get_expert_parameters_list, get_non_expert_parameters_list
+from ort_moe.utils import get_state_dict_for_local_expert_idx
+from ort_moe.utils import get_state_dict_partitions_for_saving, get_state_dict_partition_names_for_loading
+from ort_moe.utils import translate_state_dict_key_global_to_local, translate_state_dict_key_local_to_global
+from ort_moe.utils import translate_state_dict_global_to_local, translate_state_dict_local_to_global
+from ort_moe.utils import get_moe_loss, fsdp_wrap
+from ort_moe.topKgate import TopKGate
+from ort_moe.layers import LanguageExpertMoEEncoderLayer, LanguageExpertMoEDecoderLayer
+from ort_moe.layers import TransformerMoEEncoderLayer, TransformerMoEDecoderLayer
+from ort_moe.grids import DistributionGrid
+from ort_moe.loss_functions import loss_functions
+from ort_moe.gate_logs import gate_logs
 from . import topKgate_old, moe_old
 from apex import amp as apex_amp
 
