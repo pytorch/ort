@@ -1,3 +1,21 @@
+This repository contains below libraries. They can be installed independent of each other.
+* [ort_moe](#mixture-of-experts): Mixture of Experts implementation in PyTorch
+* [torch_ort](#accelerate-pytorch-models-with-onnx-runtime): ONNX Runtime package that accelerates PyTorch models
+
+# Mixture Of Experts
+
+Mixture of Experts layer implementation is available in the [ort_moe](ort_moe) folder. 
+- [docs/moe.md](docs/moe.md) provides brief overview of the implementation.
+- A simple MoE tutorial is provided [here](docs/tutorials/moe_tutorial.py).
+- Note: ONNX Runtime (following pre-requisites) is not required to run the MoE layer. It is intergrated in stand-alone Pytorch.
+
+## Build MoE
+```
+cd ort_moe
+pip install build # Install PyPA build
+python -m build
+```
+
 # Accelerate PyTorch models with ONNX Runtime
 
 ONNX Runtime for PyTorch accelerates PyTorch model training using ONNX Runtime.
