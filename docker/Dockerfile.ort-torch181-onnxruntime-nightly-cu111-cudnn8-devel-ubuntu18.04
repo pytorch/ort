@@ -3,7 +3,7 @@
 # Licensed under the MIT License.
 
 # CUDA development image for building sources
-FROM nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04 as builder
+FROM nvidia/cuda:11.2.2-cudnn8-devel-ubuntu18.04 as builder
 
 ARG TORCH_CUDA_VERSION=cu111
 ARG TORCH_VERSION=1.8.1

@@ -4,40 +4,29 @@
 
 import os
 import argparse
-from azure.storage.blob import BlockBlobService, ContentSettings
+from azure.storage.blob import BlobServiceClient, ContentSettings
 
 
 def upload_whl(python_wheel_path, account_name, account_key, container_name):
-    block_blob_service = BlockBlobService(
-        account_name=account_name,
-        account_key=account_key
-    )
+    blob_service_client = BlobServiceClient(f"https://{account_name}.blob.core.windows.net",
+                                            credential=account_key)
+
 
     blob_name = os.path.basename(python_wheel_path)
-    block_blob_service.create_blob_from_path(container_name, blob_name, python_wheel_path)
+    blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+    with open(python_wheel_path, "rb") as blob:
+        blob_client.upload_blob(blob, blob_type="BlockBlob", overwrite=True)
 
     html_blob_name = 'torch_ort_nightly.html'
-
-    download_path_to_html = "./torch_ort_nightly.html"
-    block_blob_service.get_blob_to_path(container_name, html_blob_name, download_path_to_html)
-
-    with open(download_path_to_html) as f:
-        lines = f.read().splitlines()
+    html_blob_client = blob_service_client.get_blob_client(container_name, html_blob_name)
+    lines = html_blob_client.download_blob().content_as_text().splitlines()
 
     new_line = '<a href="{blobname}">{blobname}</a><br>'.format(blobname=blob_name)
     lines.append(new_line)
     lines.sort()
-
-    with open(download_path_to_html, 'w') as f:
-        for item in lines:
-            f.write("%s\n" % item)
-
+    html_blob = "\n".join(lines)
     content_settings = ContentSettings(content_type='text/html')
-    block_blob_service.create_blob_from_path(
-        container_name,
-        html_blob_name,
-        download_path_to_html,
-        content_settings=content_settings)
+    html_blob_client.upload_blob(html_blob, blob_type="BlockBlob", content_settings=content_settings, overwrite=True)
 
 
 if __name__ == "__main__":
