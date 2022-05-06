@@ -5,8 +5,8 @@ This repository contains below libraries. They can be installed independent of e
 # Mixture Of Experts
 
 Mixture of Experts layer implementation is available in the [ort_moe](ort_moe) folder. 
-- [docs/moe.md](docs/moe.md) provides brief overview of the implementation.
-- A simple MoE tutorial is provided [here](docs/tutorials/moe_tutorial.py).
+- [ort_moe/docs/moe.md](ort_moe/docs/moe.md) provides brief overview of the implementation.
+- A simple MoE tutorial is provided [here](ort_moe/docs/tutorials/moe_tutorial.py).
 - Note: ONNX Runtime (following pre-requisites) is not required to run the MoE layer. It is intergrated in stand-alone Pytorch.
 
 ## Build MoE
@@ -28,7 +28,7 @@ This repository contains the source code for the package, as well as instruction
 
 You need a machine with at least one NVIDIA or AMD GPU to run ONNX Runtime for PyTorch.
 
-You can install and run torch-ort in your local environment, or with [Docker](docker/README.md).
+You can install and run torch-ort in your local environment, or with [Docker](torch_ort/docker/README.md).
 
 ## Install in a local Python environment
 
