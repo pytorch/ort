@@ -67,7 +67,7 @@ steps:
 - task: CmdLine@2
   inputs:
     script: |
-      files=($(Build.SourcesDirectory)/dist/*.whl) && \
+      files=($(Build.SourcesDirectory)/torch_ort/dist/*.whl) && \
       echo ${files[0]} && \
       whlfilename=$(basename ${files[0]}) && \
       echo $whlfilename && \
@@ -87,7 +87,7 @@ steps:
     scriptLocation: 'inlineScript'
     inlineScript: |
       python3 -m pip install azure-storage-blob && \
-      files=($(Build.SourcesDirectory)/dist/*.whl) && \
+      files=($(Build.SourcesDirectory)/torch_ort/dist/*.whl) && \
       echo ${files[0]} && \
       python3 tools/python/upload_python_package_to_azure_storage.py \
           --python_wheel_path ${files[0]} \
