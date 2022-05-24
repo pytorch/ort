@@ -35,7 +35,7 @@ steps:
   inputs:
     script: |
       docker run --rm --gpus all \
-        --volume $(Build.SourcesDirectory):/torch_ort_src \
+        --volume $(Build.SourcesDirectory)/torch_ort:/torch_ort_src \
         -e NVIDIA_VISIBLE_DEVICES=all \
         -e NIGHTLY_BUILD \
         -e BUILD_BUILDNUMBER \
@@ -67,12 +67,12 @@ steps:
 - task: CmdLine@2
   inputs:
     script: |
-      files=($(Build.SourcesDirectory)/dist/*.whl) && \
+      files=($(Build.SourcesDirectory)/torch_ort/dist/*.whl) && \
       echo ${files[0]} && \
       whlfilename=$(basename ${files[0]}) && \
       echo $whlfilename && \
       docker run --rm --gpus all \
-        --volume $(Build.SourcesDirectory):/torch_ort_src \
+        --volume $(Build.SourcesDirectory)/torch_ort:/torch_ort_src \
         -w /torch_ort_src \
         torchortpackagingtest \
           /usr/bin/python3 build.py --wheel_file /torch_ort_src/dist/$whlfilename
@@ -87,7 +87,7 @@ steps:
     scriptLocation: 'inlineScript'
     inlineScript: |
       python3 -m pip install azure-storage-blob && \
-      files=($(Build.SourcesDirectory)/dist/*.whl) && \
+      files=($(Build.SourcesDirectory)/torch_ort/dist/*.whl) && \
       echo ${files[0]} && \
       python3 tools/python/upload_python_package_to_azure_storage.py \
           --python_wheel_path ${files[0]} \
