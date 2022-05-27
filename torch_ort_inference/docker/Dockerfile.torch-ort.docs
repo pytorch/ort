@@ -1,0 +1,24 @@
+FROM ubuntu:20.04
+
+RUN apt-get update
+RUN apt-get install -y software-properties-common
+RUN apt-get install -y wget
+RUN apt-get install -y apt-utils
+RUN apt-get install -y git
+RUN apt-get install -y cmake 
+RUN unattended-upgrade
+RUN apt-get autoremove -y
+
+RUN apt-get install -y python3-pip
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
+RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
+RUN pip install --upgrade pip
+
+RUN pip install sphinx
+RUN pip install recommonmark
+RUN pip install pytorch_sphinx_theme
+RUN pip install torch
+
+RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
+RUN pip install torch-ort
+RUN python -m torch_ort.configure
