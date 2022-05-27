@@ -20,6 +20,7 @@ from onnxruntime.training.ortmodule.debug_options import DebugOptions, LogLevel
 
 from .provider_options import ProviderOptions
 from . import _utils
+import inspect
 
 # Needed to override PyTorch methods
 T = TypeVar("T", bound="Module")
@@ -53,6 +54,7 @@ class ORTInferenceModule(torch.nn.Module):
             self._debug_options = debug_options
              # onnx models
             self._onnx_models = _onnx_models.ONNXModels()
+            self._module_parameters = list(inspect.signature(self._original_module.forward).parameters.values())
             
                          
         except Exception as e:
@@ -61,7 +63,7 @@ class ORTInferenceModule(torch.nn.Module):
         # Finally, ORTInferenceModule initialization is complete.
         self._is_initialized = True
     
-    def forward(self, *inputs, **kwargs):
+    def forwardtemp(self, *inputs, **kwargs):
         """Delegate the :meth:`~torch.nn.Module.forward` to
         ONNX Runtime.
 
@@ -89,7 +91,7 @@ class ORTInferenceModule(torch.nn.Module):
             pass
         else:
             # Exporting module to ONNX for the first time
-                self._onnx_models.exported_model = self._export_model(*inputs, **kwargs)
+                self._onnx_models.exported_model = self._export_model(schema,*inputs, **kwargs)
                 if self._debug_options.save_onnx_models.save:
                    self._onnx_models.save_exported_model(
                        self._debug_options.save_onnx_models.path,
@@ -115,7 +117,7 @@ class ORTInferenceModule(torch.nn.Module):
             # Catch-all
             raise e
 
-    def _export_model(self, *inputs, **kwargs):
+    def _export_model(self, input_schema, *inputs, **kwargs):
         """Exports PyTorch `self._flattened_module` to ONNX for inferencing or training, using `*inputs` and `**kwargs` as input
         TODO: How to support dynamic axes? Dimensions are determined by samples
         """
@@ -224,29 +226,7 @@ class ORTInferenceModule(torch.nn.Module):
         if name in self.__dict__:
             # If the name is an attribute of ORTInferenceModule, update only ORTInferenceModule
             self.__dict__[name] = value
-
-        elif "_is_initialized" in self.__dict__ and self.__dict__["_is_initialized"] is True:
-
-            assert "_torch_module" in self.__dict__, "ORTInferenceModule does not have a reference to the user's model"
-
-            # If the name is an attribute of user model, or is a new attribute, update there.
-            # Set the attribute on the user's original module
-            setattr(self.module, name, value)    
         else:
             # Setting any new attributes should be done on ORTModule only when 'torch_module' is not defined
             self.__dict__[name] = value
-    '''
-    @property
-    def module(self):
-        """The original `torch.nn.Module` that this module wraps.
-        This property provides access to methods and properties on the original module.
-        """
-
-        # HuggingFace Trainer `save_model` method checks to see if the input model is a HuggingFace PreTrainedModel
-        # or if the model has an attribute called `module` which references a HuggingFace PreTrainedModel to save
-        # the entire context of the model so that it can be loaded using HuggingFace `from_pretrained` method.
-        # This `module` property enables HuggingFace Trainer to retrieve the underlying PreTrainedModel inside ORTModule
-        # to save and load a complete checkpoint
-
-        return self._torch_module.module
-    '''
+    

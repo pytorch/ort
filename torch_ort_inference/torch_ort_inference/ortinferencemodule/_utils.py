@@ -23,6 +23,26 @@ from onnxruntime.training.ortmodule import _onnx_models
 #from ._torch_module_pytorch import TorchModulePytorch
 #from .torch_cpp_extensions.cpu.aten_op_executor import load_aten_op_executor_cpp_extension
 
+def get_device_from_module(module):
+    """Returns the first device found in the `module`'s parameters or None
+    Args:
+        module (torch.nn.Module): PyTorch model to extract device from
+    Raises:
+        ORTModuleFallbackException: When more than one device is found at `module`
+    """
+    device = None
+    try:
+        device = next(module.parameters()).device
+        for param in module.parameters():
+            if param.device != device:
+                raise e(
+                    RuntimeError("ORTModule supports a single device per model")
+                )
+    except Exception as e:
+            raise e
+        # Model doesn't have a device set to any of the model parameters
+    return device
+
 def patch_ortinferencemodule_forward_method(ortinferencemodule):
     # Create forward dynamically, so each ORTInferenceModule instance will have its own copy.
     # This is needed to be able to copy the forward signatures from the original PyTorch models
@@ -32,7 +52,7 @@ def patch_ortinferencemodule_forward_method(ortinferencemodule):
         ONNX model is exported the first time this method is executed.
         Next, we instantiate the ONNX Runtime InferenceSession.
         """
-        return ortinferencemodule.forward(*inputs, **kwargs)
+        return ortinferencemodule.forwardtemp(*inputs, **kwargs)
 
     # Bind the forward method.
     ortinferencemodule.forward = _forward.__get__(ortinferencemodule)
