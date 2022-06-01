@@ -39,7 +39,7 @@ class ORTInferenceModule(torch.nn.Module):
 
     def __init__(self, module, debug_options=None, provider_options=None):
         self._is_initialized = False
-        
+
         if not debug_options:
             debug_options = DebugOptions()
 
@@ -52,7 +52,7 @@ class ORTInferenceModule(torch.nn.Module):
             utils.patch_ortinferencemodule_forward_method(self)
             self._flattened_module = _io._FlattenedModule(module)
             self._debug_options = debug_options
-             # onnx models
+            # onnx models
             self._onnx_models = _onnx_models.ONNXModels()
             self._module_parameters = list(inspect.signature(self._original_module.forward).parameters.values())
             self._device = utils.get_device_from_module(module)
@@ -60,15 +60,15 @@ class ORTInferenceModule(torch.nn.Module):
             self._export_extra_kwargs = {}
             self._provider_options = provider_options
             self._graph_initializers = None
-            self._graph_info = None          
+            self._graph_info = None
 
         except Exception as e:
             raise e
 
         # Finally, ORTInferenceModule initialization is complete.
         self._is_initialized = True
-    
-    def forwardtemp(self, *inputs, **kwargs):
+
+    def forward_call(self, *inputs, **kwargs):
         """Delegate the :meth:`~torch.nn.Module.forward` to
         ONNX Runtime.
 
@@ -113,30 +113,22 @@ class ORTInferenceModule(torch.nn.Module):
             )
 
            run_options = C.RunOptions()
-           
+
            # pre-process inputs to make them compatible with onnxruntime
            io_binding = self._inference_session.io_binding()
-           
            # Use IO binding
-           ort_inputs = []           
-           
+           ort_inputs = []
            for inp in inputs:
                ort_inputs.append(inp)
-            
            _utils._create_iobinding(io_binding, inputs, self._onnx_models.exported_model, self._device)
-           
            self._inference_session.run_with_iobinding(io_binding, run_options)
            forward_outputs = io_binding.get_outputs()
-           print("""forward_outputs""")
-           print(forward_outputs)
 
            # forward outputs is a list (std::vector<OrtValue>) but _ortvalues_to_torch_tensor
            # is expected a OrtValueVector (also std::vector<OrtValue> but defined in onnxruntime-training).
            # _ortvalues_to_torch_tensor_list needs to be used.
            user_outputs = _utils._ortvalues_to_torch_tensor_list(forward_outputs, self._device)
-           
            result = [(output.shape, output.device, output.dtype) for output in user_outputs]
-        
            return _io.unflatten_user_output(self._module_output_schema, result)
 
         except Exception as e:
@@ -175,7 +167,7 @@ class ORTInferenceModule(torch.nn.Module):
         # Ops behaving differently under train/eval mode need to exported with the
         # correct training flag to reflect the expected behavior.
         # For example, the Dropout node in a model is dropped under eval mode.
-        #assert self._export_mode is not None, "Please use a concrete instance of ExecutionManager"
+        assert self._export_mode is not None, "Please use a concrete instance of ExecutionManager"
         try:
             with torch.no_grad():
                 required_export_kwargs = {
@@ -203,13 +195,7 @@ class ORTInferenceModule(torch.nn.Module):
                 )
         except Exception as e:
             raise e
-        #        raise wrap_exception(
-        #            ORTInferenceModuleONNXModelException,
-        #            RuntimeError(
-        #                f"There was an error while exporting the PyTorch model to ONNX: "
-        #                f"\n\n{_utils.get_exception_as_string(e)}"
-        #            ),
-        #        )
+
         exported_model = onnx.load_model_from_string(f.getvalue())
         return exported_model
 
@@ -255,7 +241,7 @@ class ORTInferenceModule(torch.nn.Module):
         else:
             # Setting any new attributes should be done on ORTModule only when 'torch_module' is not defined
             self.__dict__[name] = value
-    
+
     def _set_device_from_module(self, inputs, kwargs):
         """Get the device from the module and save it to self._device"""
 
@@ -266,4 +252,4 @@ class ORTInferenceModule(torch.nn.Module):
                 raise (
                     RuntimeError("A device must be specified in the model or inputs!")
                 )
-    
+

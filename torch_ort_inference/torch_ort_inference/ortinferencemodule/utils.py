@@ -52,7 +52,7 @@ def patch_ortinferencemodule_forward_method(ortinferencemodule):
         ONNX model is exported the first time this method is executed.
         Next, we instantiate the ONNX Runtime InferenceSession.
         """
-        return ortinferencemodule.forwardtemp(*inputs, **kwargs)
+        return ortinferencemodule.forward_call(*inputs, **kwargs)
 
     # Bind the forward method.
     ortinferencemodule.forward = _forward.__get__(ortinferencemodule)
