@@ -15,11 +15,11 @@ from torch.onnx import OperatorExportTypes
 import onnxruntime
 from onnxruntime.capi import _pybind_state as C
 from onnxruntime.training import ortmodule
-from onnxruntime.training.ortmodule import _io, _logger, _onnx_models #, _utils
+from onnxruntime.training.ortmodule import _io, _logger, _onnx_models, _utils
 from onnxruntime.training.ortmodule.debug_options import DebugOptions, LogLevel
 
-from .provider_options import ProviderOptions
-from . import _utils
+from .provider_options import ProviderOptions,OpenVINOProviderOptions
+from . import utils
 import inspect
 
 # Needed to override PyTorch methods
@@ -49,14 +49,19 @@ class ORTInferenceModule(torch.nn.Module):
         try:
             super(ORTInferenceModule, self).__init__()
             self._original_module = module
-            _utils.patch_ortinferencemodule_forward_method(self)
+            utils.patch_ortinferencemodule_forward_method(self)
             self._flattened_module = _io._FlattenedModule(module)
             self._debug_options = debug_options
              # onnx models
             self._onnx_models = _onnx_models.ONNXModels()
             self._module_parameters = list(inspect.signature(self._original_module.forward).parameters.values())
-            
-                         
+            self._device = utils.get_device_from_module(module)
+            self._export_mode = torch.onnx.TrainingMode.EVAL
+            self._export_extra_kwargs = {}
+            self._provider_options = provider_options
+            self._graph_initializers = None
+            self._graph_info = None          
+
         except Exception as e:
             raise e
 
@@ -91,27 +96,48 @@ class ORTInferenceModule(torch.nn.Module):
             pass
         else:
             # Exporting module to ONNX for the first time
-                self._onnx_models.exported_model = self._export_model(schema,*inputs, **kwargs)
-                if self._debug_options.save_onnx_models.save:
-                   self._onnx_models.save_exported_model(
-                       self._debug_options.save_onnx_models.path,
-                       self._debug_options.save_onnx_models.name_prefix,
-                       self._export_mode,
-                    )
+            self._set_device_from_module(inputs, kwargs)
+            self._onnx_models.exported_model = self._export_model(schema,*inputs, **kwargs)
+            if self._debug_options.save_onnx_models.save:
+                self._onnx_models.save_exported_model(
+                    self._debug_options.save_onnx_models.path,
+                    self._debug_options.save_onnx_models.name_prefix,
+                    self._export_mode,
+                )
 
-        self._set_device_from_module(inputs, kwargs)
         try:
            # Create the inference_session
            session_options, providers, provider_options = self._get_session_config()
            self._inference_session = onnxruntime.InferenceSession(
-                self._onnx_models.exported_model , session_options, providers, provider_options
+                self._onnx_models.exported_model.SerializeToString() , session_options, providers, provider_options
             )
 
            run_options = C.RunOptions()
+           
            # pre-process inputs to make them compatible with onnxruntime
-           input_name = self._inference_session.get_inputs()[0].name
-           outputs = self._inference_session.run(None, {input_name: inputs}, run_options)
-           return _io.unflatten_user_output(self._module_output_schema, outputs)
+           io_binding = self._inference_session.io_binding()
+           
+           # Use IO binding
+           ort_inputs = []           
+           
+           for inp in inputs:
+               ort_inputs.append(inp)
+            
+           _utils._create_iobinding(io_binding, inputs, self._onnx_models.exported_model, self._device)
+           
+           self._inference_session.run_with_iobinding(io_binding, run_options)
+           forward_outputs = io_binding.get_outputs()
+           print("""forward_outputs""")
+           print(forward_outputs)
+
+           # forward outputs is a list (std::vector<OrtValue>) but _ortvalues_to_torch_tensor
+           # is expected a OrtValueVector (also std::vector<OrtValue> but defined in onnxruntime-training).
+           # _ortvalues_to_torch_tensor_list needs to be used.
+           user_outputs = _utils._ortvalues_to_torch_tensor_list(forward_outputs, self._device)
+           
+           result = [(output.shape, output.device, output.dtype) for output in user_outputs]
+        
+           return _io.unflatten_user_output(self._module_output_schema, result)
 
         except Exception as e:
             # Catch-all
@@ -149,7 +175,7 @@ class ORTInferenceModule(torch.nn.Module):
         # Ops behaving differently under train/eval mode need to exported with the
         # correct training flag to reflect the expected behavior.
         # For example, the Dropout node in a model is dropped under eval mode.
-        assert self._export_mode is not None, "Please use a concrete instance of ExecutionManager"
+        #assert self._export_mode is not None, "Please use a concrete instance of ExecutionManager"
         try:
             with torch.no_grad():
                 required_export_kwargs = {
@@ -229,4 +255,15 @@ class ORTInferenceModule(torch.nn.Module):
         else:
             # Setting any new attributes should be done on ORTModule only when 'torch_module' is not defined
             self.__dict__[name] = value
+    
+    def _set_device_from_module(self, inputs, kwargs):
+        """Get the device from the module and save it to self._device"""
+
+        device = utils.get_device_from_module(self._original_module) or utils.get_device_from_inputs(inputs, kwargs)
+        if not self._device or self._device != device:
+            self._device = device
+            if not self._device:
+                raise (
+                    RuntimeError("A device must be specified in the model or inputs!")
+                )
     

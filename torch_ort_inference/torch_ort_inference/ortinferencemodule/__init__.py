@@ -82,4 +82,4 @@ def _are_deterministic_algorithms_enabled():
 from onnxruntime.training.ortmodule.debug_options import DebugOptions, LogLevel  # noqa: E402
 
 from .ortinferencemodule import ORTInferenceModule  # noqa: E402
-from .provider_options import ProviderOptions
+from .provider_options import ProviderOptions, OpenVINOProviderOptions
