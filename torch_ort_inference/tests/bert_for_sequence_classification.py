@@ -8,7 +8,7 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 from transformers import BertForSequenceClassification, BertConfig
 
 import torch
-from torch_ort_inference import ORTInferenceModule, ProviderOptions, OpenVINOProviderOptions
+from torch_ort_inference import ORTInferenceModule, OpenVINOProviderOptions
 
 openvino_backend_precisions = {
     "CPU": ["FP32"],
