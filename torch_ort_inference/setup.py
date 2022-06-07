@@ -20,12 +20,12 @@ if 'dev' in version_str:
     version_str = version_str + date.today().strftime("%Y%m%d")
 
 # Create a new file called _version.py where the version is stored in a variable __version__
-with open(os.path.join("torch_ort_inference", "_version.py"), 'w') as fh:
+with open(os.path.join("torch_ort", "_version.py"), 'w') as fh:
     fh.write(f"__version__ = '{version_str}'")
 
 install_requires = fetch_requirements('requirements.txt')
 
-packages=[*setuptools.find_packages(), 'torch_ort_inference.configure']
+packages=[*setuptools.find_packages(), 'torch_ort.configure']
 
 setuptools.setup(
     name="torch_ort_inference",

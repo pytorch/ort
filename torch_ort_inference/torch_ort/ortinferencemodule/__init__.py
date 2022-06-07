@@ -68,7 +68,7 @@ def override_torch_manual_seed(seed):
 torch_manual_seed = torch.manual_seed
 torch.manual_seed = override_torch_manual_seed
 
-#from onnxruntime.training.ortmodule.debug_options import DebugOptions, LogLevel  # noqa: E402
+from onnxruntime.training.ortmodule.debug_options import DebugOptions, LogLevel  # noqa: E402
 
-#from .ortinferencemodule import ORTInferenceModule  # noqa: E402
-#from .provider_options import ProviderOptions, OpenVINOProviderOptions
+from .ortinferencemodule import ORTInferenceModule  # noqa: E402
+from .provider_options import ProviderOptions, OpenVINOProviderOptions

@@ -58,6 +58,7 @@ class ORTInferenceModule(torch.nn.Module):
         self._provider_options = provider_options
         self._graph_initializers = None
         self._graph_info = None
+        self._inference_session = None
 
     def _forward_call(self, *inputs, **kwargs):
         """Delegate the :meth:`~torch.nn.Module.forward` to
@@ -97,10 +98,11 @@ class ORTInferenceModule(torch.nn.Module):
                 )
 
         # Create the inference_session
-        session_options, providers, provider_options = self._get_session_config()
-        self._inference_session = onnxruntime.InferenceSession(
+        if not self._inference_session:
+           session_options, providers, provider_options = self._get_session_config()
+           self._inference_session = onnxruntime.InferenceSession(
             self._onnx_models.exported_model.SerializeToString() , session_options, providers, provider_options
-        )
+           )
 
         run_options = C.RunOptions()
 
