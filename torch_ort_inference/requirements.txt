@@ -3,5 +3,5 @@
 # In an environment where a requirement is already met, the package will not be updated.
 # If a package of a specific version is needed, the package can be installed
 # with version being specified (see Readme.md).
-#onnxruntime-ortinference-openvino>=1.12.0
+onnxruntime-openvino>=1.11.0
 torch>=1.8

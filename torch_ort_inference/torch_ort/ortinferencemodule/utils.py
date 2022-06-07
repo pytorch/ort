@@ -1,34 +1,11 @@
-import copy
 import functools
-import inspect
-import os
-import random
-import traceback
-import types
-import warnings
-from distutils.version import LooseVersion
-from typing import List
-
-import numpy as np
-import torch
-from onnx import TensorProto
-from torch._C import _from_dlpack
-from torch.utils.dlpack import from_dlpack, to_dlpack
-
-from onnxruntime.capi import _pybind_state as C
-from onnxruntime.capi.onnxruntime_inference_collection import OrtValue
-#from onnxruntime.tools import pytorch_export_contrib_ops
-
-from onnxruntime.training.ortmodule import _onnx_models
-#from ._torch_module_pytorch import TorchModulePytorch
-#from .torch_cpp_extensions.cpu.aten_op_executor import load_aten_op_executor_cpp_extension
 
 def get_device_from_module(module):
     """Returns the first device found in the `module`'s parameters or None
     Args:
         module (torch.nn.Module): PyTorch model to extract device from
     Raises:
-        ORTModuleFallbackException: When more than one device is found at `module`
+        Exception: When more than one device is found at `module`
     """
     device = None
     try:
@@ -36,7 +13,7 @@ def get_device_from_module(module):
         for param in module.parameters():
             if param.device != device:
                 raise e(
-                    RuntimeError("ORTModule supports a single device per model")
+                    RuntimeError("ORTInferenceModule supports a single device per model")
                 )
     except Exception as e:
             raise e
@@ -50,9 +27,10 @@ def patch_ortinferencemodule_forward_method(ortinferencemodule):
     def _forward(self, *inputs, **kwargs):
         """Forward pass starts here and continues at `_ORTInferenceModuleFunction.forward`
         ONNX model is exported the first time this method is executed.
-        Next, we instantiate the ONNX Runtime InferenceSession.
+        Next, we instantiate the ONNX Runtime InferenceSession
+        Finally, we run the ONNX Runtime InferenceSession.
         """
-        return ortinferencemodule.forward_call(*inputs, **kwargs)
+        return ortinferencemodule._forward_call(*inputs, **kwargs)
 
     # Bind the forward method.
     ortinferencemodule.forward = _forward.__get__(ortinferencemodule)

@@ -31,7 +31,7 @@ setuptools.setup(
     name="torch_ort_inference",
     version=version_str,
     author="torch-ort contributors",
-    description="Accelerate PyTorch models with ONNX Runtime",
+    description="Accelerate PyTorch models with ONNX Runtime OpenVINO EP",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/pytorch/ort",

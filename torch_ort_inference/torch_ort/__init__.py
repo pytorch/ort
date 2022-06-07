@@ -6,7 +6,6 @@
 from onnxruntime.training.ortmodule import DebugOptions, LogLevel
 from .ortinferencemodule import ORTInferenceModule
 from .ortinferencemodule.provider_options import ProviderOptions, OpenVINOProviderOptions
-from onnxruntime import set_seed
 
 # Add a __version__ attribute that users can use to check the version
 try:
