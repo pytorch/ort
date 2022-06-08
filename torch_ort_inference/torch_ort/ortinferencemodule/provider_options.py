@@ -12,7 +12,7 @@ class ProviderOptions:
 class OpenVINOProviderOptions(ProviderOptions):
     def __init__(
         self,
-        provider="",
+        provider="openvino",
         backend="CPU",
         precision="FP32",
     ):

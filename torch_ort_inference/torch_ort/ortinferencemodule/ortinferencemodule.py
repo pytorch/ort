@@ -110,9 +110,6 @@ class ORTInferenceModule(torch.nn.Module):
         
         # Use IO binding
         io_binding = self._inference_session.io_binding()
-        ort_inputs = []
-        for inp in inputs:
-            ort_inputs.append(inp)
         _utils._create_iobinding(io_binding, inputs, self._onnx_models.exported_model, self._device)
         
         # Run inference session
@@ -161,7 +158,6 @@ class ORTInferenceModule(torch.nn.Module):
                 required_export_kwargs = {
                     "input_names": self._input_info.names,
                     "output_names": output_names,
-                    "opset_version": ortmodule.ONNX_OPSET_VERSION,
                     "do_constant_folding": True,
                     "dynamic_axes": self._input_info.dynamic_axes,
                     "verbose": self._debug_options.logging.log_level < LogLevel.WARNING,
@@ -209,6 +205,10 @@ class ORTInferenceModule(torch.nn.Module):
            else:
               providers = ["CPUExecutionProvider"]
               provider_options = [{}]
+        else:
+            raise (
+                RuntimeError("Only CPU device type is supported for torch-ort inference")
+            )
 
         #set session options
         session_options = onnxruntime.SessionOptions()
