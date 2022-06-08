@@ -1,7 +1,7 @@
 This repository contains below libraries. They can be installed independent of each other.
 * [ort_moe](#mixture-of-experts): Mixture of Experts implementation in PyTorch
 * [torch_ort](#accelerate-pytorch-models-with-onnx-runtime): ONNX Runtime package that accelerates PyTorch models
-* [torch_ort_inference](#accelerate-inference-for-pytorch-models-with-onnx-runtime-(Preview)): ONNX Runtime package that accelerates inference for PyTorch models
+* [torch_ort_inference](#accelerate-inference-for-pytorch-models-with-onnx-runtime-preview): ONNX Runtime package that accelerates inference for PyTorch models
 
 
 # Mixture Of Experts
