@@ -7,7 +7,7 @@ import argparse
 from PIL import Image
 from torchvision import transforms
 import torchvision.models as models
-from torch_ort_inference import ORTInferenceModule, OpenVINOProviderOptions
+from torch_ort import ORTInferenceModule, OpenVINOProviderOptions
 
 ov_backend_precisions = {
     "CPU": ["FP32"],

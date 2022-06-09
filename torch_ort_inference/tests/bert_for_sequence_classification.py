@@ -2,13 +2,14 @@ import argparse
 import os
 import numpy as np
 import time
+import pandas as pd
 
 from transformers import BertTokenizer, AutoConfig
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from transformers import BertForSequenceClassification, BertConfig
 
 import torch
-from torch_ort_inference import ORTInferenceModule, OpenVINOProviderOptions
+from torch_ort import ORTInferenceModule, OpenVINOProviderOptions
 
 openvino_backend_precisions = {
     "CPU": ["FP32"],
@@ -84,13 +85,11 @@ def predict(model,prediction_dataloader):
         with torch.no_grad():
             #warm-up
             if warm_up:
-                model(b_input_ids,
-                      attention_mask=b_input_mask)
+                model(b_input_ids, b_input_mask)
                 warm_up=False
             #infer
             t0 = time.time()
-            outputs = model(b_input_ids,
-                            attention_mask=b_input_mask)
+            outputs =  model(b_input_ids, b_input_mask)
             t1 = time.time() - t0
             total_prediction_time += t1
 
@@ -152,7 +151,7 @@ def main():
     parser.add_argument('--model-path', type=str, default=None,
                         help='Path to fine tuned model for prediction')
     parser.add_argument('--input', type=str, default=None,
-                        help="Input sentence(s) for prediction")
+                        help="Input sentence for prediction")
     parser.add_argument('--input-file', type=str, default=None,
                         help="Input file in .tsv format for prediction")
     parser.add_argument('--provider', type=str,
