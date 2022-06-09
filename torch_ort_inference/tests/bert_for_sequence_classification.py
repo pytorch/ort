@@ -181,6 +181,8 @@ def main():
 
         if not (args.backend and args.precision):
             print("Please provide both backend and precision. If not default values are taken as CPU and FP32")
+            args.backend = "CPU"
+            args.precision = "FP32"
 
     # 2. Dataloader
     # Load input dataset/file for prediction

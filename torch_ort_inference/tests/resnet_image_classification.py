@@ -87,15 +87,17 @@ def main():
     if args.provider is None: 
         print("Using default execution provider CPU, to use OpenVINOExecutionProvider set provider as openvino")
     
-    if (args.backend is not None) and (args.backend not in list(ov_backend_precisions.keys())):
-        raise Exception("Invalid backend string. Valid values are:", list(ov_backend_precisions.keys())) 
-    
-    if (args.precision is not None) and (args.precision not in ov_backend_precisions[args.backend]):
-        raise Exception("Invalid precision for provided backend")
+    if args.provider == "openvino":
+        if (args.backend is not None) and (args.backend not in list(ov_backend_precisions.keys())):
+            raise Exception("Invalid backend string. Valid values are:", list(ov_backend_precisions.keys())) 
 
-    if not (args.backend and args.precision):
-        print("Please provide both backend and precision. If not default values are taken as CPU and FP32")
+        if (args.precision is not None) and (args.precision not in ov_backend_precisions[args.backend]):
+            raise Exception("Invalid precision for provided backend")
 
+        if not (args.backend and args.precision):
+            print("Please provide both backend and precision. If not default values are taken as CPU and FP32")
+            args.backend = "CPU"
+            args.precision = "FP32"
 
     # 2. Download and load the model
     model = models.resnet50(pretrained=True)
