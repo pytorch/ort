@@ -33,8 +33,7 @@ def _defined_from_envvar(name, default_value, warn=True):
 # NOTE: To *change* values in runtime, import onnxruntime.training.ortmodule and
 # assign them new values. Importing them directly do not propagate changes.
 ################################################################################
-ONNX_OPSET_VERSION = 14
-MINIMUM_RUNTIME_PYTORCH_VERSION_STR = "1.8.1"
+MINIMUM_RUNTIME_PYTORCH_VERSION_STR = "1.12.0"
 
 # Verify minimum PyTorch version is installed before proceding to ONNX Runtime initialization
 try:
@@ -44,7 +43,7 @@ try:
     minimum_runtime_pytorch_version = version.parse(MINIMUM_RUNTIME_PYTORCH_VERSION_STR)
     if runtime_pytorch_version < minimum_runtime_pytorch_version:
         raise RuntimeError(
-            "ONNX Runtime ORTModule frontend requires PyTorch version greater"
+            "ONNX Runtime ORTInferenceModule frontend requires PyTorch version greater"
             f" or equal to {MINIMUM_RUNTIME_PYTORCH_VERSION_STR},"
             f" but version {torch.__version__} was found instead."
         )
@@ -55,7 +54,7 @@ except ImportError as e:
     ) from e
 
 # Initalized ORT's random seed with pytorch's initial seed
-# in case user has set pytorch seed before importing ORTModule
+# in case user has set pytorch seed before importing ORTInferenceModule
 set_seed((torch.initial_seed() % sys.maxsize))
 
 
@@ -67,17 +66,6 @@ def override_torch_manual_seed(seed):
 
 torch_manual_seed = torch.manual_seed
 torch.manual_seed = override_torch_manual_seed
-
-"""
-def _use_deterministic_algorithms(enabled):
-    global ORTMODULE_IS_DETERMINISTIC
-    ORTMODULE_IS_DETERMINISTIC = enabled
-
-
-def _are_deterministic_algorithms_enabled():
-    global ORTMODULE_IS_DETERMINISTIC
-    return ORTMODULE_IS_DETERMINISTIC
-"""
 
 from onnxruntime.training.ortmodule.debug_options import DebugOptions, LogLevel  # noqa: E402
 

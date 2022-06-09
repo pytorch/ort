@@ -9,7 +9,6 @@ torchtext
 tensorboard==v2.0.0
 h5py
 wget
---pre onnxruntime-gpu==ort-gpu-nightly-training
 # required for build
 setuptools
 build
