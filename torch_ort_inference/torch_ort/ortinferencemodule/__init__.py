@@ -33,7 +33,7 @@ def _defined_from_envvar(name, default_value, warn=True):
 # NOTE: To *change* values in runtime, import onnxruntime.training.ortmodule and
 # assign them new values. Importing them directly do not propagate changes.
 ################################################################################
-MINIMUM_RUNTIME_PYTORCH_VERSION_STR = "1.8.1"
+MINIMUM_RUNTIME_PYTORCH_VERSION_STR = "1.12.0"
 
 # Verify minimum PyTorch version is installed before proceding to ONNX Runtime initialization
 try:

@@ -1,4 +1,4 @@
-The torch-ort-inference packages uses the PyTorch APIs to accelerate PyTorch models using ONNX Runtime OpenVINO EP.
+The torch-ort-inference package uses the PyTorch APIs to accelerate PyTorch models using ONNX Runtime OpenVINO EP.
 
 ## Dependencies
 
