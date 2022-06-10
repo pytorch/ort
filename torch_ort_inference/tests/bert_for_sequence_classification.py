@@ -8,18 +8,19 @@ import os
 import numpy as np
 import time
 import pandas as pd
+import logging
 
 from transformers import BertTokenizer, AutoConfig
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from transformers import BertForSequenceClassification, BertConfig
 
 import torch
-from torch_ort import ORTInferenceModule, OpenVINOProviderOptions
+from torch_ort import ORTInferenceModule, OpenVINOProviderOptions, DebugOptions, LogLevel
 
 ov_backend_precisions = {
     "CPU": ["FP32"],
     "GPU": ["FP32", "FP16"],
-    #"MYRIAD": ["FP16"]
+    "MYRIAD": ["FP16"]
 }
 
 def get_tokenizer():
@@ -129,7 +130,7 @@ def load_pred_dataset(args):
         df = pd.read_csv(args.input_file, delimiter='\t', header=None, names=['Id', 'Sentence'], skiprows=1)
         sentences = df.Sentence.values
     else:
-        print("Input not provided! Using default input")
+        logging.warning("Input not provided! Using default input")
         sentences = ["This is a sample input."]
 
     input_ids,attention_masks = preprocess_input(sentences)
@@ -184,6 +185,9 @@ def main():
                     " Please specify backend and precision to override.\n")
                 args.backend = "CPU"
                 args.precision = "FP32"
+
+            if args.backend == "MYRIAD":
+                print("Execution on MYRIAD might be impacted due to large model size")
 
     # 2. Dataloader
     # Load input dataset/file for prediction
