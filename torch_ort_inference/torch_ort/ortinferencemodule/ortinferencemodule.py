@@ -16,7 +16,7 @@ from onnxruntime.capi import _pybind_state as C
 from onnxruntime.training.ortmodule import _io, _onnx_models, _utils
 from onnxruntime.training.ortmodule.debug_options import DebugOptions, LogLevel
 
-from .provider_options import ProviderOptions
+from .provider_options import OpenVINOProviderOptions
 from . import utils
 import inspect
 
@@ -41,7 +41,7 @@ class ORTInferenceModule(torch.nn.Module):
             debug_options = DebugOptions()
 
         if not provider_options:
-            provider_options = ProviderOptions()
+            provider_options = OpenVINOProviderOptions()
 
         super(ORTInferenceModule, self).__init__()
         self._original_module = module
