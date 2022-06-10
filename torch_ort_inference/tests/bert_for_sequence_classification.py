@@ -16,7 +16,7 @@ from transformers import BertForSequenceClassification, BertConfig
 import torch
 from torch_ort import ORTInferenceModule, OpenVINOProviderOptions
 
-openvino_backend_precisions = {
+ov_backend_precisions = {
     "CPU": ["FP32"],
     "GPU": ["FP32", "FP16"],
     #"MYRIAD": ["FP16"]
@@ -169,10 +169,9 @@ def main():
     args = parser.parse_args()
 
     # parameters validation
-    if args.provider is None: 
-        print("Using default execution provider CPU, to use OpenVINOExecutionProvider set provider as openvino")
-    
-    if args.provider == "openvino":
+    if args.provider != "openvino": 
+        raise Exception("Invalid Provider! Set openvino as provider")
+    else:
         if (args.backend is not None) and (args.backend not in list(ov_backend_precisions.keys())):
             raise Exception("Invalid backend string. Valid values are:", list(ov_backend_precisions.keys())) 
     
