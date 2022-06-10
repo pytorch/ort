@@ -169,20 +169,21 @@ def main():
     args = parser.parse_args()
 
     # parameters validation
-    if args.provider != "openvino": 
-        raise Exception("Invalid Provider! Set openvino as provider")
-    else:
-        if (args.backend is not None) and (args.backend not in list(ov_backend_precisions.keys())):
-            raise Exception("Invalid backend. Valid values are:", list(ov_backend_precisions.keys())) 
-    
-        if (args.precision is not None) and (args.precision not in ov_backend_precisions[args.backend]):
-            raise Exception("Invalid precision for provided backend")
+    if not args.pytorch_only:
+        if args.provider != "openvino":
+            raise Exception("Invalid Provider! Set openvino as provider")
+        else:
+            if (args.backend is not None) and (args.backend not in list(ov_backend_precisions.keys())):
+                raise Exception("Invalid backend. Valid values are:", list(ov_backend_precisions.keys()))
 
-        if not (args.backend and args.precision):
-            print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default." +
-                " Please specify backend and precision to override.\n")
-            args.backend = "CPU"
-            args.precision = "FP32"
+            if (args.precision is not None) and (args.precision not in ov_backend_precisions[args.backend]):
+                raise Exception("Invalid precision for provided backend")
+
+            if not (args.backend and args.precision):
+                print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default." +
+                    " Please specify backend and precision to override.\n")
+                args.backend = "CPU"
+                args.precision = "FP32"
 
     # 2. Dataloader
     # Load input dataset/file for prediction
