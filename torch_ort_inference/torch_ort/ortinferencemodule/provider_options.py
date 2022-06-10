@@ -1,7 +1,7 @@
 class ProviderOptions:
     def __init__(
         self,
-        provider="",
+        provider=""
     ):
         self._provider = provider
         
@@ -14,7 +14,7 @@ class OpenVINOProviderOptions(ProviderOptions):
         self,
         provider="openvino",
         backend="CPU",
-        precision="FP32",
+        precision="FP32"
     ):
         super().__init__(provider)
         self._backend = backend

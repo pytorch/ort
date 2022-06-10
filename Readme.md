@@ -114,8 +114,8 @@ Once you have created your environment, using Python, execute the following step
 ## Add ONNX Runtime for PyTorch to your PyTorch inference script
 
 ```python
-from torch_ort import ORTInferenceModule
-model = ORTInferenceModule(model)
+from torch_ort import ORTInferenceModule,OpenVINOProviderOptions
+model = ORTInferenceModule(model, provider_options = OpenVINOProviderOptions())
 
 # PyTorch inference script follows
 ```
@@ -132,7 +132,7 @@ model = ORTInferenceModule(model, provider_options = provider_options)
 # PyTorch inference script follows
 ```
 
-If no provider options are specified by user, OpenVINO™ Execution Provider is enabled with following options by default.
+Please note that OpenVINO™ Execution Provider is enabled with following options by default:
 
 ```python
 backend = "CPU"
