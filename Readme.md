@@ -132,7 +132,7 @@ model = ORTInferenceModule(model, provider_options = provider_options)
 # PyTorch inference script follows
 ```
 
-If no provider options are specified by user, OpenVINO™ Execution Provider is enabled with following options by default.
+If no provider options are specified by user, OpenVINO™ Execution Provider is enabled with following options by default:
 
 ```python
 backend = "CPU"

@@ -13,11 +13,10 @@ from torch.onnx import OperatorExportTypes
 
 import onnxruntime
 from onnxruntime.capi import _pybind_state as C
-from onnxruntime.training import ortmodule
-from onnxruntime.training.ortmodule import _io, _logger, _onnx_models, _utils
+from onnxruntime.training.ortmodule import _io, _onnx_models, _utils
 from onnxruntime.training.ortmodule.debug_options import DebugOptions, LogLevel
 
-from .provider_options import ProviderOptions,OpenVINOProviderOptions
+from .provider_options import OpenVINOProviderOptions
 from . import utils
 import inspect
 
@@ -42,22 +41,19 @@ class ORTInferenceModule(torch.nn.Module):
             debug_options = DebugOptions()
 
         if not provider_options:
-            provider_options = ProviderOptions()
+            provider_options = OpenVINOProviderOptions()
 
         super(ORTInferenceModule, self).__init__()
         self._original_module = module
         utils.patch_ortinferencemodule_forward_method(self)
         self._flattened_module = _io._FlattenedModule(module)
         self._debug_options = debug_options
-        # onnx models
         self._onnx_models = _onnx_models.ONNXModels()
         self._module_parameters = list(inspect.signature(self._original_module.forward).parameters.values())
         self._device = utils.get_device_from_module(module)
         self._export_mode = torch.onnx.TrainingMode.EVAL
         self._export_extra_kwargs = {}
         self._provider_options = provider_options
-        self._graph_initializers = None
-        self._graph_info = None
         self._inference_session = None
 
     def _forward_call(self, *inputs, **kwargs):
@@ -192,19 +188,18 @@ class ORTInferenceModule(torch.nn.Module):
 
         # Set EP based on Provider Options
         if self._device.type == "cpu":
-           if self._provider_options.provider == "openvino":
-              providers = ["OpenVINOExecutionProvider"]
-              providers.append("CPUExecutionProvider")
-              provider_option_map = {}
-              # OpenVINO EP options
-              backend = self._provider_options.backend
-              precision = self._provider_options.precision
-              if backend and precision:
-                 device_type = backend + "_" + precision
-                 provider_option_map["device_type"] = device_type
-           else:
-              providers = ["CPUExecutionProvider"]
-              provider_options = [{}]
+            if self._provider_options.provider == "openvino":
+                providers = ["OpenVINOExecutionProvider"]
+                provider_option_map = {}
+                # OpenVINO EP options
+                backend = self._provider_options.backend
+                precision = self._provider_options.precision
+                device_type = backend + "_" + precision
+                provider_option_map["device_type"] = device_type
+                provider_options = [provider_option_map]
+            else:
+                providers = ["CPUExecutionProvider"]
+                provider_options = [{}]
         else:
             raise (
                 RuntimeError("Only CPU device type is supported for torch-ort inference")
