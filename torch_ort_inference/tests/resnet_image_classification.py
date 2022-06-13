@@ -1,8 +1,3 @@
-# -------------------------------------------------------------------------
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License.
-# --------------------------------------------------------------------------
-
 import os
 import sys
 import time
@@ -12,19 +7,20 @@ import argparse
 from PIL import Image
 from torchvision import transforms
 import torchvision.models as models
-from torch_ort import ORTInferenceModule, OpenVINOProviderOptions
+from torch_ort import (
+    ORTInferenceModule,
+    OpenVINOProviderOptions,
+)
 
-ov_backend_precisions = {
-    "CPU": ["FP32"],
-    "GPU": ["FP32", "FP16"],
-    "MYRIAD": ["FP16"]
-}
+ov_backend_precisions = {"CPU": ["FP32"], "GPU": ["FP32", "FP16"], "MYRIAD": ["FP16"]}
 
 def download_labels(labels):
     if not labels:
-        labelsUrl = 'https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt'
         labels = "imagenet_classes.txt"
         if not os.path.exists(labels):
+            labelsUrl = (
+                "https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt"
+            )
             # Download the file (if we haven't already)
             wget.download(labelsUrl)
         else:
@@ -35,21 +31,22 @@ def download_labels(labels):
         categories = [s.strip() for s in f.readlines()]
         return categories
 
-def preprocess(input):
-    transform = transforms.Compose([
-     transforms.Resize(256),
-     transforms.CenterCrop(224),
-     transforms.ToTensor(),
-     transforms.Normalize(
-     mean=[0.485, 0.456, 0.406],
-     std=[0.229, 0.224, 0.225]
-    )])
-    return transform(input)
 
-def predict(model,image,categories):
+def preprocess(img):
+    transform = transforms.Compose(
+        [
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
+    return transform(img)
+
+
+def infer(model, image, categories):
     # warmup
-    for _ in range(5):
-        outputs = model(image)
+    model(image)
 
     # Start inference
     t0 = time.time()
@@ -62,48 +59,74 @@ def predict(model,image,categories):
 
     # Show top categories per image
     top5_prob, top5_catid = torch.topk(probabilities, 5)
-    print("Labels , Probabilities:")
+    print("Top 5 Results: \nLabels , Probabilities:")
     for i in range(top5_prob.size(0)):
-        print(categories[top5_catid[i]],top5_prob[i].item())
+        print(categories[top5_catid[i]], top5_prob[i].item())
+
 
 def main():
     # 1. Basic setup
-    parser = argparse.ArgumentParser(description='PyTorch Image Classification Example')
-    parser.add_argument('--pytorch-only', action='store_true', default=False,
-                        help='disables ONNX Runtime inference')
-    parser.add_argument('--labels', type=str, default=None,
-                        help="labels file")
-    parser.add_argument('--input', type=str, required = True,
-                        help="input image for inference")
-    parser.add_argument('--provider', type=str, default="openvino",
-                        help="ONNX Runtime Execution Provider for inference")
-    parser.add_argument('--backend', type=str,
-                        help="Backend for inference")
-    parser.add_argument('--precision', type=str,
-                        help="Precision for prediction")
+    parser = argparse.ArgumentParser(description="PyTorch Image Classification Example")
+    parser.add_argument(
+        "--pytorch-only",
+        action="store_true",
+        default=False,
+        help="disables ONNX Runtime",
+    )
+    parser.add_argument("--labels", type=str, default=None, help="path to labels file")
+    parser.add_argument(
+        "--input-file", type=str, required=True, help="path to input image file"
+    )
+    parser.add_argument(
+        "--provider",
+        type=str,
+        help="ONNX Runtime Execution Provider",
+    )
+    parser.add_argument(
+        "--backend", type=str, help="OpenVINO target device (CPU, GPU or MYRIAD)"
+    )
+    parser.add_argument(
+        "--precision", type=str, help="OpenVINO target device precision (FP16 or FP32)"
+    )
     args = parser.parse_args()
 
     # parameters validation
     if not args.pytorch_only:
-        if args.provider != "openvino":
-            raise Exception("Invalid Provider! Set openvino as provider")
-        else:
-            if (args.backend is not None) and (args.backend not in list(ov_backend_precisions.keys())):
-                raise Exception("Invalid backend. Valid values are:", list(ov_backend_precisions.keys())) 
+        if args.provider is None:
+            print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default.")
+            args.provider = "openvino"
+        if args.provider == "openvino":
+            if (args.backend is not None) and (
+                args.backend not in list(ov_backend_precisions.keys())
+            ):
+                raise Exception(
+                    "Invalid backend. Valid values are:",
+                    list(ov_backend_precisions.keys()),
+                )
 
-            if (args.precision is not None) and (args.precision not in ov_backend_precisions[args.backend]):
+            if (args.precision is not None) and (
+                args.precision not in ov_backend_precisions[args.backend]
+            ):
                 raise Exception("Invalid precision for provided backend")
 
             if not (args.backend and args.precision):
-                print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default." +
-                    " Please specify backend and precision to override\n")
+                print(
+                    "OpenVINOExecutionProvider is enabled with CPU and FP32 by default."
+                    + " Please specify backend and precision to override\n"
+                )
                 args.backend = "CPU"
                 args.precision = "FP32"
+        else:
+            raise Exception("Invalid execution provider!!")
 
     # 2. Download and load the model
     model = models.resnet50(pretrained=True)
     if not args.pytorch_only:
-        provider_options = OpenVINOProviderOptions(provider=args.provider, backend=args.backend, precision=args.precision)
+        provider_options = None
+        if args.provider == "openvino":
+            provider_options = OpenVINOProviderOptions(
+                backend=args.backend, precision=args.precision
+            )
         model = ORTInferenceModule(model, provider_options=provider_options)
 
     # Convert model for evaluation
@@ -111,17 +134,20 @@ def main():
 
     # 3. Download ImageNet labels
     categories = download_labels(args.labels)
-    
-    # 4. Read input image and preprocess
-    if not args.input:
+
+    # 4. Read input image file and preprocess
+    if not args.input_file:
         raise ValueError("Input image not provided!")
-    img = Image.open(args.input)
+    if not os.path.exists(args.input_file):
+        raise ValueError("Invalid input file path")
+    img = Image.open(args.input_file)
     img_trans = preprocess(img)
-    #Adding batch dimension (size 1)
+    # Adding batch dimension (size 1)
     img_trans = torch.unsqueeze(img_trans, 0)
 
-    # 5. Predict
-    predict(model,img_trans,categories)
+    # 5. Infer
+    infer(model, img_trans, categories)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
