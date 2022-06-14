@@ -36,3 +36,20 @@ def patch_ortinferencemodule_forward_method(ortinferencemodule):
     ortinferencemodule.forward = _forward.__get__(ortinferencemodule)
     # Copy the forward signature from the PyTorch module
     functools.update_wrapper(ortinferencemodule.forward.__func__, ortinferencemodule._original_module.forward.__func__)
+
+
+def set_dynamic_axes(module):
+
+    """Returns true if dynamic_axes parameter needs to be set for
+    onnx export
+    Args:
+        module (torch.nn.Module): Pytorch model
+    """
+    try:
+        avg_pool_module = module._original_module.get_submodule("avgpool")
+        output_size = list(avg_pool_module.output_size)
+        if output_size != [1] * len(output_size):
+            return False
+    except Exception:
+        return True
+    return True

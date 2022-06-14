@@ -36,7 +36,7 @@ class ORTInferenceModule(torch.nn.Module):
     """
 
     def __init__(self, module, debug_options=None, provider_options=None):
-        
+
         if not debug_options:
             debug_options = DebugOptions()
 
@@ -103,15 +103,15 @@ class ORTInferenceModule(torch.nn.Module):
         run_options = C.RunOptions()
 
         # Pre-process inputs to make them compatible with onnxruntime
-        
+
         # Use IO binding
         io_binding = self._inference_session.io_binding()
         _utils._create_iobinding(io_binding, inputs, self._onnx_models.exported_model, self._device)
-        
+
         # Run inference session
         self._inference_session.run_with_iobinding(io_binding, run_options)
-        
-        # Post-process outputs to make them compatible with pytorch 
+
+        # Post-process outputs to make them compatible with pytorch
         forward_outputs = io_binding.get_outputs()
 
         # forward outputs is a list (std::vector<OrtValue>) but _ortvalues_to_torch_tensor
@@ -155,12 +155,13 @@ class ORTInferenceModule(torch.nn.Module):
                     "input_names": self._input_info.names,
                     "output_names": output_names,
                     "do_constant_folding": True,
-                    "dynamic_axes": self._input_info.dynamic_axes,
                     "verbose": self._debug_options.logging.log_level < LogLevel.WARNING,
                     "operator_export_type": OperatorExportTypes.ONNX_ATEN_FALLBACK,
                     "export_params": True,
                     "keep_initializers_as_inputs": False,
                 }
+                if utils.set_dynamic_axes(self):
+                    required_export_kwargs["dynamic_axes"] = self._input_info.dynamic_axes
 
                 invalid_args = self._export_extra_kwargs.keys() & required_export_kwargs.keys()
                 assert (
@@ -179,7 +180,7 @@ class ORTInferenceModule(torch.nn.Module):
             ) from e
 
         return onnx.load_model_from_string(f.getvalue())
-      
+
     def _get_session_config(self):
         """Creates and returns the session configuration to be used."""
 
@@ -235,4 +236,3 @@ class ORTInferenceModule(torch.nn.Module):
                 raise (
                     RuntimeError("A device must be specified in the model or inputs!")
                 )
-
