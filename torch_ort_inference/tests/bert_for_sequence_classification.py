@@ -1,10 +1,8 @@
 import argparse
-from lib2to3.pgen2 import token
 import os
 import numpy as np
 import time
 import pandas as pd
-import itertools
 
 from transformers import AutoTokenizer
 from transformers import AutoModelForSequenceClassification
@@ -20,9 +18,9 @@ def preprocess_input(tokenizer, sentences):
     # Config: "do_lower_case": true, "model_max_length": 512
     inputs = []
 
-    for sent in sentences:
+    for sentence in sentences:
         tokenized_inputs = tokenizer(
-            sent,
+            sentence,
             return_tensors="pt",
             padding='max_length',
             truncation=True)
@@ -84,13 +82,15 @@ def main():
         default=False,
         help="disables ONNX Runtime",
     )
+    parser.add_argument(
+        "--input",
+        type=str,
+        help="input sentence")
 
-    parser.add_argument("--input", type=str, default=None, help="input sentence")
     parser.add_argument(
         "--input-file",
         type=str,
-        default=None,
-        help="input file in .tsv format",
+        help="path to input file in .tsv format",
     )
     parser.add_argument(
         "--provider",
@@ -98,10 +98,14 @@ def main():
         help="ONNX Runtime Execution Provider",
     )
     parser.add_argument(
-        "--backend", type=str, help="OpenVINO target device (CPU, GPU or MYRIAD)."
+        "--backend",
+        type=str,
+        help="OpenVINO target device (CPU, GPU)."
     )
     parser.add_argument(
-        "--precision", type=str, help="OpenVINO target device precision (FP16 or FP32)"
+        "--precision",
+        type=str,
+        help="OpenVINO target device precision (FP16 or FP32)"
     )
 
     args = parser.parse_args()
@@ -110,44 +114,38 @@ def main():
     if not args.pytorch_only:
         if args.provider is None:
             print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default.")
-            args.provider = "openvino"
-        if args.provider == "openvino":
-            if (args.backend is not None) and (
-                args.backend not in list(ov_backend_precisions.keys())
-            ):
-                raise Exception(
-                    "Invalid backend. Valid values are:",
-                    list(ov_backend_precisions.keys()),
-                )
-
-            if (args.precision is not None) and (
-                args.precision not in ov_backend_precisions[args.backend]
-            ):
-                raise Exception("Invalid precision for provided backend")
-
-            if not (args.backend and args.precision):
+        elif args.provider == "openvino":
+            if args.backend and args.precision:
+                if args.backend not in list(ov_backend_precisions.keys()):
+                    raise Exception(
+                        "Invalid backend. Valid values are:",
+                        list(ov_backend_precisions.keys()),
+                    )
+                if args.precision not in ov_backend_precisions[args.backend]:
+                    raise Exception("Invalid precision for provided backend. Valid values are:",
+                    list(ov_backend_precisions[args.backend]))
+            else:
                 print(
                     "OpenVINOExecutionProvider is enabled with CPU and FP32 by default."
-                    + " Please specify backend and precision to override.\n"
+                    + " Please specify both backend and precision to override.\n"
                 )
-                args.backend = "CPU"
-                args.precision = "FP32"
         else:
             raise Exception("Invalid execution provider!!")
 
     # 2. Load Model
-    # Pretrained model fine-tuned on CoLA dataset from huggingface model hub for grammar check
+    # Pretrained model fine-tuned on CoLA dataset from huggingface model hub to predict grammar correctness
     model = AutoModelForSequenceClassification.from_pretrained(
         "textattack/bert-base-uncased-CoLA"
     )
 
     if not args.pytorch_only:
-        provider_options = None
-        if args.provider == "openvino":
+        if args.provider == "openvino" and (args.backend and args.precision):
             provider_options = OpenVINOProviderOptions(
                 backend=args.backend, precision=args.precision
             )
-        model = ORTInferenceModule(model, provider_options=provider_options)
+            model = ORTInferenceModule(model, provider_options=provider_options)
+        else:
+            model = ORTInferenceModule(model)
 
     # Convert model for evaluation
     model.eval()
@@ -175,7 +173,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained("textattack/bert-base-uncased-CoLA")
     inputs = preprocess_input(tokenizer, sentences)
 
-    # 6. Infer
+    # 5. Infer
     infer(model, tokenizer, inputs)
 
 

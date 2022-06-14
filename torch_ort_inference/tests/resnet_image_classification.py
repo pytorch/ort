@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 import torch
 import wget
@@ -67,15 +66,22 @@ def infer(model, image, categories):
 def main():
     # 1. Basic setup
     parser = argparse.ArgumentParser(description="PyTorch Image Classification Example")
+
     parser.add_argument(
         "--pytorch-only",
         action="store_true",
         default=False,
         help="disables ONNX Runtime",
     )
-    parser.add_argument("--labels", type=str, default=None, help="path to labels file")
     parser.add_argument(
-        "--input-file", type=str, required=True, help="path to input image file"
+        "--labels",
+        type=str,
+        help="path to labels file")
+    parser.add_argument(
+        "--input-file",
+        type=str,
+        required=True,
+        help="path to input image file"
     )
     parser.add_argument(
         "--provider",
@@ -83,51 +89,50 @@ def main():
         help="ONNX Runtime Execution Provider",
     )
     parser.add_argument(
-        "--backend", type=str, help="OpenVINO target device (CPU, GPU or MYRIAD)"
+        "--backend",
+        type=str,
+        help="OpenVINO target device (CPU, GPU or MYRIAD)"
     )
     parser.add_argument(
-        "--precision", type=str, help="OpenVINO target device precision (FP16 or FP32)"
+        "--precision",
+        type=str,
+        help="OpenVINO target device precision (FP16 or FP32)"
     )
+
     args = parser.parse_args()
 
     # parameters validation
     if not args.pytorch_only:
         if args.provider is None:
             print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default.")
-            args.provider = "openvino"
-        if args.provider == "openvino":
-            if (args.backend is not None) and (
-                args.backend not in list(ov_backend_precisions.keys())
-            ):
-                raise Exception(
-                    "Invalid backend. Valid values are:",
-                    list(ov_backend_precisions.keys()),
-                )
-
-            if (args.precision is not None) and (
-                args.precision not in ov_backend_precisions[args.backend]
-            ):
-                raise Exception("Invalid precision for provided backend")
-
-            if not (args.backend and args.precision):
+        elif args.provider == "openvino":
+            if args.backend and args.precision:
+                if args.backend not in list(ov_backend_precisions.keys()):
+                    raise Exception(
+                        "Invalid backend. Valid values are:",
+                        list(ov_backend_precisions.keys()),
+                    )
+                if args.precision not in ov_backend_precisions[args.backend]:
+                    raise Exception("Invalid precision for provided backend. Valid values are:",
+                    list(ov_backend_precisions[args.backend]))
+            else:
                 print(
                     "OpenVINOExecutionProvider is enabled with CPU and FP32 by default."
-                    + " Please specify backend and precision to override\n"
+                    + " Please specify both backend and precision to override.\n"
                 )
-                args.backend = "CPU"
-                args.precision = "FP32"
         else:
             raise Exception("Invalid execution provider!!")
 
     # 2. Download and load the model
     model = models.resnet50(pretrained=True)
     if not args.pytorch_only:
-        provider_options = None
-        if args.provider == "openvino":
+        if args.provider == "openvino" and (args.backend and args.precision):
             provider_options = OpenVINOProviderOptions(
                 backend=args.backend, precision=args.precision
             )
-        model = ORTInferenceModule(model, provider_options=provider_options)
+            model = ORTInferenceModule(model, provider_options=provider_options)
+        else:
+            model = ORTInferenceModule(model)
 
     # Convert model for evaluation
     model.eval()
@@ -137,7 +142,7 @@ def main():
 
     # 4. Read input image file and preprocess
     if not args.input_file:
-        raise ValueError("Input image not provided!")
+        raise ValueError("Path to input image not provided!")
     if not os.path.exists(args.input_file):
         raise ValueError("Invalid input file path")
     img = Image.open(args.input_file)
