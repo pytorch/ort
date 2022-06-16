@@ -23,11 +23,14 @@ def preprocess_input(tokenizer, sentences):
     # Config: "do_lower_case": true, "model_max_length": 512
     inputs = []
 
+    MAX_LEN = 64
+
     for sentence in sentences:
         tokenized_inputs = tokenizer(
             sentence,
             return_tensors="pt",
             padding='max_length',
+            max_length=MAX_LEN,
             truncation=True)
         inputs.append(tokenized_inputs)
 
@@ -74,7 +77,6 @@ def infer(model, tokenizer, inputs):
             break
         count = count + 1
     print("\nInference time: {:.4f}s".format(total_infer_time))
-
 
 def main():
     # 1. Basic setup
