@@ -11,7 +11,8 @@ import torch
 
 import _test_helpers
 from torch_ort import ORTModule, DebugOptions, LogLevel, set_seed
-
+from torch_ort.optim import FusedAdam
+from torch_ort.utils import LoadBalancingDistributedSampler
 
 class NeuralNetSinglePositionalArgument(torch.nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
@@ -27,6 +28,17 @@ class NeuralNetSinglePositionalArgument(torch.nn.Module):
         out = self.relu(out)
         out = self.fc2(out)
         return self.dropout(out)
+
+
+class MyDataset(torch.utils.data.Dataset):
+    def __init__(self, samples):
+        self.samples = samples
+
+    def __getitem__(self, index):
+        return self.samples[index]
+
+    def __len__(self):
+        return len(self.samples)
 
 def test_set_seed():
     N, D_in, H, D_out = 64, 784, 500, 10
@@ -138,3 +150,41 @@ def test_debug_options_log_level_validation_fails_on_type_mismatch():
     with pytest.raises(Exception) as ex_info:
         _ = DebugOptions(log_level=log_level)
     assert f"Expected log_level of type LogLevel, got {type(log_level)}." in str(ex_info.value)
+
+def test_fused_adam_import():
+    device = "cuda"
+    N, D_in, H, D_out = 64, 784, 500, 10
+    model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
+
+    ort_fused_adam_optimizer = FusedAdam(
+        model.parameters(), lr=1e-3, weight_decay=0.01, eps=1e-8
+    )
+
+    def run_step(model, x):
+        prediction = model(x)
+        loss = prediction.sum()
+        loss.backward()
+
+        return loss
+
+    def run_optim_step(optimizer):
+        optimizer.step()
+        optimizer.zero_grad()
+
+    x1 = torch.randn(N, D_in, device=device, dtype=torch.float32)
+    run_step(model, x1)
+
+    run_optim_step(ort_fused_adam_optimizer)
+
+
+def test_load_balancing_data_sampler_balances_import():
+    samples_and_complexities = [(torch.FloatTensor([val]), torch.randint(0, 100, (1,)).item()) for val in range(100)]
+    dataset = MyDataset(samples_and_complexities)
+
+    def complexity_fn(sample):
+        return sample[1]
+
+    data_sampler = LoadBalancingDistributedSampler(
+        dataset, complexity_fn=complexity_fn, world_size=2, rank=0, shuffle=False
+    )
+
