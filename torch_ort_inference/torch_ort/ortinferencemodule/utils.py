@@ -45,6 +45,19 @@ def set_dynamic_axes(module):
     Args:
         module (torch.nn.Module): Pytorch model
     """
+    # Torchvision models like alexnet, vgg and densenets have AdaptiveAvgPool2d
+    # op in the model.
+    # This op can be converted through onnx export in two scenarios.
+    # 1.If the output_size of this op is 1 for all dimensions,
+    # it's converted to GlobalMaxPool.
+    # 2. If the output_size is a factor of the input size,
+    # then it's converted to MaxPool.
+    # However the second condition can only be checked if the model is static
+    # and dynamic_axes paramter of torch.onnx.export is not set to True.
+    # Hence, we disable dynamic_axes parameter when we cannot convert this op
+    # to GlobalMaxPool so that we can check in onnx export if this op can be
+    # converted to MaxPool.
+
     try:
         avg_pool_module = module._original_module.get_submodule("avgpool")
         output_size = list(avg_pool_module.output_size)
