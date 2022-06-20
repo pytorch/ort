@@ -7,6 +7,6 @@
 :mod:`torch_ort.utils.data` is a package that expose various Load Balancing Balancers to the ORTModule.
 """
 
-from .sampler import LoadBalancingDistributedSampler
+from onnxruntime.training.utils.data import LoadBalancingDistributedSampler
 
 
