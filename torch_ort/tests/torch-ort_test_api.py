@@ -12,7 +12,7 @@ import torch
 import _test_helpers
 from torch_ort import ORTModule, DebugOptions, LogLevel, set_seed
 from torch_ort.optim import FusedAdam
-from torch_ort.utils.data import LoadBalancingDistributedSampler
+from torch_ort.utils.data import LoadBalancingDistributedSampler,LoadBalancingDistributedBatchSampler
 
 class NeuralNetSinglePositionalArgument(torch.nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
@@ -188,3 +188,14 @@ def test_load_balancing_data_sampler_balances_import():
         dataset, complexity_fn=complexity_fn, world_size=2, rank=0, shuffle=False
     )
 
+    batch_size = 12
+
+    def batch_fn(indices):
+        nonlocal batch_size
+        batches = []
+        for batch_index_begin in range(0, len(indices), batch_size):
+            batch_index_end = min(batch_index_begin + batch_size, len(indices))
+            batches.append(indices[batch_index_begin:batch_index_end])
+        return batches
+
+    batch_sampler = LoadBalancingDistributedBatchSampler(data_sampler, batch_fn)
