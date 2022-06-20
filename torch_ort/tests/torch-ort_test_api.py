@@ -151,32 +151,6 @@ def test_debug_options_log_level_validation_fails_on_type_mismatch():
         _ = DebugOptions(log_level=log_level)
     assert f"Expected log_level of type LogLevel, got {type(log_level)}." in str(ex_info.value)
 
-def test_fused_adam_import():
-    device = "cuda"
-    N, D_in, H, D_out = 64, 784, 500, 10
-    model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
-
-    ort_fused_adam_optimizer = FusedAdam(
-        model.parameters(), lr=1e-3, weight_decay=0.01, eps=1e-8
-    )
-
-    def run_step(model, x):
-        prediction = model(x)
-        loss = prediction.sum()
-        loss.backward()
-
-        return loss
-
-    def run_optim_step(optimizer):
-        optimizer.step()
-        optimizer.zero_grad()
-
-    x1 = torch.randn(N, D_in, device=device, dtype=torch.float32)
-    run_step(model, x1)
-
-    run_optim_step(ort_fused_adam_optimizer)
-
-
 def test_load_balancing_data_sampler_balances_import():
     samples_and_complexities = [(torch.FloatTensor([val]), torch.randint(0, 100, (1,)).item()) for val in range(100)]
     dataset = MyDataset(samples_and_complexities)
