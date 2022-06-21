@@ -93,7 +93,7 @@ class ORTInferenceModule(torch.nn.Module):
                     self._export_mode,
                 )
 
-             # Create the inference_session
+            # Create the inference_session
             if not self._inference_session:
                 session_options, providers, provider_options = self._get_session_config()
                 self._inference_session = onnxruntime.InferenceSession(
