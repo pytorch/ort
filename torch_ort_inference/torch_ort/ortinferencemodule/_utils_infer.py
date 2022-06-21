@@ -1,3 +1,8 @@
+# -------------------------------------------------------------------------
+# Copyright (C) 2022 Intel Corporation
+# Licensed under the MIT License
+# --------------------------------------------------------------------------
+
 import functools
 from collections import abc
 from onnxruntime.training.ortmodule import _io
@@ -28,7 +33,7 @@ def get_user_inputs(onnx_input_names, input_info, inputs, kwargs, device):
     def _expand_inputs(current_input, non_none_inputs):
         # The exporter handles input lists by expanding them so that each
         # element of the list is its own input.
-        # ORTModule must match this behavior by also expanding the inputs.
+        # ORTInferenceModule must match this behavior by also expanding the inputs.
         if current_input is None or isinstance(current_input, str):
             # Drop all None and string inputs
             return

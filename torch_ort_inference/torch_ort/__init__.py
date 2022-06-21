@@ -1,6 +1,6 @@
 # -------------------------------------------------------------------------
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License.
+# Copyright (C) 2022 Intel Corporation
+# Licensed under the MIT License
 # --------------------------------------------------------------------------
 
 from onnxruntime.training.ortmodule import DebugOptions, LogLevel

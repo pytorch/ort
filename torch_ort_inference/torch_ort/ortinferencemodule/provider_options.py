@@ -1,3 +1,8 @@
+# -------------------------------------------------------------------------
+# Copyright (C) 2022 Intel Corporation
+# Licensed under the MIT License
+# --------------------------------------------------------------------------
+
 class ProviderOptions:
     def __init__(
         self,

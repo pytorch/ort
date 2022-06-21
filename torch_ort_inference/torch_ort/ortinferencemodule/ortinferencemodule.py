@@ -1,6 +1,6 @@
 # -------------------------------------------------------------------------
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License.
+# Copyright (C) 2022 Intel Corporation
+# Licensed under the MIT License
 # --------------------------------------------------------------------------
 
 import copy
@@ -110,7 +110,7 @@ class ORTInferenceModule(torch.nn.Module):
         inputs = utils.get_user_inputs(onnx_input_names, input_info, inputs, kwargs, self._device)
 
         io_binding = self._inference_session.io_binding()
-        _utils._create_iobinding(io_binding, inputs, self._onnx_models.exported_model, self._device)
+        _utils_infer._create_iobinding(io_binding, inputs, self._onnx_models.exported_model, self._device)
 
         # Run inference session
         self._inference_session.run_with_iobinding(io_binding, run_options)
