@@ -17,6 +17,7 @@ from torch_ort import (
 )
 
 ov_backend_precisions = {"CPU": ["FP32"], "GPU": ["FP32", "FP16"], "MYRIAD": ["FP16"]}
+inference_execution_providers = ["openvino"]
 
 def download_labels(labels):
     if not labels:
@@ -108,25 +109,24 @@ def main():
 
     # parameters validation
     if not args.pytorch_only:
-        if args.provider is None:
-            print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default.")
-        elif args.provider == "openvino":
+        if args.provider is None or args.provider == "openvino":
             if args.backend and args.precision:
                 if args.backend not in list(ov_backend_precisions.keys()):
                     raise Exception(
-                        "Invalid backend. Valid values are:",
-                        list(ov_backend_precisions.keys()),
-                    )
+                        "Invalid backend. Valid values are: {}".format(
+                            list(ov_backend_precisions.keys())))
                 if args.precision not in ov_backend_precisions[args.backend]:
-                    raise Exception("Invalid precision for provided backend. Valid values are:",
-                    list(ov_backend_precisions[args.backend]))
-            else:
-                print(
-                    "OpenVINOExecutionProvider is enabled with CPU and FP32 by default."
-                    + " Please specify both backend and precision to override.\n"
+                    raise Exception("Invalid precision for provided backend. Valid values are: {}".format(
+                    list(ov_backend_precisions[args.backend])))
+            elif args.backend or args.precision:
+                raise Exception(
+                    "Please specify both backend and precision to override default options.\n"
                 )
+            else:
+                print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default.")
         else:
-            raise Exception("Invalid execution provider!!")
+            raise Exception("Invalid execution provider!! Available providers are: {}".format(inference_execution_providers))
+
 
     # 2. Download and load the model
     model = models.resnet50(pretrained=True)

@@ -8,6 +8,7 @@ import os
 import numpy as np
 import time
 import pandas as pd
+import pathlib
 
 from transformers import AutoTokenizer
 from transformers import AutoModelForSequenceClassification
@@ -16,7 +17,7 @@ import torch
 from torch_ort import ORTInferenceModule, OpenVINOProviderOptions
 
 ov_backend_precisions = {"CPU": ["FP32"], "GPU": ["FP32", "FP16"]}
-
+inference_execution_providers = ["openvino"]
 
 def preprocess_input(tokenizer, sentences):
     # Tokenization & Input Formatting
@@ -50,7 +51,6 @@ def infer(model, tokenizer, inputs):
             if i == 0:
                t0 = time.time()
                model(input_ids, attention_masks)
-               print("warm up time:", time.time()-t0)
             # infer
             t0 = time.time()
             outputs = model(input_ids, attention_masks)
@@ -69,7 +69,7 @@ def infer(model, tokenizer, inputs):
         orig_sent = tokenizer.decode(input_ids[0],skip_special_tokens=True)
         results[orig_sent] = pred_flat[0]
 
-    print("\n Top (20) Results: \n")
+    print("\n Top Results: \n")
     count = 0
     for k, v in results.items():
         print("\t{!r} : {!r}".format(k, v))
@@ -119,25 +119,23 @@ def main():
 
     # parameters validation
     if not args.pytorch_only:
-        if args.provider is None:
-            print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default.")
-        elif args.provider == "openvino":
+        if args.provider is None or args.provider == "openvino":
             if args.backend and args.precision:
                 if args.backend not in list(ov_backend_precisions.keys()):
                     raise Exception(
-                        "Invalid backend. Valid values are:",
-                        list(ov_backend_precisions.keys()),
-                    )
+                        "Invalid backend. Valid values are: {}".format(
+                            list(ov_backend_precisions.keys())))
                 if args.precision not in ov_backend_precisions[args.backend]:
-                    raise Exception("Invalid precision for provided backend. Valid values are:",
-                    list(ov_backend_precisions[args.backend]))
-            else:
-                print(
-                    "OpenVINOExecutionProvider is enabled with CPU and FP32 by default."
-                    + " Please specify both backend and precision to override.\n"
+                    raise Exception("Invalid precision for provided backend. Valid values are: {}".format(
+                    list(ov_backend_precisions[args.backend])))
+            elif args.backend or args.precision:
+                raise Exception(
+                    "Please specify both backend and precision to override default options.\n"
                 )
+            else:
+                print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default.")
         else:
-            raise Exception("Invalid execution provider!!")
+            raise Exception("Invalid execution provider!! Available providers are: {}".format(inference_execution_providers))
 
     # 2. Load Model
     # Pretrained model fine-tuned on CoLA dataset from huggingface model hub to predict grammar correctness
@@ -146,7 +144,8 @@ def main():
     )
 
     if not args.pytorch_only:
-        if args.provider == "openvino" and (args.backend and args.precision):
+        if (args.provider == "openvino" or args.provider is None) \
+            and (args.backend and args.precision):
             provider_options = OpenVINOProviderOptions(
                 backend=args.backend, precision=args.precision
             )
@@ -162,19 +161,24 @@ def main():
     if args.input is not None:
         sentences = [args.input]
     elif args.input_file is not None:
-        if not os.path.exists(args.input_file):
-            raise ValueError("Invalid input file path: %s" % args.input_file)
+        file_name = args.input_file
+        if not os.path.exists(file_name):
+            raise Exception("Invalid input file path: %s" % file_name)
+        if os.stat(file_name).st_size == 0:
+            raise Exception("Input file is empty!!")
+
         df = pd.read_csv(
-            args.input_file,
+            file_name,
             delimiter="\t",
             header=None,
             names=["Id", "Sentence"],
             skiprows=1,
         )
         sentences = df.Sentence.values
+        print(sentences)
     else:
         print("Input not provided! Using default input...")
-        sentences = ["This is a sample input."]
+        sentences = ["This is a BERT sample.","User input is invalid not."]
 
     # 4. Load Tokenizer & Preprocess input sentences
     tokenizer = AutoTokenizer.from_pretrained("textattack/bert-base-uncased-CoLA")
