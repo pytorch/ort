@@ -17,7 +17,7 @@ from onnxruntime.training.ortmodule import _io, _onnx_models, _utils
 from onnxruntime.training.ortmodule.debug_options import DebugOptions, LogLevel
 
 from .provider_options import OpenVINOProviderOptions
-from . import utils
+from . import _utils_infer
 import inspect
 
 # Needed to override PyTorch methods
@@ -45,12 +45,12 @@ class ORTInferenceModule(torch.nn.Module):
 
         super(ORTInferenceModule, self).__init__()
         self._original_module = module
-        utils.patch_ortinferencemodule_forward_method(self)
+        _utils_infer.patch_ortinferencemodule_forward_method(self)
         self._flattened_module = _io._FlattenedModule(module)
         self._debug_options = debug_options
         self._onnx_models = _onnx_models.ONNXModels()
         self._module_parameters = list(inspect.signature(self._original_module.forward).parameters.values())
-        self._device = utils.get_device_from_module(module)
+        self._device = _utils_infer.get_device_from_module(module)
         self._export_mode = torch.onnx.TrainingMode.EVAL
         self._export_extra_kwargs = {}
         self._provider_options = provider_options
@@ -61,7 +61,7 @@ class ORTInferenceModule(torch.nn.Module):
         ONNX Runtime.
 
         The first call to forward performs setup and checking steps. During this call,
-        ORTInferenceModule determines whether the module can be trained with ONNX Runtime. For
+        ORTInferenceModule determines whether the module can be exported to ONNX. For
         this reason, the first forward call execution takes longer than subsequent calls.
         Execution is interrupted if ONNX Runtime cannot process the model for inferencing.
 
@@ -93,12 +93,12 @@ class ORTInferenceModule(torch.nn.Module):
                     self._export_mode,
                 )
 
-        # Create the inference_session
-        if not self._inference_session:
-           session_options, providers, provider_options = self._get_session_config()
-           self._inference_session = onnxruntime.InferenceSession(
-            self._onnx_models.exported_model.SerializeToString() , session_options, providers, provider_options
-           )
+             # Create the inference_session
+            if not self._inference_session:
+                session_options, providers, provider_options = self._get_session_config()
+                self._inference_session = onnxruntime.InferenceSession(
+                    self._onnx_models.exported_model.SerializeToString() , session_options, providers, provider_options
+                )
 
         run_options = C.RunOptions()
 
@@ -112,12 +112,9 @@ class ORTInferenceModule(torch.nn.Module):
         self._inference_session.run_with_iobinding(io_binding, run_options)
 
         # Post-process outputs to make them compatible with pytorch
-        forward_outputs = io_binding.get_outputs()
+        forward_outputs = io_binding._iobinding.get_outputs()
 
-        # forward outputs is a list (std::vector<OrtValue>) but _ortvalues_to_torch_tensor
-        # is expected a OrtValueVector (also std::vector<OrtValue> but defined in onnxruntime-training).
-           # _ortvalues_to_torch_tensor_list needs to be used.
-        user_outputs = _utils._ortvalues_to_torch_tensor_list(forward_outputs, self._device)
+        user_outputs = _utils._ortvalues_to_torch_tensor(forward_outputs, self._device)
         return _io.unflatten_user_output(self._module_output_schema, user_outputs)
 
     def _export_model(self, input_schema, *inputs, **kwargs):
@@ -160,7 +157,7 @@ class ORTInferenceModule(torch.nn.Module):
                     "export_params": True,
                     "keep_initializers_as_inputs": False,
                 }
-                if utils.set_dynamic_axes(self):
+                if _utils_infer.set_dynamic_axes(self):
                     required_export_kwargs["dynamic_axes"] = self._input_info.dynamic_axes
 
                 invalid_args = self._export_extra_kwargs.keys() & required_export_kwargs.keys()
@@ -229,7 +226,7 @@ class ORTInferenceModule(torch.nn.Module):
     def _set_device_from_module(self, inputs, kwargs):
         """Get the device from the module and save it to self._device"""
 
-        device = utils.get_device_from_module(self._original_module) or utils.get_device_from_inputs(inputs, kwargs)
+        device = _utils_infer.get_device_from_module(self._original_module) or _utils.get_device_from_inputs(inputs, kwargs)
         if not self._device or self._device != device:
             self._device = device
             if not self._device:

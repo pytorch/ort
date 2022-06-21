@@ -1,7 +1,7 @@
 class ProviderOptions:
     def __init__(
         self,
-        provider=""
+        provider
     ):
         self._provider = provider
         
