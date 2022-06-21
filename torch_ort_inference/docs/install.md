@@ -6,11 +6,11 @@ You can install and run torch-ort-inference in your local environment.
 
 ### Default dependencies
 
-By default, torch-ort-inference depends on PyTorch 1.12 and ONNX Runtime OpenVINO EP 1.11.
+By default, torch-ort-inference depends on PyTorch 1.12 and ONNX Runtime OpenVINO EP 1.12.
 
-Install torch-ort-inference
+Install torch-ort-inference with OpenVINO dependencies
 
-- `pip install torch-ort-inference`
+- `pip install torch-ort-inference[openvino]`
 
 ## Test your installation
 
@@ -22,7 +22,7 @@ Once you have created your environment, using Python, execute the following step
 
 2. Install extra dependencies
 
-    `pip install wget pandas sklearn transformers`
+    `pip install wget pandas transformers`
 
 3. Run the inference script
 

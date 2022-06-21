@@ -6,7 +6,6 @@
 import os
 import sys
 import warnings
-from cmath import e
 
 import torch
 from packaging import version
@@ -30,8 +29,6 @@ def _defined_from_envvar(name, default_value, warn=True):
 
 ################################################################################
 # All global constant goes here, before ORTInferenceModule is imported ##################
-# NOTE: To *change* values in runtime, import onnxruntime.training.ortmodule and
-# assign them new values. Importing them directly do not propagate changes.
 ################################################################################
 MINIMUM_RUNTIME_PYTORCH_VERSION_STR = "1.12.0"
 

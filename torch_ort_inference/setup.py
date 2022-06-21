@@ -23,6 +23,11 @@ if 'dev' in version_str:
 with open(os.path.join("torch_ort", "_version.py"), 'w') as fh:
     fh.write(f"__version__ = '{version_str}'")
 
+extras_require = {
+    "openvino": [
+        "onnxruntime-openvino>=1.12.0",
+    ],
+}
 install_requires = fetch_requirements('requirements.txt')
 
 packages=[*setuptools.find_packages(), 'torch_ort.configure']
@@ -44,6 +49,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    extras_require=extras_require,
     packages=packages,
-    python_requires=">=3.6",
+    python_requires=">=3.7",
 )
