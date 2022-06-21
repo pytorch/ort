@@ -1,6 +1,6 @@
 # -------------------------------------------------------------------------
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License.
+# Copyright (C) 2022 Intel Corporation
+# Licensed under the MIT License
 # --------------------------------------------------------------------------
 
 import copy
@@ -105,6 +105,10 @@ class ORTInferenceModule(torch.nn.Module):
         # Pre-process inputs to make them compatible with onnxruntime
 
         # Use IO binding
+        onnx_input_names = [inp.name for inp in self._onnx_models.exported_model.graph.input]
+        input_info = _io.parse_inputs_for_onnx_export(self._module_parameters, None, schema, inputs, kwargs)
+        inputs = _utils_infer.get_user_inputs(onnx_input_names, input_info, inputs, kwargs, self._device)
+
         io_binding = self._inference_session.io_binding()
         _utils._create_iobinding(io_binding, inputs, self._onnx_models.exported_model, self._device)
 
