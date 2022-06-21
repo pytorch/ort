@@ -4,7 +4,6 @@
 # --------------------------------------------------------------------------
 
 import copy
-from ctypes import util
 import io
 from typing import TypeVar
 
