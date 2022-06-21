@@ -1,4 +1,6 @@
 import functools
+from collections import abc
+from onnxruntime.training.ortmodule import _io
 
 def get_device_from_module(module):
     """Returns the first device found in the `module`'s parameters or None
@@ -19,6 +21,64 @@ def get_device_from_module(module):
             raise e
         # Model doesn't have a device set to any of the model parameters
     return device
+
+def get_user_inputs(onnx_input_names, input_info, inputs, kwargs, device):
+
+    # User inputs
+    def _expand_inputs(current_input, non_none_inputs):
+        # The exporter handles input lists by expanding them so that each
+        # element of the list is its own input.
+        # ORTModule must match this behavior by also expanding the inputs.
+        if current_input is None or isinstance(current_input, str):
+            # Drop all None and string inputs
+            return
+        if isinstance(current_input, abc.Sequence):
+            # If the input is a sequence (like a list), expand the list so that
+            # each element of the list is an input by itself
+            for inp in current_input:
+                _expand_inputs(inp, non_none_inputs)
+        elif isinstance(current_input, abc.Mapping):
+            # If the input is a mapping (like a dict), expand the dict so that
+            # each element of the dict is an input by itself
+            for _, val in current_input.items():
+                _expand_inputs(val, non_none_inputs)
+        else:
+            # else just collect all the non none inputs within non_none_inputs
+            non_none_inputs.append(current_input)
+
+    non_none_inputs = []
+    _expand_inputs(inputs, non_none_inputs)
+    result = []
+
+    for input_idx, name in enumerate(onnx_input_names):
+        inp = None
+        if name in kwargs and kwargs[name] is not None:
+            # Only use keywords coming from user that are expected by ONNX model
+            inp = kwargs[name]
+
+        if inp is None:
+            try:
+                # Only use positionals coming from user that are expected by ONNX model
+                # if input_idx >= len(input_info.names), IndexError will be thrown
+                if name != input_info.names[input_idx]:
+                    # When ONNX drops unused inputs, get correct index from user input
+                    # if name is not in input_info.names, ValueError will be thrown
+                    input_idx = input_info.names.index(name)
+                inp = non_none_inputs[input_idx]
+            except (IndexError, ValueError):
+                # ONNX input name is not present in input_info.names.
+                pass
+
+        if inp is not None:
+            if _io._PrimitiveType.is_primitive_type(inp):
+                inp = _io._PrimitiveType.get_tensor(inp,device)
+            result.append(inp)
+        else:
+            raise (
+                RuntimeError(f"Input is present in ONNX graph but not provided: {name}.")
+            )
+
+    return result
 
 def patch_ortinferencemodule_forward_method(ortinferencemodule):
     # Create forward dynamically, so each ORTInferenceModule instance will have its own copy.
