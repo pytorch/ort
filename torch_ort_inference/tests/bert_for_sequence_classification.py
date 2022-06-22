@@ -92,7 +92,7 @@ def main():
         "--pytorch-only",
         action="store_true",
         default=False,
-        help="disables ONNX Runtime",
+        help="disables ONNX Runtime inference",
     )
     parser.add_argument(
         "--input",
@@ -141,6 +141,10 @@ def main():
                 print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default.")
         else:
             raise Exception("Invalid execution provider!! Available providers are: {}".format(inference_execution_providers))
+    else:
+        print("ONNXRuntime inference is disabled.")
+        if args.provider or args.precision or args.backend:
+            raise Exception("provider, backend, precision arguments are not applicable for --pytorch-only option")
 
     # 2. Read input sentence(s)
     # Input can be a single sentence, list of single sentences in a .tsv file.
