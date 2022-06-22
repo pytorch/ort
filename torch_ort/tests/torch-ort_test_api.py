@@ -11,7 +11,7 @@ import torch
 
 import _test_helpers
 from torch_ort import ORTModule, DebugOptions, LogLevel, set_seed
-
+from torch_ort.utils.data import LoadBalancingDistributedSampler, LoadBalancingDistributedBatchSampler
 
 class NeuralNetSinglePositionalArgument(torch.nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
@@ -27,6 +27,17 @@ class NeuralNetSinglePositionalArgument(torch.nn.Module):
         out = self.relu(out)
         out = self.fc2(out)
         return self.dropout(out)
+
+
+class MyDataset(torch.utils.data.Dataset):
+    def __init__(self, samples):
+        self.samples = samples
+
+    def __getitem__(self, index):
+        return self.samples[index]
+
+    def __len__(self):
+        return len(self.samples)
 
 def test_set_seed():
     N, D_in, H, D_out = 64, 784, 500, 10
@@ -138,3 +149,26 @@ def test_debug_options_log_level_validation_fails_on_type_mismatch():
     with pytest.raises(Exception) as ex_info:
         _ = DebugOptions(log_level=log_level)
     assert f"Expected log_level of type LogLevel, got {type(log_level)}." in str(ex_info.value)
+
+def test_load_balancing_data_sampler_balances_import():
+    samples_and_complexities = [(torch.FloatTensor([val]), torch.randint(0, 100, (1,)).item()) for val in range(100)]
+    dataset = MyDataset(samples_and_complexities)
+
+    def complexity_fn(sample):
+        return sample[1]
+
+    data_sampler = LoadBalancingDistributedSampler(
+        dataset, complexity_fn=complexity_fn, world_size=2, rank=0, shuffle=False
+    )
+
+    batch_size = 12
+
+    def batch_fn(indices):
+        nonlocal batch_size
+        batches = []
+        for batch_index_begin in range(0, len(indices), batch_size):
+            batch_index_end = min(batch_index_begin + batch_size, len(indices))
+            batches.append(indices[batch_index_begin:batch_index_end])
+        return batches
+
+    batch_sampler = LoadBalancingDistributedBatchSampler(data_sampler, batch_fn)
