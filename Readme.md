@@ -79,104 +79,65 @@ model = ORTModule(model)
 import torch
 from torch_ort.optim import FusedAdam
 
-class NeuralNetSinglePositionalArgument(torch.nn.Module):
-    def __init__(self, input_size, hidden_size, num_classes):
-        super(NeuralNetSinglePositionalArgument, self).__init__()
-
-        self.fc1 = torch.nn.Linear(input_size, hidden_size)
-        self.relu = torch.nn.ReLU()
-        self.fc2 = torch.nn.Linear(hidden_size, num_classes)
-        self.dropout = torch.nn.Dropout(p=0.5)
-
-    def forward(self, input1):
-        out = self.fc1(input1)
-        out = self.relu(out)
-        out = self.fc2(out)
-        return self.dropout(out)
-
-
-class MyDataset(torch.utils.data.Dataset):
-    def __init__(self, samples):
-        self.samples = samples
-
-    def __getitem__(self, index):
-        return self.samples[index]
-
-    def __len__(self):
-        return len(self.samples)
-
-
-def run_step(model, x):
-    prediction = model(x)
-    loss = prediction.sum()
-    loss.backward()
-
-    return loss
-
-def run_optim_step(optimizer):
-    optimizer.step()
-    optimizer.zero_grad()
+class NeuralNet(torch.nn.Module):
+    ...
 
 # Only supports GPU Currently.
 device = "cuda"
-N, D_in, H, D_out = 64, 784, 500, 10
-model = NeuralNetSinglePositionalArgument(D_in, H, D_out).to(device)
+model = NeuralNet(...).to(device)
 
 ort_fused_adam_optimizer = FusedAdam(
-    model.parameters(), lr=1e-3, weight_decay=0.01, eps=1e-8
+    model.parameters(), lr=1e-3, betas=(0.9, 0.999), weight_decay=0.01, eps=1e-8
 )
 
-x = torch.randn(N, D_in, device=device, dtype=torch.float32)
-run_step(model, x)
+loss = model(...).sum()
+loss.backward()
 
-run_optim_step(ort_fused_adam_optimizer)
+ort_fused_adam_optimizer.step()
+ort_fused_adam_optimizer.zero_grad()
 
 ```
 For detailed documentation see [FusedAdam](https://github.com/microsoft/onnxruntime/blob/master/orttraining/orttraining/python/training/optim/fused_adam.py#L25)
+
+For a full working example see [FusedAdam Test Example](https://github.com/pytorch/ort/blob/main/torch_ort/tests/torch-ort_test_api.py) 
 
 ## Usage of LoadBalancingDistributedSampler
 
 ```python
 import torch
+from torch.utils.data import DataLoader 
 from torch_ort.utils.data import LoadBalancingDistributedSampler
 
-class NeuralNetSinglePositionalArgument(torch.nn.Module):
-    def __init__(self, input_size, hidden_size, num_classes):
-        super(NeuralNetSinglePositionalArgument, self).__init__()
-
-        self.fc1 = torch.nn.Linear(input_size, hidden_size)
-        self.relu = torch.nn.ReLU()
-        self.fc2 = torch.nn.Linear(hidden_size, num_classes)
-        self.dropout = torch.nn.Dropout(p=0.5)
-
-    def forward(self, input1):
-        out = self.fc1(input1)
-        out = self.relu(out)
-        out = self.fc2(out)
-        return self.dropout(out)
-
 class MyDataset(torch.utils.data.Dataset):
-    def __init__(self, samples):
-        self.samples = samples
+   ...
+   
+def collate_fn(data): 
+    ...
+    return samples, label_list 
 
-    def __getitem__(self, index):
-        return self.samples[index]
+samples = [...] 
+labels = [...] 
 
-    def __len__(self):
-        return len(self.samples)
+dataset = MyDataset(samples, labels) 
 
-def complexity_fn(sample):
-    return sample[1]
+data_sampler = sampler.LoadBalancingDistributedSampler( 
 
-samples_and_complexities = [(torch.FloatTensor([val]), torch.randint(0, 100, (1,)).item()) for val in range(100)]
-dataset = MyDataset(samples_and_complexities)
+    dataset, complexity_fn=complexity_fn, world_size=2, rank=0, shuffle=False 
 
-data_sampler = LoadBalancingDistributedSampler(
-    dataset, complexity_fn=complexity_fn, world_size=2, rank=0, shuffle=False
-)
+) 
 
+train_dataloader = DataLoader(dataset, batch_size=2, sampler=data_sampler, collate_fn=collate_fn) 
+
+for batched_data, batched_label in train_dataloader: 
+    optimizer.zero_grad() 
+    loss = loss_fn(model(batched_data) , batched_labels) 
+    loss.backward() 
+    optimizer.step() 
+    
 ```
 For detailed documentation see [LoadBalancingDistributedSampler](https://github.com/microsoft/onnxruntime/blob/master/orttraining/orttraining/python/training/utils/data/sampler.py#L37)
+
+For a full working example see [LoadBalancingDistributedSampler Test Example](https://github.com/microsoft/onnxruntime/blob/master/orttraining/orttraining/python/training/utils/data/sampler.py#L37)
 
 ## Samples
 
