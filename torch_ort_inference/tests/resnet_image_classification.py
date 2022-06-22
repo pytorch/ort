@@ -1,3 +1,8 @@
+# -------------------------------------------------------------------------
+# Copyright (C) 2022 Intel Corporation
+# Licensed under the MIT License
+# --------------------------------------------------------------------------
+
 import os
 import time
 import torch
