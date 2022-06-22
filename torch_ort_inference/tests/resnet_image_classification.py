@@ -158,7 +158,7 @@ def main():
 
     # 5. Infer
     infer(model, img_trans, categories)
-
+    img.close()
 
 if __name__ == "__main__":
     main()
