@@ -11,10 +11,7 @@ import argparse
 from PIL import Image
 from torchvision import transforms
 import torchvision.models as models
-from torch_ort import (
-    ORTInferenceModule,
-    OpenVINOProviderOptions,
-)
+from torch_ort import ORTInferenceModule, OpenVINOProviderOptions
 
 ov_backend_precisions = {"CPU": ["FP32"], "GPU": ["FP32", "FP16"], "MYRIAD": ["FP16"]}
 inference_execution_providers = ["openvino"]
@@ -127,11 +124,21 @@ def main():
         else:
             raise Exception("Invalid execution provider!! Available providers are: {}".format(inference_execution_providers))
 
+    # 2. Read input image file and preprocess
+    if not args.input_file:
+        raise ValueError("Path to input image not provided!")
+    if not os.path.exists(args.input_file):
+        raise ValueError("Invalid input file path")
+    img = Image.open(args.input_file)
+    img_trans = preprocess(img)
+    # Adding batch dimension (size 1)
+    img_trans = torch.unsqueeze(img_trans, 0)
 
-    # 2. Download and load the model
+    # 3. Download and load the model
     model = models.resnet50(pretrained=True)
     if not args.pytorch_only:
-        if args.provider == "openvino" and (args.backend and args.precision):
+        if (args.provider == "openvino" or args.provider is None) \
+            and (args.backend and args.precision):
             provider_options = OpenVINOProviderOptions(
                 backend=args.backend, precision=args.precision
             )
@@ -142,18 +149,8 @@ def main():
     # Convert model for evaluation
     model.eval()
 
-    # 3. Download ImageNet labels
+    # 4. Download ImageNet labels
     categories = download_labels(args.labels)
-
-    # 4. Read input image file and preprocess
-    if not args.input_file:
-        raise ValueError("Path to input image not provided!")
-    if not os.path.exists(args.input_file):
-        raise ValueError("Invalid input file path")
-    img = Image.open(args.input_file)
-    img_trans = preprocess(img)
-    # Adding batch dimension (size 1)
-    img_trans = torch.unsqueeze(img_trans, 0)
 
     # 5. Infer
     infer(model, img_trans, categories)

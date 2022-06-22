@@ -38,12 +38,13 @@ def preprocess_input(tokenizer, sentences):
     return inputs
 
 
-def infer(model, tokenizer, inputs):
+def infer(model, sentences, inputs):
+    num_sentences = len(sentences)
     total_infer_time = 0
     results = {}
 
     # Run inference
-    for i in range(len(inputs)):
+    for i in range(num_sentences):
         input_ids = (inputs[i])['input_ids']
         attention_masks = (inputs[i])['attention_mask']
         with torch.no_grad():
@@ -66,17 +67,21 @@ def infer(model, tokenizer, inputs):
 
         # predictions
         pred_flat = np.argmax(logits, axis=1).flatten()
-        orig_sent = tokenizer.decode(input_ids[0],skip_special_tokens=True)
+        orig_sent = sentences[i]
         results[orig_sent] = pred_flat[0]
 
-    print("\n Top Results: \n")
+    print("\n Number of sentences: {}".format(num_sentences))
+    if num_sentences > 20:
+        print(" First 20 results:")
+    print("\t Grammar correctness label (0=unacceptable, 1=acceptable)\n")
     count = 0
     for k, v in results.items():
         print("\t{!r} : {!r}".format(k, v))
         if count == 20:
             break
         count = count + 1
-    print("\nInference time: {:.4f}s".format(total_infer_time))
+    print("\n Average inference time: {:.4f}ms".format(total_infer_time/num_sentences))
+    print(" Total Inference time: {:.4f}ms".format(total_infer_time * 1000))
 
 def main():
     # 1. Basic setup
@@ -137,7 +142,35 @@ def main():
         else:
             raise Exception("Invalid execution provider!! Available providers are: {}".format(inference_execution_providers))
 
-    # 2. Load Model
+    # 2. Read input sentence(s)
+    # Input can be a single sentence, list of single sentences in a .tsv file.
+    if args.input and args.input_file:
+        raise Exception("Please provide either input or input file for inference")
+
+    if args.input is not None:
+        sentences = [args.input]
+    elif args.input_file is not None:
+        file_name = args.input_file
+        if not os.path.exists(file_name):
+            raise Exception("Invalid input file path: %s" % file_name)
+        if os.stat(file_name).st_size == 0:
+            raise Exception("Input file is empty!!")
+        name, ext = os.path.splitext(file_name)
+        if ext != ".tsv":
+            raise Exception("Invalid input file format. Please provide .tsv file.")
+        df = pd.read_csv(
+            file_name,
+            delimiter="\t",
+            header=None,
+            names=["Id", "Sentence"],
+            skiprows=1,
+        )
+        sentences = df.Sentence.values
+    else:
+        print("Input not provided! Using default input...")
+        sentences = ["This is a BERT sample.","User input is invalid not."]
+
+    # 3. Load Model
     # Pretrained model fine-tuned on CoLA dataset from huggingface model hub to predict grammar correctness
     model = AutoModelForSequenceClassification.from_pretrained(
         "textattack/bert-base-uncased-CoLA"
@@ -156,36 +189,12 @@ def main():
     # Convert model for evaluation
     model.eval()
 
-    # 3. Read input sentence(s)
-    # Input can be a single sentence, list of single sentences in a .tsv file.
-    if args.input is not None:
-        sentences = [args.input]
-    elif args.input_file is not None:
-        file_name = args.input_file
-        if not os.path.exists(file_name):
-            raise Exception("Invalid input file path: %s" % file_name)
-        if os.stat(file_name).st_size == 0:
-            raise Exception("Input file is empty!!")
-
-        df = pd.read_csv(
-            file_name,
-            delimiter="\t",
-            header=None,
-            names=["Id", "Sentence"],
-            skiprows=1,
-        )
-        sentences = df.Sentence.values
-        print(sentences)
-    else:
-        print("Input not provided! Using default input...")
-        sentences = ["This is a BERT sample.","User input is invalid not."]
-
     # 4. Load Tokenizer & Preprocess input sentences
     tokenizer = AutoTokenizer.from_pretrained("textattack/bert-base-uncased-CoLA")
     inputs = preprocess_input(tokenizer, sentences)
 
     # 5. Infer
-    infer(model, tokenizer, inputs)
+    infer(model, sentences, inputs)
 
 
 if __name__ == "__main__":
