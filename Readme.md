@@ -147,7 +147,7 @@ To see torch-ort in action, see https://github.com/microsoft/onnxruntime-trainin
 
 # Accelerate inference for PyTorch models with ONNX Runtime (Preview)
 
-ONNX Runtime for PyTorch accelerates PyTorch model inference using ONNX Runtime.
+ONNX Runtime for PyTorch is now extended to support PyTorch model inference using ONNX Runtime.
 
 It is available via the torch-ort-inference python package. This preview package enables OpenVINO™ Execution Provider for ONNX Runtime by default for accelerating inference on various Intel® CPUs, Intel® integrated GPUs, and Intel® Movidius™ Vision Processing Units - referred to as VPU.
 
@@ -163,7 +163,7 @@ Install torch-ort-inference with OpenVINO dependencies
 
 ## Verify your installation
 
-Once you have created your environment, using Python, execute the following steps to validate that your installation is correct.
+Once you have created your environment, execute the following steps to validate that your installation is correct.
 
 1. Clone this repo
 
