@@ -25,7 +25,7 @@ with open(os.path.join("torch_ort", "_version.py"), 'w') as fh:
 
 install_requires = fetch_requirements('requirements.txt')
 
-packages=[*setuptools.find_packages(), 'torch_ort.configure']
+packages=[*setuptools.find_packages(), 'torch_ort.configure','torch_ort.utils.data','torch_ort.optim']
 
 setuptools.setup(
     name="torch_ort",

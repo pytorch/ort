@@ -45,9 +45,6 @@ def test_load_config_from_json_1():
         # test enable custom autograd function
         assert ort_model_attributes._enable_custom_autograd_function == True
 
-        # test allow layer norm mod precision
-        assert ort_model_attributes._allow_layer_norm_mod_precision == True
-
         # test use static shape
         assert ort_model_attributes._use_static_shape == True
 
@@ -89,9 +86,6 @@ def test_load_config_from_json_2():
 
         # test enable custom autograd function
         assert ort_model_attributes._enable_custom_autograd_function == False
-
-        # test allow layer norm mod precision
-        assert ort_model_attributes._allow_layer_norm_mod_precision == False
 
         # test use static shape
         assert ort_model_attributes._use_static_shape == False

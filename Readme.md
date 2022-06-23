@@ -75,6 +75,72 @@ model = ORTModule(model)
 # PyTorch training script follows
 ```
 
+## Usage of FusedAdam
+
+```python
+import torch
+from torch_ort.optim import FusedAdam
+
+class NeuralNet(torch.nn.Module):
+    ...
+
+# Only supports GPU Currently.
+device = "cuda"
+model = NeuralNet(...).to(device)
+
+ort_fused_adam_optimizer = FusedAdam(
+    model.parameters(), lr=1e-3, betas=(0.9, 0.999), weight_decay=0.01, eps=1e-8
+)
+
+loss = model(...).sum()
+loss.backward()
+
+ort_fused_adam_optimizer.step()
+ort_fused_adam_optimizer.zero_grad()
+
+```
+For detailed documentation see [FusedAdam](https://github.com/microsoft/onnxruntime/blob/master/orttraining/orttraining/python/training/optim/fused_adam.py#L25)
+
+For a full working example see [FusedAdam Test Example](https://github.com/pytorch/ort/blob/main/torch_ort/tests/torch-ort_test_api.py) 
+
+## Usage of LoadBalancingDistributedSampler
+
+```python
+import torch
+from torch.utils.data import DataLoader 
+from torch_ort.utils.data import LoadBalancingDistributedSampler
+
+class MyDataset(torch.utils.data.Dataset):
+   ...
+   
+def collate_fn(data): 
+    ...
+    return samples, label_list 
+
+samples = [...] 
+labels = [...] 
+
+dataset = MyDataset(samples, labels) 
+
+data_sampler = sampler.LoadBalancingDistributedSampler( 
+
+    dataset, complexity_fn=complexity_fn, world_size=2, rank=0, shuffle=False 
+
+) 
+
+train_dataloader = DataLoader(dataset, batch_size=2, sampler=data_sampler, collate_fn=collate_fn) 
+
+for batched_data, batched_label in train_dataloader: 
+    optimizer.zero_grad() 
+    loss = loss_fn(model(batched_data) , batched_labels) 
+    loss.backward() 
+    optimizer.step() 
+    
+```
+For detailed documentation see [LoadBalancingDistributedSampler](https://github.com/microsoft/onnxruntime/blob/master/orttraining/orttraining/python/training/utils/data/sampler.py#L37)
+
+For a full working example see [LoadBalancingDistributedSampler Test Example](https://github.com/microsoft/onnxruntime/blob/master/orttraining/orttraining/python/training/utils/data/sampler.py#L37)
+
 ## Samples
 
 To see torch-ort in action, see https://github.com/microsoft/onnxruntime-training-examples, which shows you how to train the most popular HuggingFace models.
