@@ -80,7 +80,7 @@ def infer(model, sentences, inputs):
         if count == 20:
             break
         count = count + 1
-    print("\n Average inference time: {:.4f}ms".format(total_infer_time/num_sentences))
+    print("\n Average inference time: {:.4f}ms".format((total_infer_time/num_sentences)*1000))
     print(" Total Inference time: {:.4f}ms".format(total_infer_time * 1000))
 
 def main():
@@ -172,7 +172,7 @@ def main():
         sentences = df.Sentence.values
     else:
         print("Input not provided! Using default input...")
-        sentences = ["This is a BERT sample.","User input is invalid not."]
+        sentences = ["This is a BERT sample.","User input is valid not."]
 
     # 3. Load Model
     # Pretrained model fine-tuned on CoLA dataset from huggingface model hub to predict grammar correctness
