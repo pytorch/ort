@@ -43,8 +43,8 @@ def preprocess_input(tokenizer, sentences):
 
         # Truncate to MAX_LEN
         if len(encoded_sent) > MAX_LEN:
-            print("WARNING: Number of tokens for the sentence {}"\
-                "exceeds MAX LENGTH {}. This might impact accuracy of the results".format(
+            print("WARNING: During preprocessing, number of tokens for the sentence {}"\
+                "exceedeed MAX LENGTH {}. This might impact accuracy of the results".format(
                 sentence,
                 MAX_LEN
             ))
