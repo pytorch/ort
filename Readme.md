@@ -153,13 +153,23 @@ It is available via the torch-ort-inference python package. This preview package
 
 This repository contains the source code for the package, as well as instructions for running the package.
 
+## Prerequisites
+
+- Ubuntu 18.04, 20.04
+
+- Python* 3.7, 3.8 or 3.9
+
 ## Install in a local Python environment
 
 By default, torch-ort-inference depends on PyTorch 1.12 and ONNX Runtime OpenVINO EP 1.12.
 
-Install torch-ort-inference with OpenVINO dependencies
+1. Install torch-ort-inference with OpenVINO dependencies.
 
-- `pip install torch-ort-inference[openvino]`
+    - `pip install torch-ort-inference[openvino]`
+<br/><br/>
+2. Run post-installation script
+
+    - `python -m torch_ort.configure`
 
 ## Verify your installation
 
@@ -168,11 +178,11 @@ Once you have created your environment, execute the following steps to validate 
 1. Clone this repo
 
     - `git clone git@github.com:pytorch/ort.git`
-
+<br/><br/>
 2. Install extra dependencies
 
     - `pip install wget pandas transformers`
-
+<br/><br/>
 3. Run the inference script
 
     - `python ./ort/torch_ort_inference/tests/bert_for_sequence_classification.py`
@@ -204,6 +214,8 @@ If no provider options are specified by user, OpenVINO™ Execution Provider is 
 backend = "CPU"
 precision = "FP32"
 ```
+For more details on APIs, see [usage.md](/torch_ort_inference/docs/usage.md).
+
 ### Note
 
 Currently, Vision models are supported on Intel® VPUs. Support for NLP models may be added in future releases.

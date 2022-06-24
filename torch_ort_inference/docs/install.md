@@ -2,6 +2,12 @@
 
 You can install and run torch-ort-inference in your local environment.
 
+## Prerequisites
+
+- Ubuntu 18.04, 20.04
+
+- Python* 3.7, 3.8 or 3.9
+
 ## Run in a Python environment
 
 ### Default dependencies
