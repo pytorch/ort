@@ -106,33 +106,37 @@ def main():
 
     # parameters validation
     if not args.pytorch_only:
-        if args.provider is None or args.provider == "openvino":
+        if args.provider is None:
+            print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default.")
+            if args.backend or args.precision:
+                raise ValueError("Provider not specified!! Please specify provider arg along with backend and precision.")
+        elif args.provider == "openvino":
             if args.backend and args.precision:
                 if args.backend not in list(ov_backend_precisions.keys()):
-                    raise Exception(
+                    raise ValueError(
                         "Invalid backend. Valid values are: {}".format(
                             list(ov_backend_precisions.keys())))
                 if args.precision not in ov_backend_precisions[args.backend]:
-                    raise Exception("Invalid precision for provided backend. Valid values are: {}".format(
+                    raise ValueError("Invalid precision for provided backend. Valid values are: {}".format(
                     list(ov_backend_precisions[args.backend])))
             elif args.backend or args.precision:
-                raise Exception(
+                raise ValueError(
                     "Please specify both backend and precision to override default options.\n"
                 )
             else:
                 print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default.")
         else:
-            raise Exception("Invalid execution provider!! Available providers are: {}".format(inference_execution_providers))
+            raise ValueError("Invalid execution provider!! Available providers are: {}".format(inference_execution_providers))
     else:
         print("ONNXRuntime inference is disabled.")
         if args.provider or args.precision or args.backend:
-            raise Exception("provider, backend, precision arguments are not applicable for --pytorch-only option")
+            raise ValueError("provider, backend, precision arguments are not applicable for --pytorch-only option.")
 
     # 2. Read input image file and preprocess
     if not args.input_file:
         raise ValueError("Path to input image not provided!")
     if not os.path.exists(args.input_file):
-        raise ValueError("Invalid input file path")
+        raise ValueError("Invalid input file path.")
     img = Image.open(args.input_file)
     img_trans = preprocess(img)
     # Adding batch dimension (size 1)
@@ -141,8 +145,7 @@ def main():
     # 3. Download and load the model
     model = models.resnet50(pretrained=True)
     if not args.pytorch_only:
-        if (args.provider == "openvino" or args.provider is None) \
-            and (args.backend and args.precision):
+        if args.provider == "openvino" and (args.backend and args.precision):
             provider_options = OpenVINOProviderOptions(
                 backend=args.backend, precision=args.precision
             )

@@ -148,44 +148,48 @@ def main():
 
     # parameters validation
     if not args.pytorch_only:
-        if args.provider is None or args.provider == "openvino":
+        if args.provider is None:
+            print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default.")
+            if args.backend or args.precision:
+                raise ValueError("Provider not specified!! Please specify provider arg along with backend and precision.")
+        elif args.provider == "openvino":
             if args.backend and args.precision:
                 if args.backend not in list(ov_backend_precisions.keys()):
-                    raise Exception(
+                    raise ValueError(
                         "Invalid backend. Valid values are: {}".format(
                             list(ov_backend_precisions.keys())))
                 if args.precision not in ov_backend_precisions[args.backend]:
-                    raise Exception("Invalid precision for provided backend. Valid values are: {}".format(
+                    raise ValueError("Invalid precision for provided backend. Valid values are: {}".format(
                     list(ov_backend_precisions[args.backend])))
             elif args.backend or args.precision:
-                raise Exception(
+                raise ValueError(
                     "Please specify both backend and precision to override default options.\n"
                 )
             else:
                 print("OpenVINOExecutionProvider is enabled with CPU and FP32 by default.")
         else:
-            raise Exception("Invalid execution provider!! Available providers are: {}".format(inference_execution_providers))
+            raise ValueError("Invalid execution provider!! Available providers are: {}".format(inference_execution_providers))
     else:
         print("ONNXRuntime inference is disabled.")
         if args.provider or args.precision or args.backend:
-            raise Exception("provider, backend, precision arguments are not applicable for --pytorch-only option")
+            raise ValueError("provider, backend, precision arguments are not applicable for --pytorch-only option.")
 
     # 2. Read input sentence(s)
     # Input can be a single sentence, list of single sentences in a .tsv file.
     if args.input and args.input_file:
-        raise Exception("Please provide either input or input file for inference")
+        raise ValueError("Please provide either input or input file for inference.")
 
     if args.input is not None:
         sentences = [args.input]
     elif args.input_file is not None:
         file_name = args.input_file
         if not os.path.exists(file_name):
-            raise Exception("Invalid input file path: %s" % file_name)
+            raise ValueError("Invalid input file path: %s" % file_name)
         if os.stat(file_name).st_size == 0:
-            raise Exception("Input file is empty!!")
+            raise ValueError("Input file is empty!!")
         name, ext = os.path.splitext(file_name)
         if ext != ".tsv":
-            raise Exception("Invalid input file format. Please provide .tsv file.")
+            raise ValueError("Invalid input file format. Please provide .tsv file.")
         df = pd.read_csv(
             file_name,
             delimiter="\t",
@@ -205,8 +209,7 @@ def main():
     )
 
     if not args.pytorch_only:
-        if (args.provider == "openvino" or args.provider is None) \
-            and (args.backend and args.precision):
+        if args.provider == "openvino" and (args.backend and args.precision):
             provider_options = OpenVINOProviderOptions(
                 backend=args.backend, precision=args.precision
             )
