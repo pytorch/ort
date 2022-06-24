@@ -27,13 +27,37 @@ def preprocess_input(tokenizer, sentences):
     MAX_LEN = 64
 
     for sentence in sentences:
-        tokenized_inputs = tokenizer(
-            sentence,
-            return_tensors="pt",
-            padding='max_length',
-            max_length=MAX_LEN,
-            truncation=True)
-        inputs.append(tokenized_inputs)
+        # `encode` will:
+        #   (1) Tokenize the sentence.
+        #   (2) Prepend the `[CLS]` token to the start.
+        #   (3) Append the `[SEP]` token to the end.
+        #   (4) Map tokens to their IDs.
+        encoded_sent = tokenizer.encode(
+                            sentence,                      # Sentence to encode.
+                            add_special_tokens = True, # Add '[CLS]' and '[SEP]'
+                    )
+
+        # Pad our input tokens with value 0.
+        if len(encoded_sent) < MAX_LEN:
+            encoded_sent.extend([0]*(MAX_LEN-len(encoded_sent)))
+
+        # Truncate to MAX_LEN
+        if len(encoded_sent) > MAX_LEN:
+            print("WARNING: Number of tokens for the sentence {}"\
+                "exceeds MAX LENGTH {}. This might impact accuracy of the results".format(
+                sentence,
+                MAX_LEN
+            ))
+            encoded_sent = encoded_sent[:MAX_LEN]
+
+        # Create the attention mask.
+        #   - If a token ID is 0, then it's padding, set the mask to 0.
+        #   - If a token ID is > 0, then it's a real token, set the mask to 1.
+        att_mask = [int(token_id > 0) for token_id in encoded_sent]
+
+        # Store the input ids and attention masks for the sentence.
+        inputs.append({'input_ids': torch.unsqueeze(torch.tensor(encoded_sent),0),
+                'attention_mask': torch.unsqueeze(torch.tensor(att_mask),0)})
 
     return inputs
 

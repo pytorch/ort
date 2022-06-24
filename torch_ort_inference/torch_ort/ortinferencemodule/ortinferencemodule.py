@@ -106,7 +106,7 @@ class ORTInferenceModule(torch.nn.Module):
 
         # Use IO binding
         onnx_input_names = [inp.name for inp in self._onnx_models.exported_model.graph.input]
-        input_info = _io.parse_inputs_for_onnx_export(self._module_parameters, None, schema, inputs, kwargs)
+        input_info = self._flattened_module._input_info
         inputs = _utils_infer.get_user_inputs(onnx_input_names, input_info, inputs, kwargs, self._device)
 
         io_binding = self._inference_session.io_binding()
