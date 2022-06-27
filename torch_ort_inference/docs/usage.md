@@ -11,7 +11,7 @@ from torch_ort import ORTInferenceModule
 model = ORTInferenceModule(model)
 ```
 
-By default, CPU backend with FP32 precision is enabled. You can set different backend and supported precision using OpenvINOProviderOptions as below:
+By default, CPU backend with FP32 precision is enabled. You can set different backend and supported precision using OpenVINOProviderOptions as below:
 
 ```python
 provider_options = OpenVINOProviderOptions(backend = "GPU", precision = "FP16")
