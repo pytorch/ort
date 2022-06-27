@@ -22,7 +22,8 @@ RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 RUN pip install --upgrade pip
 
 # PyTorch
-RUN pip install onnx==1.9.0 ninja
+# TODO: upgrade to latest onnx
+RUN pip install onnx==1.11.0 ninja
 RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TORCHVISION_VERSION}+${TORCH_CUDA_VERSION} -f https://download.pytorch.org/whl/torch_stable.html
 
 # ORT Module
