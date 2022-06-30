@@ -22,8 +22,6 @@ python -m build
 
 ONNX Runtime for PyTorch accelerates PyTorch model training using ONNX Runtime.
 
-It is available via the torch-ort python package.
-
 This repository contains the source code for the package, as well as instructions for running the package.
 
 ## Pre-requisites
