@@ -1,7 +1,7 @@
 This repository contains below libraries. They can be installed independent of each other.
 * [ort_moe](#mixture-of-experts): Mixture of Experts implementation in PyTorch
 * [torch_ort](#accelerate-pytorch-models-with-onnx-runtime): ONNX Runtime package that accelerates PyTorch models
-* [torch_ort_inference](#accelerate-inference-for-pytorch-models-with-onnx-runtime-preview): ONNX Runtime package that accelerates inference for PyTorch models
+* [torch_ort_infer](#accelerate-inference-for-pytorch-models-with-onnx-runtime-preview): ONNX Runtime package that accelerates inference for PyTorch models
 
 
 # Mixture Of Experts
@@ -147,7 +147,7 @@ To see torch-ort in action, see https://github.com/microsoft/onnxruntime-trainin
 
 ONNX Runtime for PyTorch is now extended to support PyTorch model inference using ONNX Runtime.
 
-It is available via the torch-ort-inference python package. This preview package enables OpenVINO™ Execution Provider for ONNX Runtime by default for accelerating inference on various Intel® CPUs, Intel® integrated GPUs, and Intel® Movidius™ Vision Processing Units - referred to as VPU.
+It is available via the torch-ort-infer python package. This preview package enables OpenVINO™ Execution Provider for ONNX Runtime by default for accelerating inference on various Intel® CPUs, Intel® integrated GPUs, and Intel® Movidius™ Vision Processing Units - referred to as VPU.
 
 This repository contains the source code for the package, as well as instructions for running the package.
 
@@ -159,11 +159,11 @@ This repository contains the source code for the package, as well as instruction
 
 ## Install in a local Python environment
 
-By default, torch-ort-inference depends on PyTorch 1.12 and ONNX Runtime OpenVINO EP 1.12.
+By default, torch-ort-infer depends on PyTorch 1.12 and ONNX Runtime OpenVINO EP 1.12.
 
-1. Install torch-ort-inference with OpenVINO dependencies.
+1. Install torch-ort-infer with OpenVINO dependencies.
 
-    - `pip install torch-ort-inference[openvino]`
+    - `pip install torch-ort-infer[openvino]`
 <br/><br/>
 2. Run post-installation script
 
@@ -216,7 +216,7 @@ For more details on APIs, see [usage.md](/torch_ort_inference/docs/usage.md).
 
 ### Note
 
-Currently, Vision models are supported on Intel® VPUs. Support for NLP models may be added in future releases.
+Currently, Support for vision models is limited on Intel® VPUs(tested on MYRIADX with 512MB). Support for NLP models may be added in future releases.
 
 ## License
 

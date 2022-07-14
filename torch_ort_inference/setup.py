@@ -33,7 +33,7 @@ install_requires = fetch_requirements('requirements.txt')
 packages=[*setuptools.find_packages(), 'torch_ort.configure']
 
 setuptools.setup(
-    name="torch_ort_inference",
+    name="torch_ort_infer",
     version=version_str,
     author="torch-ort contributors",
     description="Accelerate PyTorch models with ONNX Runtime OpenVINO EP",
