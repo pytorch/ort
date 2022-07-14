@@ -216,7 +216,7 @@ For more details on APIs, see [usage.md](/torch_ort_inference/docs/usage.md).
 
 ### Note
 
-Currently, Support for vision models is limited on Intel® VPUs(tested on MYRIADX with 512MB). Support for NLP models may be added in future releases.
+Experimental support on Intel® VPUs(tested on MYRIADX with 512MB) in this preview. 
 
 ## License
 
