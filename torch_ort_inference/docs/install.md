@@ -1,6 +1,6 @@
-# Install torch-ort-inference
+# Install torch-ort-infer
 
-You can install and run torch-ort-inference in your local environment.
+You can install and run torch-ort-infer in your local environment.
 
 ## Prerequisites
 
@@ -14,9 +14,9 @@ You can install and run torch-ort-inference in your local environment.
 
 By default, torch-ort-inference depends on PyTorch 1.12 and ONNX Runtime OpenVINO EP 1.12.
 
-Install torch-ort-inference with OpenVINO dependencies
+Install torch-ort-infer with OpenVINO dependencies
 
-- `pip install torch-ort-inference[openvino]`
+- `pip install torch-ort-infer[openvino]`
 
 ## Test your installation
 
