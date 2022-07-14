@@ -216,7 +216,7 @@ For more details on APIs, see [usage.md](/torch_ort_inference/docs/usage.md).
 
 ### Note
 
-Experimental support on Intel® VPUs(tested on MYRIADX with 512MB) in this preview. 
+Experimental support on Intel® MyriadX VPU in this preview. 
 
 ## License
 
