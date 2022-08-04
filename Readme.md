@@ -171,7 +171,7 @@ By default, torch-ort-infer depends on PyTorch 1.12 and ONNX Runtime OpenVINO EP
 
 ## Samples
 
-To see OpenVINO™ integration with Torch-ORT in action, refer to directory ./ort/torch_ort_inference/demos, which shows you how to run inference on some of the most popular Deep Learning models.
+To see OpenVINO™ integration with Torch-ORT in action, see [demos](/torch_ort_inference/demos), which shows you how to run inference on some of the most popular Deep Learning models.
 
 ## Add ONNX Runtime for PyTorch to your PyTorch inference script
 
