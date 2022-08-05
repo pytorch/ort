@@ -54,15 +54,13 @@ usage: bert_for_sequence_classification.py [-h] [--pytorch-only] [--input INPUT]
 PyTorch BERT Sequence Classification Example
 
 optional arguments:
--h, --help            show this help message and exit
---pytorch-only        disables ONNX Runtime inference
---input "INPUT"         input sentence, put it in quotes
---input-file INPUT_FILE
-                        path to input file in .tsv format
---provider PROVIDER   ONNX Runtime Execution Provider
---backend BACKEND     OpenVINO target device (CPU, GPU).
---precision PRECISION
-                        OpenVINO target device precision (FP16 or FP32)
+-h, --help                  show this help message and exit
+--pytorch-only              disables ONNX Runtime inference
+--input "INPUT"             input sentence, put it in quotes
+--input-file INPUT_FILE     path to input file in .tsv format
+--provider PROVIDER         ONNX Runtime Execution Provider
+--backend BACKEND           OpenVINO target device (CPU, GPU).
+--precision PRECISION       OpenVINO target device precision (FP16 or FP32)
 ```
     
 **Note**: Default options and inputs are selected if no arguments are given
@@ -81,8 +79,6 @@ Number of sentences: 2
 Average inference time: 25.2306ms
 Total Inference time: 50.4613ms
 ```
-
-<br/><br/>
 
 **Note**: This demo has a warm-up run and then inference time is measured on the subsequent runs. The execution time of first run is in general higher compared to the next runs as it includes inline conversion to ONNX, many one-time graph transformations and optimizations steps.
 
