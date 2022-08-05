@@ -62,18 +62,16 @@ usage: resnet_image_classification.py [-h] [--pytorch-only] [--labels LABELS] --
 PyTorch Image Classification Example
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --pytorch-only        disables ONNX Runtime inference
-  --labels LABELS       path to labels file
-  --input-file INPUT_FILE
-                        path to input image file
-  --provider PROVIDER   ONNX Runtime Execution Provider
-  --backend BACKEND     OpenVINO target device (CPU, GPU or MYRIAD)
-  --precision PRECISION
-                        OpenVINO target device precision (FP16 or FP32)
+  -h, --help                show this help message and exit
+  --pytorch-only            disables ONNX Runtime inference
+  --labels LABELS           path to labels file
+  --input-file INPUT_FILE   path to input image file
+  --provider PROVIDER       ONNX Runtime Execution Provider
+  --backend BACKEND         OpenVINO target device (CPU, GPU or MYRIAD)
+  --precision PRECISION     OpenVINO target device precision (FP16 or FP32)
 ```
     
-**Note**: Default options and inputs are selected if no arguments are given
+**Note**: Some default options are selected if no arguments are given
 
 ## Expected Output
 
@@ -89,8 +87,6 @@ projectile 0.0002502237621229142
 ```
 
 Here, the network classifies the image as an airplane, with a high score of 0.91.
-
-<br/><br/>
 
 **Note**: This demo has a warm-up run and then inference time is measured on the subsequent runs. The execution time of first run is in general higher compared to the next runs as it includes inline conversion to ONNX, many one-time graph transformations and optimizations steps.
 
