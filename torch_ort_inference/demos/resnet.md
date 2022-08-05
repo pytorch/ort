@@ -54,12 +54,28 @@ Once you have created your environment, execute the following steps to validate 
     - `python ./ort/torch_ort_inference/demos/resnet_image_classification.py --input-file ./ort/torch_ort_inference/demos/plane.jpg`
 <br/><br/>
     **Note**: OpenVINOExecutionProvider is enabled with CPU and FP32 by default.
-<br/><br/>
-4. To see more options for various backends (Intel® hardware), invoke:
 
-    - `$ python ./ort/torch_ort_inference/demos/resnet_image_classification.py --help`
+## Run demo with custom options
+```
+usage: resnet_image_classification.py [-h] [--pytorch-only] [--labels LABELS] --input-file INPUT_FILE [--provider PROVIDER] [--backend BACKEND] [--precision PRECISION]
 
-## Output
+PyTorch Image Classification Example
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --pytorch-only        disables ONNX Runtime inference
+  --labels LABELS       path to labels file
+  --input-file INPUT_FILE
+                        path to input image file
+  --provider PROVIDER   ONNX Runtime Execution Provider
+  --backend BACKEND     OpenVINO target device (CPU, GPU or MYRIAD)
+  --precision PRECISION
+                        OpenVINO target device precision (FP16 or FP32)
+```
+    
+**Note**: Default options and inputs are selected if no arguments are given
+
+## Expected Output
 
 For the input image of an airplane, you can see the output something similar to:
 
@@ -70,24 +86,11 @@ wing 0.08387967199087143
 airship 0.001151240081526339
 warplane 0.00030989135848358274
 projectile 0.0002502237621229142
-
 ```
 
 Here, the network classifies the image as an airplane, with a high score of 0.91.
 
-## Run inference using new input
-You can provide either absolute or relative path to an image of your choice.
-e.g.
-```bash
-$ python ./ort/torch_ort_inference/demos/resnet_image_classification.py  --input-file=<absolute-or-relative-path-to-your-input>
-```
-If you add a new image (e.g, my_image.png) to the existing `<path-to-ort-repository>/torch_ort_inference/demos` directory in the **ort** repository, it will look like this:
-
-```bash
-$ python ./ort/torch_ort_inference/demos/resnet_image_classification.py --input-file=./ort/torch_ort_inference/demos/my_image.png
-
-```
-<br/> 
+<br/><br/>
 
 **Note**: This demo has a warm-up run and then inference time is measured on the subsequent runs. The execution time of first run is in general higher compared to the next runs as it includes inline conversion to ONNX, many one-time graph transformations and optimizations steps.
 
