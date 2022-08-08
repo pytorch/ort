@@ -88,9 +88,27 @@ Get install instructions for other combinations in the `Get Started Easily` sect
 - `pip install torch-ort-infer[openvino]`
 - Run post installation configuration script `python -m torch_ort.configure`
 
+### Verify your installation
+
+1. Clone this repo
+
+    - `git clone git@github.com:pytorch/ort.git`
+
+2. Install extra dependencies
+
+    - `pip install wget pandas sklearn transformers`
+
+3. Run the training script
+
+    - `python ./torch_ort_inference/tests/bert_for_sequence_classification.py`
+
 # 📈 Training
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+## Samples
+
+To see torch-ort in action, see https://github.com/microsoft/onnxruntime-training-examples, which shows you how to train the most popular HuggingFace models.
 
 # 🎯 Inference
 
@@ -107,7 +125,13 @@ ONNX Runtime for PyTorch is now extended to support PyTorch model inference usin
 
 It is available via the torch-ort-infer python package. This preview package enables OpenVINO™ Execution Provider for ONNX Runtime by default for accelerating inference on various Intel® CPUs, Intel® integrated GPUs, and Intel® Movidius™ Vision Processing Units - referred to as VPU.
 
-### Provider Options
+## Supported Execution Providers
+
+|Execution Providers|CPU|
+|---|---|
+|OpenVINO| [![openvino](https://img.shields.io/badge/openvino-2022.1-purple)]() |
+
+## Provider Options
 
 Users can configure different options  for a given Execution Provider to run inference. As an example, OpenVINO™ Execution Provider options can be configured as shown below:
 
@@ -118,6 +142,15 @@ model = ORTInferenceModule(model, provider_options = provider_options)
 
 # PyTorch inference script follows
 ```
+### List of Provider Options
+
+Supported backend-precision combinations:
+| Backend | Precision |
+| --------| --------- |  
+|   CPU   |    FP32   |
+|   GPU   |    FP32   |
+|   GPU   |    FP16   |
+|  MYRIAD |    FP16   |
 
 If no provider options are specified by user, OpenVINO™ Execution Provider is enabled with following options by default:
 
@@ -128,7 +161,7 @@ precision = "FP32"
 
 For more details on APIs, see [usage.md](/torch_ort_inference/docs/usage.md).
 
-### Code Sample
+## Code Sample
 
 Below is an example of how you can leverage OpenVINO™ integration with Torch-ORT in a simple NLP usecase. 
 A pretrained [BERT model](https://huggingface.co/textattack/bert-base-uncased-CoLA) fine-tuned on the CoLA dataset from HuggingFace model hub is used to predict grammar correctness on a given input text. 
@@ -157,11 +190,10 @@ print("Grammar correctness label (0=unacceptable, 1=acceptable)")
 print(pred)
 ```
 
-## Supported Execution Providers
+## Samples
 
-|Execution Providers|CPU|
-|---|---|
-|OpenVINO| [![openvino](https://img.shields.io/badge/openvino-2022.1-purple)]() |
+To see OpenVINO™ integration with Torch-ORT in action, see [demos](/torch_ort_inference/demos), which shows you how to run inference on some of the most popular Deep Learning models.
+
 
 # 🤝 Contributing
 
