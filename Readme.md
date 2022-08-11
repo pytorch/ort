@@ -35,6 +35,31 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 
 # 🚀 Installation
 
+## Inference
+
+### Prerequisites
+
+- Ubuntu 18.04, 20.04
+- Python* 3.7, 3.8 or 3.9
+
+### Install in a local Python environment
+- `pip install torch-ort-infer[openvino]`
+- Run post installation configuration script `python -m torch_ort.configure`
+
+### Verify your installation
+
+1. Clone this repo
+
+    - `git clone git@github.com:pytorch/ort.git`
+
+2. Install extra dependencies
+
+    - `pip install wget pandas sklearn transformers`
+
+3. Run the training script
+
+    - `python ./torch_ort_inference/tests/bert_for_sequence_classification.py`
+
 ## Training
 
 ### Pre-requisites
@@ -76,31 +101,6 @@ Get install instructions for other combinations in the `Get Started Easily` sect
 
     - `python ./ort/tests/bert_for_sequence_classification.py`
 
-
-## Inference
-
-### Prerequisites
-
-- Ubuntu 18.04, 20.04
-- Python* 3.7, 3.8 or 3.9
-
-### Install in a local Python environment
-- `pip install torch-ort-infer[openvino]`
-- Run post installation configuration script `python -m torch_ort.configure`
-
-### Verify your installation
-
-1. Clone this repo
-
-    - `git clone git@github.com:pytorch/ort.git`
-
-2. Install extra dependencies
-
-    - `pip install wget pandas sklearn transformers`
-
-3. Run the training script
-
-    - `python ./torch_ort_inference/tests/bert_for_sequence_classification.py`
 
 # 🎯 Inference
 
