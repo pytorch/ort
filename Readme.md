@@ -119,9 +119,9 @@ It is available via the torch-ort-infer python package. This preview package ena
 
 ## Supported Execution Providers
 
-|Execution Providers|CPU|
-|---|---|
-|OpenVINO| [![openvino](https://img.shields.io/badge/openvino-2022.1-purple)]() |
+|Execution Providers|
+|---|
+|OpenVINO  [![openvino](https://img.shields.io/badge/openvino-2022.1-purple)]() |
 
 ## Provider Options
 
