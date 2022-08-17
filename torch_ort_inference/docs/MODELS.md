@@ -126,7 +126,7 @@ This document provides a list of all validated models that are supported by **Op
 | [ncf](https://github.com/mlcommons/training/tree/master/recommendation/pytorch)  | CPU, iGPU |
 | [seresnext-50](https://github.com/Cadene/pretrained-models.pytorch/blob/master/pretrainedmodels/models/senet.py)  | CPU, iGPU |
 | [spnasnet_100](https://github.com/rwightman/gen-efficientnet-pytorch/blob/master/geffnet/gen_efficientnet.py)  | CPU, iGPU |
-| [vnet](https://github.com/zyody/vnet.pytorch/blob/master/vnet.py)  | iGPU |
+| [vnet](https://github.com/zyody/vnet.pytorch/blob/master/vnet.py)  | CPU, iGPU |
 | [yolov2](https://github.com/yjh0410/yolov2-yolov3_PyTorch)  | CPU, iGPU |
 | [yolov3](https://github.com/eriklindernoren/PyTorch-YOLOv3)  | CPU, iGPU |
 | [yolov3-tiny](https://github.com/eriklindernoren/PyTorch-YOLOv3)  | CPU, iGPU |
