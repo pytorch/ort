@@ -1,7 +1,7 @@
 This document provides a list of all validated models that are supported by **OpenVINO™ integration with Torch-ORT**. The list of supported models and performance is continuously evolving as we are optimizing models and enabling more operators. The performance gain depends on various factors such as model architecture, Intel<sup>®</sup> Platform (e.g. Xeon<sup>®</sup> or Core<sup>TM</sup>), Backend device (e.g. CPU, GPU or VPU) etc. 
 
 
-## Torcvision Models
+## Torchvision Models
 | Model Name | Supported Devices |
 |---|---|
 | [alexnet](https://github.com/pytorch/vision/blob/main/torchvision/models/alexnet.py)  | CPU, iGPU |
