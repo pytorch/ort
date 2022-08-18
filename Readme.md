@@ -35,6 +35,31 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 
 # 🚀 Installation
 
+## Inference
+
+### Prerequisites
+
+- Ubuntu 18.04, 20.04
+- Python* 3.7, 3.8 or 3.9
+
+### Install in a local Python environment
+- `pip install torch-ort-infer[openvino]`
+- Run post installation configuration script `python -m torch_ort.configure`
+
+### Verify your installation
+
+1. Clone this repo
+
+    - `git clone git@github.com:pytorch/ort.git`
+
+2. Install extra dependencies
+
+    - `pip install wget pandas sklearn transformers`
+
+3. Run the training script
+
+    - `python ./torch_ort_inference/tests/bert_for_sequence_classification.py`
+
 ## Training
 
 ### Pre-requisites
@@ -127,9 +152,9 @@ It is available via the torch-ort-infer python package. This preview package ena
 
 ## Supported Execution Providers
 
-|Execution Providers|CPU|
-|---|---|
-|OpenVINO| [![openvino](https://img.shields.io/badge/openvino-2022.1-purple)]() |
+|Execution Providers|
+|---|
+|OpenVINO  [![openvino](https://img.shields.io/badge/openvino-2022.1-purple)]() |
 
 ## Provider Options
 
@@ -166,10 +191,6 @@ For more details on APIs, see [usage.md](/torch_ort_inference/docs/usage.md).
 Below is an example of how you can leverage OpenVINO™ integration with Torch-ORT in a simple NLP usecase. 
 A pretrained [BERT model](https://huggingface.co/textattack/bert-base-uncased-CoLA) fine-tuned on the CoLA dataset from HuggingFace model hub is used to predict grammar correctness on a given input text. 
 
-## Samples
-
-To see OpenVINO™ integration with Torch-ORT in action, see [demos](/torch_ort_inference/demos), which shows you how to run inference on some of the most popular Deep Learning models.
-
 
 ```python 
 from transformers 
@@ -202,35 +223,6 @@ To see OpenVINO™ integration with Torch-ORT in action, see [demos](/torch_ort_
 # 🤝 Contributing
 
 Please refer to our [contributing guide](CONTRIBUTING.md) for more information on how to contribute!
-
-## Code Sample
-
-Below is an example of how you can leverage OpenVINO™ integration with Torch-ORT in a simple NLP usecase. 
-A pretrained [BERT model](https://huggingface.co/textattack/bert-base-uncased-CoLA) fine-tuned on the CoLA dataset from HuggingFace model hub is used to predict grammar correctness on a given input text. 
-
-
-```python 
-from transformers 
-import AutoTokenizer, AutoModelForSequenceClassification
-import numpy as np
-from torch_ort import ORTInferenceModule
-tokenizer = AutoTokenizer.from_pretrained(
-            "textattack/bert-base-uncased-CoLA")
-model = AutoModelForSequenceClassification.from_pretrained(
-        "textattack/bert-base-uncased-CoLA")
-# Wrap model in ORTInferenceModule to prepare the model for inference using OpenVINO Execution Provider on CPU
-model = ORTInferenceModule(model)
-text = "Replace me any text by you'd like ."
-encoded_input = tokenizer(text, return_tensors='pt')
-output = model(**encoded_input)
-# Post processing
-logits = output.logits
-logits = logits.detach().cpu().numpy()
-# predictions
-pred = np.argmax(logits, axis=1).flatten()
-print("Grammar correctness label (0=unacceptable, 1=acceptable)")
-print(pred)
-```
 
 ## License
 
