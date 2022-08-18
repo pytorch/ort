@@ -100,7 +100,7 @@ This document provides a list of all validated models that are supported by **Op
 | [hbonet-0.5](https://docs.openvino.ai/2021.3/omz_models_model_hbonet_0_5.html)  | CPU, iGPU |
 | [hbonet-1.0](https://github.com/openvinotoolkit/open_model_zoo/tree/master/models/public/hbonet-1.0)  | CPU, iGPU |
 | [higher-hrnet-w32-human-pose-estimation](https://github.com/openvinotoolkit/open_model_zoo/tree/master/models/public/higher-hrnet-w32-human-pose-estimation)  | CPU, iGPU |
-| [hrnet-v2-c1-segmentation](https://github.com/openvinotoolkit/open_model_zoo/tree/master/models/public/hrnet-v2-c1-segmentation) | iGPU |
+| [hrnet-v2-c1-segmentation](https://github.com/openvinotoolkit/open_model_zoo/tree/master/models/public/hrnet-v2-c1-segmentation) | CPU, iGPU |
 | [human-pose-estimation-3d-0001](https://github.com/openvinotoolkit/open_model_zoo/tree/master/models/public/human-pose-estimation-3d-0001)  | CPU, iGPU |
 | [midasnet](https://github.com/openvinotoolkit/open_model_zoo/tree/master/models/public/midasnet)  | CPU |
 | [nfnet-f0](https://github.com/openvinotoolkit/open_model_zoo/tree/master/models/public/nfnet-f0)  | CPU, iGPU |
