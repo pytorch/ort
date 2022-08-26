@@ -3,11 +3,11 @@
 # Licensed under the MIT License.
 
 # CUDA development image for building sources
-FROM nvidia/cuda:10.2-cudnn8-devel-ubuntu18.04 as builder
+FROM nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04 as builder
 
-ARG TORCH_CUDA_VERSION=cu102
-ARG TORCH_VERSION=1.8.1
-ARG TORCHVISION_VERSION=0.9.1
+ARG TORCH_CUDA_VERSION=cu116
+ARG TORCH_VERSION=1.12.1
+ARG TORCHVISION_VERSION=0.13.1
 
 # Install and update tools to minimize security vulnerabilities
 RUN apt-get update
@@ -27,10 +27,10 @@ RUN pip install onnx==1.11.0 ninja
 RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TORCHVISION_VERSION}+${TORCH_CUDA_VERSION} -f https://download.pytorch.org/whl/torch_stable.html
 
 # ORT Module
-RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cu102.html
+RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cu116.html
 
 RUN pip install torch-ort
-ENV TORCH_CUDA_ARCH_LIST="5.0 5.2 6.0 6.1 7.0 7.5+PTX"
+ENV TORCH_CUDA_ARCH_LIST="5.2 6.0 6.1 7.0 7.5 8.0 8.6+PTX"
 RUN python -m torch_ort.configure
 
 WORKDIR /workspace
