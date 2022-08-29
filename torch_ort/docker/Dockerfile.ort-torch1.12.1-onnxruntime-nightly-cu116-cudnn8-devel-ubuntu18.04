@@ -24,7 +24,7 @@ RUN pip install --upgrade pip
 # PyTorch
 # TODO: upgrade to latest onnx
 RUN pip install onnx==1.11.0 ninja
-RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TORCHVISION_VERSION}+${TORCH_CUDA_VERSION} -f https://download.pytorch.org/whl/torch_stable.html
+RUN pip install torch==${TORCH_VERSION} torchvision==${TORCHVISION_VERSION} -f https://download.pytorch.org/whl/cu116
 
 # ORT Module
 RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cu116.html
