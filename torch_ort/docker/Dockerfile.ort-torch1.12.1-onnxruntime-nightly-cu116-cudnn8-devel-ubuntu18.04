@@ -11,6 +11,7 @@ ARG TORCHVISION_VERSION=0.13.1
 
 # Install and update tools to minimize security vulnerabilities
 RUN apt-get update
+RUN sudo apt install python3.9
 RUN apt-get install -y software-properties-common wget apt-utils patchelf git libprotobuf-dev protobuf-compiler cmake
 RUN unattended-upgrade
 RUN apt-get autoremove -y
