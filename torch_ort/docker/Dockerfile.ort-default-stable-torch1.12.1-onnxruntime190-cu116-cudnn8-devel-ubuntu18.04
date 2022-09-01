@@ -3,7 +3,7 @@
 # Licensed under the MIT License.
 
 # CUDA development image for building sources
-FROM nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04 as builder
+FROM nvidia/cuda:11.6.2-cudnn8-devel-ubuntu20.04 as builder
 ARG TORCH_CUDA_VERSION=cu116
 ARG ONNXRUNTIME_TRAINING_VERSION=1.12.0
 ARG TORCH_VERSION=1.12.1
@@ -14,11 +14,6 @@ RUN apt-get update
 RUN apt-get install -y software-properties-common wget apt-utils patchelf git libprotobuf-dev protobuf-compiler cmake
 RUN unattended-upgrade
 RUN apt-get autoremove -y
-
-# Add repository to install python 3.9
-RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt update
-RUN apt install python3.9
 
 # Python and pip
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
