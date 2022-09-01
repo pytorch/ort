@@ -214,8 +214,7 @@ A pretrained [BERT model](https://huggingface.co/textattack/bert-base-uncased-Co
 
 
 ```python 
-from transformers 
-import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import numpy as np
 from torch_ort import ORTInferenceModule
 tokenizer = AutoTokenizer.from_pretrained(
