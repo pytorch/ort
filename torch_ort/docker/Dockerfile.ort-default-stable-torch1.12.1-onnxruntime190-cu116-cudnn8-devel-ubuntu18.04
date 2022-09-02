@@ -10,13 +10,13 @@ ARG TORCH_VERSION=1.12.1
 ARG TORCHVISION_VERSION=0.13.1
 
 # Install and update tools to minimize security vulnerabilities
-RUN apt-get install curl
 RUN apt-get update
 RUN apt-get install -y software-properties-common wget apt-utils patchelf git libprotobuf-dev protobuf-compiler cmake
 RUN unattended-upgrade
 RUN apt-get autoremove -y
 
 # install miniconda (comes with python 3.9 default)
+RUN apt-get install curl
 ARG CONDA_VERSION=4.7.10
 ARG CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh
 RUN curl -fSsL --insecure ${CONDA_URL} -o install-conda.sh &&\
