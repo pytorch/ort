@@ -10,6 +10,7 @@ ARG TORCH_VERSION=1.12.1
 ARG TORCHVISION_VERSION=0.13.1
 
 # Install and update tools to minimize security vulnerabilities
+RUN apt-get install curl
 RUN apt-get update
 RUN apt-get install -y software-properties-common wget apt-utils patchelf git libprotobuf-dev protobuf-compiler cmake
 RUN unattended-upgrade
