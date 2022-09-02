@@ -3,7 +3,7 @@
 # Licensed under the MIT License.
 
 # CUDA development image for building sources
-FROM nvidia/cuda:11.6.2-cudnn8-devel-ubuntu20.04 as builder
+FROM nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04 as builder
 
 ARG TORCH_CUDA_VERSION=cu116
 ARG TORCH_VERSION=1.12.1
@@ -14,6 +14,14 @@ RUN apt-get update
 RUN apt-get install -y software-properties-common wget apt-utils patchelf git libprotobuf-dev protobuf-compiler cmake
 RUN unattended-upgrade
 RUN apt-get autoremove -y
+
+# install miniconda (comes with python 3.9 default)
+ARG CONDA_VERSION=4.7.10
+ARG CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh
+RUN curl -fSsL --insecure ${CONDA_URL} -o install-conda.sh &&\
+    /bin/bash ./install-conda.sh -b -p /opt/conda &&\
+    /opt/conda/bin/conda clean -ya
+ENV PATH=/opt/conda/bin:${PATH}
 
 # Python and pip
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
