@@ -31,9 +31,9 @@ To upgrade to the new release version, please run `pip install --upgrade -r requ
 The table below lists the supported operating systems and Python versions. **Note:** Python 3.10 is not supported yet.
 
 | Supported Operating System                                 | [Python Version (64-bit)](https://www.python.org/) |
-| :--------------------------------------------------------- | :------------------------------------------------- |
-| Ubuntu 18.04 LTS, 64-bit                                 | 3.6, 3.7, 3.8, 3.9                                      |
-| Ubuntu 20.04 LTS, 64-bit                                 | 3.6, 3.7, 3.8, 3.9                                      |
+| :--------------------------------------------------------- | :------------------------------------------------|
+| Ubuntu 18.04 LTS, 64-bit                                 | 3.7, 3.8, 3.9                                      |
+| Ubuntu 20.04 LTS, 64-bit                                 | 3.7, 3.8, 3.9                                      |
 
 [![-----------------------------------------------------](https://user-images.githubusercontent.com/10940214/155750931-fc094349-b6ec-4e1f-9f9a-113e67941119.jpg)](#)
 <div id='-run-the-notebooks'/>
