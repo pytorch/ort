@@ -22,7 +22,7 @@ To upgrade to the new release version, please run `pip install --upgrade -r requ
 
 ## 📝 Installation Guide
 
-| [Ubuntu](https://github.com/intel-staging/ort/tree/nara/notebooks/torch_ort_inference/demos/notebooks/UBUNTU.md) | 
+| [Ubuntu](../notebooks/UBUNTU.md) | 
 | ------------------------------------------------------------------------------------------ | 
 
 
