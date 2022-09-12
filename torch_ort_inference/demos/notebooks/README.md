@@ -1,6 +1,6 @@
 <h1 align="center">📚 Openvino Integration with Torch-ORT Notebooks</h1>
 
-[![MIT License](https://img.shields.io/apm/l/vim-mode)](ort/blob/nara/notebooks/LICENSE)
+[![MIT License](https://img.shields.io/apm/l/vim-mode)](https://github.com/pytorch/ort/blob/main/LICENSE)
 
 A collection of ready-to-run Jupyter notebooks for learning and experimenting with the torch-ort-infer python package. The notebooks provide an introduction to torch-ort-infer basics and teach developers how to leverage our API for optimized deep learning inference.
 
@@ -11,7 +11,7 @@ To upgrade to the new release version, please run `pip install --upgrade -r requ
 ## Table of Contents
 
 * [➤ 📝 Installation Guide](#-installation-guide)
-	* [Ubuntu](https://github.com/intel-staging/ort/tree/nara/notebooks/torch_ort_inference/demos/notebooks/UBUNTU.md)
+	* [Ubuntu](../UBUNTU.md)
 * [➤ ⚙️ System Requirements](#-system-requirements)
 * [➤ 💻 Run the Notebooks](#-run-the-notebooks)
 * [➤ 🧹 Cleaning Up](#-cleaning-up)
