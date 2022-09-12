@@ -11,7 +11,7 @@ To upgrade to the new release version, please run `pip install --upgrade -r requ
 ## Table of Contents
 
 * [➤ 📝 Installation Guide](#-installation-guide)
-	* [Ubuntu](../UBUNTU.md)
+	* [Ubuntu](../notebooks/UBUNTU.md)
 * [➤ ⚙️ System Requirements](#-system-requirements)
 * [➤ 💻 Run the Notebooks](#-run-the-notebooks)
 * [➤ 🧹 Cleaning Up](#-cleaning-up)
