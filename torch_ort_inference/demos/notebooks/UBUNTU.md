@@ -41,7 +41,7 @@ source tort_infer_env/bin/activate
 > Note: Using the `--depth=1` option for git clone reduces download size.
 
 ```bash
-git clone --depth=1 https://github.com/intel-sandbox/openvino-torch-ort-examples.git
+git clone --depth=1 https://github.com/intel-staging/ort.git
 cd ort/torch_ort_inference/demos/notebooks
 ```
 
