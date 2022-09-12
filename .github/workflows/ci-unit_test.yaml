@@ -1,4 +1,4 @@
-name: Continous Integration for External Collaborator
+name: Continuous Integration - External Collaborator
 on:
   pull_request:
     branches:
