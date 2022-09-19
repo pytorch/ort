@@ -6,6 +6,7 @@
 import functools
 from collections import abc
 from onnxruntime.training.ortmodule import _io
+from torch.onnx import register_custom_op_symbolic
 
 def get_device_from_module(module):
     """Returns the first device found in the `module`'s parameters or None
@@ -131,3 +132,22 @@ def set_dynamic_axes(module):
     except Exception:
         return True
     return True
+
+def post_process_after_export(exported_model):
+
+    for node in exported_model.graph.node:
+        if node.op_type == "ATen":
+            attr = node.attribute[0]
+            aten_op = attr.s.decode("utf-8") if isinstance(attr.s, bytes) else attr.s
+            if aten_op in ["grid_sampler", "triu"]:
+                post_process_set_atenop_output_types(aten_op)
+
+def post_process_set_atenop_output_types(aten_op):
+
+    # Set output type for Aten ops
+    def aten(g, self, x):
+        output = g.op("org.pytorch.aten::ATen", self, x, operator_s=aten_op)
+        output.setType(self.type())
+        return output
+
+    register_custom_op_symbolic("::"+ aten_op, aten, 1)

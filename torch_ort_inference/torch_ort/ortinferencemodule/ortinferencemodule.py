@@ -15,6 +15,7 @@ import onnxruntime
 from onnxruntime.capi import _pybind_state as C
 from onnxruntime.training.ortmodule import _io, _onnx_models, _utils
 from onnxruntime.training.ortmodule.debug_options import DebugOptions, LogLevel
+from onnxruntime.training.ortmodule.torch_cpp_extensions.cpu.aten_op_executor import load_aten_op_executor_cpp_extension
 
 from .provider_options import OpenVINOProviderOptions
 from . import _utils_infer
@@ -55,6 +56,8 @@ class ORTInferenceModule(torch.nn.Module):
         self._export_extra_kwargs = {}
         self._provider_options = provider_options
         self._inference_session = None
+        # Load ATen operator executor extension.
+        load_aten_op_executor_cpp_extension()
 
     def _forward_call(self, *inputs, **kwargs):
         """Delegate the :meth:`~torch.nn.Module.forward` to
@@ -179,7 +182,10 @@ class ORTInferenceModule(torch.nn.Module):
                 "Model could not be exported to ONNX"
             ) from e
 
-        return onnx.load_model_from_string(f.getvalue())
+        exported_model = onnx.load_model_from_string(f.getvalue())
+
+        # Handling aten op output types to enable aten fallback
+        _utils_infer.post_process_after_export(exported_model)
 
     def _get_session_config(self):
         """Creates and returns the session configuration to be used."""
