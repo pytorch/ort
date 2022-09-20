@@ -1,4 +1,4 @@
-<h1 align="center">📚 Openvino Integration with Torch-ORT Notebooks</h1>
+<h1 align="center">📚 OpenVINO™ Integration with Torch-ORT Notebooks</h1>
 
 [![MIT License](https://img.shields.io/apm/l/vim-mode)](https://github.com/pytorch/ort/blob/main/LICENSE)
 
@@ -92,20 +92,10 @@ To remove your virtual environment, simply delete the `tort_infer_env` directory
 	
 <p>
 <details>
-<summary>On Linux and macOS:</summary>
+<summary>On Linux:</summary>
 
 ```bash
 rm -rf tort_infer_env
-```
-</details>
-</p>
-
-<p>
-<details>
-<summary>On Windows:</summary>
-
-```bash
-rmdir /s tort_infer_env
 ```
 </details>
 </p>
