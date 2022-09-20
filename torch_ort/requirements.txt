@@ -3,5 +3,9 @@
 # In an environment where a requirement is already met, the package will not be updated.
 # If a package of a specific version is needed, the package can be installed
 # with version being specified (see Readme.md).
-onnxruntime-training>=1.7.0
-torch>=1.8
+--pre
+-f https://download.onnxruntime.ai/onnxruntime_nightly_cu116.html
+onnxruntime-training
+--pre
+-f https://download.pytorch.org/whl/torch/
+torch=>1.12.1
