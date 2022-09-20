@@ -187,6 +187,8 @@ class ORTInferenceModule(torch.nn.Module):
         # Handling aten op output types to enable aten fallback
         _utils_infer.post_process_after_export(exported_model)
 
+        return exported_model
+        
     def _get_session_config(self):
         """Creates and returns the session configuration to be used."""
 
