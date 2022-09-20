@@ -8,4 +8,4 @@
 onnxruntime-training
 --pre
 -f https://download.pytorch.org/whl/torch/
-torch=>1.12.1
+torch==1.12.1
