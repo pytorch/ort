@@ -65,7 +65,7 @@ jupyter "notebook path"
 To launch all notebooks in Jupyter Lab
 
 ```bash
-jupyter lab notebooks
+jupyter lab torch_ort_inference/demos/notebooks
 ```
 
 In Jupyter Lab, select a notebook from the file browser using the left sidebar. Each notebook is located in a subdirectory within the `notebooks` directory.
