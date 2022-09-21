@@ -1,3 +1,11 @@
+# other requirements
+wget
+pandas
+Pillow 
+torchvision
+setuptools
+wheel
+
 # torch ort module requirements
 torch-ort-infer[openvino]
 
@@ -6,9 +14,3 @@ jupyterlab
 
 # BERT quantization notebook requirements
 transformers
-
-# other requirements
-wget
-pandas
-Pillow 
-torchvision
