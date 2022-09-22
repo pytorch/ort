@@ -16,13 +16,15 @@ RUN unattended-upgrade
 RUN apt-get autoremove -y
 
 # install miniconda (comes with python 3.9 default)
+ARG BUILD_USER=onnxruntimedev
+ARG MINICONDA_PREFIX=/home/$BUILD_USER/miniconda3
 RUN apt-get install curl
-ARG CONDA_VERSION=py39_4.10.3
+ARG CONDA_VERSION=4.7.10
 ARG CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh
 RUN curl -fSsL --insecure ${CONDA_URL} -o install-conda.sh &&\
-    /bin/bash ./install-conda.sh -b -p /opt/conda &&\
-    /opt/conda/bin/conda clean -ya
-ENV PATH=/opt/conda/bin:${PATH}
+    /bin/bash ./install-conda.sh -b -p $MINICONDA_PREFIX &&\
+    $MINICONDA_PREFIX/bin/conda clean -ya
+ENV PATH=/$MINICONDA_PREFIX/bin:${PATH}
 
 # Python and pip
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
@@ -35,7 +37,7 @@ RUN pip install onnx ninja
 RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TORCHVISION_VERSION} -f https://download.pytorch.org/whl/torch/
 
 # ORT Module
-RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cu116.html
+RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_stable_cu116.html
 
 RUN pip install torch-ort
 
