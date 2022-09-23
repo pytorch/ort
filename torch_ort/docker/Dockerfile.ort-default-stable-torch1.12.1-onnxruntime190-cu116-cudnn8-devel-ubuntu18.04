@@ -37,7 +37,7 @@ RUN pip install onnx ninja
 RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TORCHVISION_VERSION} -f https://download.pytorch.org/whl/torch/
 
 # ORT Module
-RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_stable_cu116.html
+RUN pip install onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_stable_cu116.html
 
 RUN pip install torch-ort
 
