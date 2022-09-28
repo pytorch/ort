@@ -2,7 +2,7 @@
 
 ## Install
 
-`pip install -r requirments-dev.txt`
+`pip install -r requirments-test.txt`
 
 ## Run
 
