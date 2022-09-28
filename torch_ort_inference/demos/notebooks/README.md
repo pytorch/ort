@@ -109,3 +109,11 @@ jupyter kernelspec remove tort_infer_env
 ```
 </details>
 </p>
+
+[![-----------------------------------------------------](https://user-images.githubusercontent.com/10940214/155750931-fc094349-b6ec-4e1f-9f9a-113e67941119.jpg)]()
+
+<div id='-additional-info'/>
+
+## Additional Info
+
+If you want to get even better performance, try OpenVINO™ Toolkit. Check out sample tutorials at [openvino-notebooks](https://github.com/openvinotoolkit/openvino_notebooks).
