@@ -3,17 +3,28 @@
 # Licensed under the MIT License.
 
 # CUDA development image for building sources
-FROM nvidia/cuda:11.2.2-cudnn8-devel-ubuntu18.04 as builder
+FROM nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04 as builder
 
-ARG TORCH_CUDA_VERSION=cu111
-ARG TORCH_VERSION=1.8.1
-ARG TORCHVISION_VERSION=0.9.1
+ARG TORCH_CUDA_VERSION=cu116
+ARG TORCH_VERSION=1.12.1
+ARG TORCHVISION_VERSION=0.13.1
 
 # Install and update tools to minimize security vulnerabilities
 RUN apt-get update
 RUN apt-get install -y software-properties-common wget apt-utils patchelf git libprotobuf-dev protobuf-compiler cmake
 RUN unattended-upgrade
 RUN apt-get autoremove -y
+
+# install miniconda (comes with python 3.9 default)
+ARG BUILD_USER=onnxruntimedev
+ARG MINICONDA_PREFIX=/home/$BUILD_USER/miniconda3
+RUN apt-get install curl
+ARG CONDA_VERSION=4.7.10
+ARG CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh
+RUN curl -fSsL --insecure ${CONDA_URL} -o install-conda.sh &&\
+    /bin/bash ./install-conda.sh -b -p $MINICONDA_PREFIX &&\
+    $MINICONDA_PREFIX/bin/conda clean -ya
+ENV PATH=$MINICONDA_PREFIX/bin:${PATH}
 
 # Python and pip
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
@@ -22,12 +33,11 @@ RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 RUN pip install --upgrade pip
 
 # PyTorch
-# TODO: upgrade to latest onnx
-RUN pip install onnx==1.11.0 ninja
-RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TORCHVISION_VERSION}+${TORCH_CUDA_VERSION} -f https://download.pytorch.org/whl/torch_stable.html
+RUN pip install onnx ninja
+RUN pip install torch==${TORCH_VERSION}+${TORCH_CUDA_VERSION} torchvision==${TORCHVISION_VERSION} -f https://download.pytorch.org/whl/torch/
 
 # ORT Module
-RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cu111.html
+RUN pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cu116.html
 
 RUN pip install torch-ort
 ENV TORCH_CUDA_ARCH_LIST="5.2 6.0 6.1 7.0 7.5 8.0 8.6+PTX"
