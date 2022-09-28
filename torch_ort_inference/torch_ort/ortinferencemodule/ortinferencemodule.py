@@ -57,6 +57,8 @@ class ORTInferenceModule(torch.nn.Module):
         self._export_extra_kwargs = {}
         self._provider_options = provider_options
         self._inference_session = None
+        self._input_info = None
+        self._module_output_schema  = None
         # Enable ATen Fallback
         load_aten_op_executor_cpp_extension()
         _custom_op_symbolic_registry.CustomOpSymbolicRegistry.register_all()
