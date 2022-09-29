@@ -30,6 +30,8 @@ def register_symbolic(name, domain=""):
 
     return symbolic_wrapper
 
+# Unsupported Aten ops to be added here
+
 @register_symbolic("grid_sampler")
 def grid_sampler(g, self, grid, mode, padding_mode, align_corners):
     output = g.op("org.pytorch.aten::ATen", self, grid, mode, padding_mode, align_corners, operator_s="grid_sampler")
@@ -47,5 +49,3 @@ def tril(g, self, diagonal, out=None):
     out = g.op("org.pytorch.aten::ATen", self, diagonal, operator_s="tril")
     out.setType(self.type())
     return out
-
-    

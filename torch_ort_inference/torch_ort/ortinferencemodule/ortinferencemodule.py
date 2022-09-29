@@ -186,10 +186,8 @@ class ORTInferenceModule(torch.nn.Module):
                 "Model could not be exported to ONNX"
             ) from e
 
-        exported_model = onnx.load_model_from_string(f.getvalue())
+        return onnx.load_model_from_string(f.getvalue())
 
-        return exported_model
-        
     def _get_session_config(self):
         """Creates and returns the session configuration to be used."""
 

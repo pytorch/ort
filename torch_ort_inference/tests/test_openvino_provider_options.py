@@ -3,7 +3,6 @@ import torch
 import torchvision
 from torch_ort import OpenVINOProviderOptions, ORTInferenceModule
 
-
 class TestOpenVinoProviderOptions:
     def test_openvino_provider_CPU(self):
         """Test ORTInferenceModule with CPU backend with FP32 precision"""
