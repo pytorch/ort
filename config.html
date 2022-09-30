@@ -10,7 +10,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>TORCH ORT &mdash; ONNX Runtime for PyTorch latest documentation</title>
+  <title>How to configure torch-ort &mdash; ONNX Runtime for PyTorch latest documentation</title>
   
 
   
@@ -32,7 +32,6 @@
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="ORTModule" href="ortmodule.html" />
   <!-- Google Analytics -->
   
   <!-- End Google Analytics -->
@@ -264,7 +263,7 @@
   <ul class="pytorch-breadcrumbs">
     
       <li>
-        <a href="#">
+        <a href="index.html">
           
             Docs
           
@@ -272,13 +271,13 @@
       </li>
 
         
-      <li>TORCH ORT</li>
+      <li>How to configure torch-ort</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
         
             
-            <a href="_sources/index.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+            <a href="_sources/config.md.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
           
         
       </li>
@@ -304,30 +303,39 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <section id="torch-ort">
-<h1>TORCH ORT<a class="headerlink" href="#torch-ort" title="Permalink to this heading">¶</a></h1>
-<p>The torch-ort package integrates the <a class="reference external" href="https://www.onnxruntime.ai/docs/">ONNX Runtime</a> accelerator into PyTorch.</p>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Python API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="ortmodule.html">ORTModule</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="ortmodule.html#ortmodule-api">ORTModule API</a></li>
-</ul>
-</li>
-</ul>
+  <section id="how-to-configure-torch-ort">
+<h1>How to configure torch-ort<a class="headerlink" href="#how-to-configure-torch-ort" title="Permalink to this heading">¶</a></h1>
+<section id="log-level">
+<h2>Log level<a class="headerlink" href="#log-level" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="save-onnx-files">
+<h2>Save ONNX files<a class="headerlink" href="#save-onnx-files" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torch_ort</span> <span class="kn">import</span> <span class="n">DebugOptions</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">torch_ort</span><span class="o">.</span><span class="n">ORTModule</span><span class="p">(</span><span class="n">TransformerModel</span><span class="p">(</span><span class="n">ntokens</span><span class="p">,</span> <span class="n">emsize</span><span class="p">,</span> <span class="n">nhead</span><span class="p">,</span> <span class="n">d_hid</span><span class="p">,</span> <span class="n">nlayers</span><span class="p">,</span> <span class="n">dropout</span><span class="p">),</span> <span class="n">DebugOptions</span><span class="p">(</span><span class="n">save_onnx</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">onnx_prefix</span><span class="o">=</span><span class="s1">&#39;TransformerModel&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</pre></div>
 </div>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Install torch-ort</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="install.html#pre-requisites">Pre-requisites</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install.html#run-in-a-python-environment">Run in a Python environment</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install.html#run-using-docker">Run using Docker</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install.html#test-your-installation">Test your installation</a></li>
-</ul>
-</li>
-</ul>
+</section>
+<section id="or-load-from-config">
+<h2>Or load from config<a class="headerlink" href="#or-load-from-config" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">torch_ort.experimental.json_config</span> <span class="kn">import</span> <span class="n">load_from_json</span>
+<span class="n">path_to_json</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">&#39;torch-ort_config.json&#39;</span><span class="p">)</span>
+<span class="n">load_from_json</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">path_to_json</span><span class="p">)</span>
+</pre></div>
 </div>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;DebugOptions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;SaveONNX&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;ONNXPrefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;torch-ort_model&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="access-the-original-torch-module">
+<h1>Access the original torch module<a class="headerlink" href="#access-the-original-torch-module" title="Permalink to this heading">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">._torch_module</span></code></p>
 </section>
 
 
@@ -335,13 +343,6 @@
              
             </div>
             <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="ortmodule.html" class="btn btn-neutral float-right" title="ORTModule" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
-      
-      
-    </div>
   
 
   
@@ -371,9 +372,13 @@
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">TORCH ORT</a><ul>
+<li><a class="reference internal" href="#">How to configure torch-ort</a><ul>
+<li><a class="reference internal" href="#log-level">Log level</a></li>
+<li><a class="reference internal" href="#save-onnx-files">Save ONNX files</a></li>
+<li><a class="reference internal" href="#or-load-from-config">Or load from config</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#access-the-original-torch-module">Access the original torch module</a></li>
 </ul>
 
             </div>
