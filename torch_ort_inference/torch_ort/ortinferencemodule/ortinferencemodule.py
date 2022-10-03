@@ -59,6 +59,7 @@ class ORTInferenceModule(torch.nn.Module):
         self._inference_session = None
         self._input_info = None
         self._module_output_schema  = None
+        self._onnx_opset_version = 16
         # Enable ATen Fallback
         load_aten_op_executor_cpp_extension()
         _custom_op_symbolic_registry.CustomOpSymbolicRegistry.register_all()
@@ -166,6 +167,7 @@ class ORTInferenceModule(torch.nn.Module):
                     "operator_export_type": OperatorExportTypes.ONNX_ATEN_FALLBACK,
                     "export_params": True,
                     "keep_initializers_as_inputs": False,
+                    "opset_version": self._onnx_opset_version
                 }
                 if _utils_infer.set_dynamic_axes(self):
                     required_export_kwargs["dynamic_axes"] = self._input_info.dynamic_axes
