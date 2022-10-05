@@ -15,10 +15,8 @@ import onnxruntime
 from onnxruntime.capi import _pybind_state as C
 from onnxruntime.training.ortmodule import _io, _onnx_models, _utils
 from onnxruntime.training.ortmodule.debug_options import DebugOptions, LogLevel
-from onnxruntime.training.ortmodule.torch_cpp_extensions.cpu.aten_op_executor import load_aten_op_executor_cpp_extension
 
 from .provider_options import OpenVINOProviderOptions
-from . import _custom_op_symbolic_registry
 from . import _utils_infer
 import inspect
 
@@ -60,9 +58,6 @@ class ORTInferenceModule(torch.nn.Module):
         self._input_info = None
         self._module_output_schema  = None
         self._onnx_opset_version = 16
-        # Enable ATen Fallback
-        load_aten_op_executor_cpp_extension()
-        _custom_op_symbolic_registry.CustomOpSymbolicRegistry.register_all()
 
     def _forward_call(self, *inputs, **kwargs):
         """Delegate the :meth:`~torch.nn.Module.forward` to
