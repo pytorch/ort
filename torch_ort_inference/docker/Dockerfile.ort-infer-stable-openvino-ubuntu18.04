@@ -1,0 +1,84 @@
+#-------------------------------------------------------------------------
+# Copyright(C) 2022 Intel Corporation.
+# SPDX-License-Identifier: MIT
+#--------------------------------------------------------------------------
+
+ARG OPENVINO_VERSION="2022.2.0"
+ARG TORCHORT_BRANCH="main"
+
+FROM openvino/ubuntu18_runtime:${OPENVINO_VERSION}
+
+LABEL description="This is the runtime image for OpenVINO™ integration with Torch-ORT on Ubuntu 18.04 LTS"
+
+LABEL vendor="Intel Corporation"
+
+USER root
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
+
+RUN apt-get update; \
+    dpkg --get-selections | grep -v deinstall | awk '{print $1}' > base_packages.txt; \
+    apt-get install -y --no-install-recommends \
+    git build-essential \
+    python3.8 python3.8-venv libpython3.8-dev; \
+    rm -rf /var/lib/apt/lists/*;
+
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1; \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 2;
+
+WORKDIR /home/ovtort/
+
+RUN git clone https://github.com/intel-staging/ort.git && \
+    cd ort/torch_ort_inference && \
+    git checkout ${TORCHORT_BRANCH}
+
+RUN python3 -m pip install --upgrade pip && pip install -U numpy && pip install wheel && pip install -U setuptools
+
+ENV WORKDIR_PATH ort/torch_ort_inference
+WORKDIR ${WORKDIR_PATH}
+
+RUN python build.py && \
+    cd dist/ && \
+    pip install *.whl; \
+    rm -rf *.whl
+
+RUN pip install wget pandas torchvision Pillow transformers
+
+RUN python -m torch_ort.configure
+
+# Download sources for GPL/LGPL packages
+RUN apt-get update; \
+    sed -Ei 's/# deb-src /deb-src /' /etc/apt/sources.list && \
+    apt-get update && \
+    dpkg --get-selections | grep -v deinstall | awk '{print $1}' > all_packages.txt && \
+    grep -v -f base_packages.txt all_packages.txt | while read line; do \
+    package=$(echo $line); \
+    name=(${package//:/ }); \
+    grep -l GPL /usr/share/doc/${name[0]}/copyright; \
+    exit_status=$?; \
+    if [ $exit_status -eq 0 ]; then \
+    apt-get source -q --download-only $package;  \
+    fi \
+    done && \
+    echo "Download source for $(ls | wc -l) third-party packages: $(du -sh)"; \
+    rm -rf /var/lib/apt/lists/*;
+
+ARG BUILD_USER=ovtortdev
+
+RUN adduser $BUILD_USER
+
+RUN usermod -a -G video,users ${BUILD_USER}
+
+ENV WORKDIR_PATH /home/${BUILD_USER}
+
+WORKDIR ${WORKDIR_PATH}
+
+RUN chown ${BUILD_USER} -R /home/ovtort/
+
+USER ${BUILD_USER}
+
+WORKDIR /home/ovtort/ort/torch_ort_inference/
+
+CMD ["/bin/bash"]

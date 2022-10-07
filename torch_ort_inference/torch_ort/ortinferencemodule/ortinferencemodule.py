@@ -15,7 +15,7 @@ import onnxruntime
 from onnxruntime.capi import _pybind_state as C
 from onnxruntime.training.ortmodule import _io, _onnx_models, _utils
 from onnxruntime.training.ortmodule.debug_options import DebugOptions, LogLevel
-
+from onnxruntime.training.ortmodule.torch_cpp_extensions.cpu.aten_op_executor import load_aten_op_executor_cpp_extension
 from .provider_options import OpenVINOProviderOptions
 from . import _utils_infer
 import inspect
@@ -55,6 +55,10 @@ class ORTInferenceModule(torch.nn.Module):
         self._export_extra_kwargs = {}
         self._provider_options = provider_options
         self._inference_session = None
+        self._input_info = None
+        self._module_output_schema  = None
+        self._onnx_opset_version = 16
+        load_aten_op_executor_cpp_extension()
 
     def _forward_call(self, *inputs, **kwargs):
         """Delegate the :meth:`~torch.nn.Module.forward` to
@@ -159,6 +163,7 @@ class ORTInferenceModule(torch.nn.Module):
                     "operator_export_type": OperatorExportTypes.ONNX_ATEN_FALLBACK,
                     "export_params": True,
                     "keep_initializers_as_inputs": False,
+                    "opset_version": self._onnx_opset_version
                 }
                 if _utils_infer.set_dynamic_axes(self):
                     required_export_kwargs["dynamic_axes"] = self._input_info.dynamic_axes
