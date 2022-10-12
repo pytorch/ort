@@ -5,6 +5,6 @@ transformers==v4.3.2
 tensorboard
 h5py
 wget
-pytorch-lightning==1.2.5
+pytorch-lightning==1.7.7
 deepspeed
 fairscale
