@@ -1,38 +1,75 @@
-This repository contains below libraries. They can be installed independent of each other.
-* [ort_moe](#mixture-of-experts): Mixture of Experts implementation in PyTorch
-* [torch_ort](#accelerate-pytorch-models-with-onnx-runtime): ONNX Runtime package that accelerates PyTorch models
-* [torch_ort_infer](#accelerate-inference-for-pytorch-models-with-onnx-runtime-preview): ONNX Runtime package that accelerates inference for PyTorch models
+<div align="center">
 
+<p align="center"><img width="50%" src="images/ONNX_Runtime_logo_dark.png" /></p>
 
-# Mixture Of Experts
+**A library for developing and deploying PyTorch models using the ONNX Runtime**.
 
-Mixture of Experts layer implementation is available in the [ort_moe](ort_moe) folder. 
-- [ort_moe/docs/moe.md](ort_moe/docs/moe.md) provides brief overview of the implementation.
-- A simple MoE tutorial is provided [here](ort_moe/docs/tutorials/moe_tutorial.py).
-- Note: ONNX Runtime (following pre-requisites) is not required to run the MoE layer. It is intergrated in stand-alone Pytorch.
+---
 
-## Build MoE
-```
-cd ort_moe
-pip install build # Install PyPA build
-python -m build
-```
+[Key Features](#key-features) •
+[Installation](#Installation) •
+[Training](#Training) •
+[Inference](#Inference) •
+[Docs](https://www.onnxruntime.ai/) •
+[License](https://github.com/pytorch/ort/blob/main/LICENSE)
 
-# Accelerate PyTorch models with ONNX Runtime
+[![torch-ort](https://img.shields.io/pypi/v/torch-ort)](https://pypi.org/project/torch-ort/)
+[![python](https://img.shields.io/badge/python-3.7%2B-blue)]()
+[![pytorch](https://img.shields.io/badge/pytorch-1.12.1%2B-blue)]()
+[![API Checks](https://github.com/pytorch/ort/actions/workflows/api-ci.yml/badge.svg)](https://github.com/pytorch/ort/actions/workflows/api-ci.yml)
+[![Docs](https://github.com/pytorch/ort/actions/workflows/doc-automation.yml/badge.svg)](https://github.com/pytorch/ort/actions/workflows/doc-automation.yml)
 
-ONNX Runtime for PyTorch accelerates PyTorch model training using ONNX Runtime.
+</div>
 
-This repository contains the source code for the package, as well as instructions for running the package.
+---
 
-## Pre-requisites
+# Introduction
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+**Key Features:**
+
+- Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+- Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+- Inference PyTorch directly from PyTorch framework while leveraging ONNX Runtime execution provider optimizations
+
+# 🚀 Installation
+
+## Inference
+
+### Prerequisites
+
+- Ubuntu 18.04, 20.04
+- Python* 3.7, 3.8 or 3.9
+
+### Install in a local Python environment
+- `pip install torch-ort-infer[openvino]`
+- Run post installation configuration script `python -m torch_ort.configure`
+
+### Verify your installation
+
+1. Clone this repo
+
+    - `git clone git@github.com:pytorch/ort.git`
+
+2. Install extra dependencies
+
+    - `pip install wget pandas sklearn transformers`
+
+3. Run the training script
+
+    - `python ./torch_ort_inference/tests/bert_for_sequence_classification.py`
+
+## Training
+
+### Pre-requisites
 
 You need a machine with at least one NVIDIA or AMD GPU to run ONNX Runtime for PyTorch.
 
 You can install and run torch-ort in your local environment, or with [Docker](torch_ort/docker/README.md).
 
-## Install in a local Python environment
+### Install in a local Python environment
 
-### Default dependencies
 
 By default, torch-ort depends on PyTorch 1.9.0, ONNX Runtime 1.9.0 and CUDA 10.2.
 
@@ -50,7 +87,7 @@ By default, torch-ort depends on PyTorch 1.9.0, ONNX Runtime 1.9.0 and CUDA 10.2
 
 Get install instructions for other combinations in the `Get Started Easily` section at <https://www.onnxruntime.ai/> under the `Optimize Training` tab.
 
-## Verify your installation
+### Verify your installation
 
 1. Clone this repo
 
@@ -64,125 +101,62 @@ Get install instructions for other combinations in the `Get Started Easily` sect
 
     - `python ./ort/tests/bert_for_sequence_classification.py`
 
-## Add ONNX Runtime for PyTorch to your PyTorch training script
 
-```python
-from torch_ort import ORTModule
-model = ORTModule(model)
+## Inference
 
-# PyTorch training script follows
-```
+### Prerequisites
 
-## Usage of FusedAdam
+- Ubuntu 18.04, 20.04
+- Python* 3.7, 3.8 or 3.9
 
-```python
-import torch
-from torch_ort.optim import FusedAdam
+### Install in a local Python environment
+- `pip install torch-ort-infer[openvino]`
+- Run post installation configuration script `python -m torch_ort.configure`
 
-class NeuralNet(torch.nn.Module):
-    ...
+### Verify your installation
 
-# Only supports GPU Currently.
-device = "cuda"
-model = NeuralNet(...).to(device)
+1. Clone this repo
 
-ort_fused_adam_optimizer = FusedAdam(
-    model.parameters(), lr=1e-3, betas=(0.9, 0.999), weight_decay=0.01, eps=1e-8
-)
+    - `git clone git@github.com:pytorch/ort.git`
 
-loss = model(...).sum()
-loss.backward()
+2. Install extra dependencies
 
-ort_fused_adam_optimizer.step()
-ort_fused_adam_optimizer.zero_grad()
+    - `pip install wget pandas sklearn transformers`
 
-```
-For detailed documentation see [FusedAdam](https://github.com/microsoft/onnxruntime/blob/master/orttraining/orttraining/python/training/optim/fused_adam.py#L25)
+3. Run the training script
 
-For a full working example see [FusedAdam Test Example](https://github.com/pytorch/ort/blob/main/torch_ort/tests/torch-ort_test_api.py) 
+    - `python ./torch_ort_inference/tests/bert_for_sequence_classification.py`
 
-## Usage of LoadBalancingDistributedSampler
+# 📈 Training
 
-```python
-import torch
-from torch.utils.data import DataLoader 
-from torch_ort.utils.data import LoadBalancingDistributedSampler
-
-class MyDataset(torch.utils.data.Dataset):
-   ...
-   
-def collate_fn(data): 
-    ...
-    return samples, label_list 
-
-samples = [...] 
-labels = [...] 
-
-dataset = MyDataset(samples, labels) 
-
-data_sampler = sampler.LoadBalancingDistributedSampler( 
-
-    dataset, complexity_fn=complexity_fn, world_size=2, rank=0, shuffle=False 
-
-) 
-
-train_dataloader = DataLoader(dataset, batch_size=2, sampler=data_sampler, collate_fn=collate_fn) 
-
-for batched_data, batched_label in train_dataloader: 
-    optimizer.zero_grad() 
-    loss = loss_fn(model(batched_data) , batched_labels) 
-    loss.backward() 
-    optimizer.step() 
-    
-```
-For detailed documentation see [LoadBalancingDistributedSampler](https://github.com/microsoft/onnxruntime/blob/master/orttraining/orttraining/python/training/utils/data/sampler.py#L37)
-
-For a full working example see [LoadBalancingDistributedSampler Test Example](https://github.com/microsoft/onnxruntime/blob/master/orttraining/orttraining/python/training/utils/data/sampler.py#L37)
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
 ## Samples
 
 To see torch-ort in action, see https://github.com/microsoft/onnxruntime-training-examples, which shows you how to train the most popular HuggingFace models.
 
-# Accelerate inference for PyTorch models with ONNX Runtime (Preview)
+# 🎯 Inference
+
+<div align="center">
+
+<p align="center"><img width="30%" src="images/ONNX_Runtime_logo_dark.png" /></p>
+<p align="center">➕</p>
+<p align="center"><img width="30%" src="images/openvino-logo-purple-black.png" /></p>
+
+</div>
+
 
 ONNX Runtime for PyTorch is now extended to support PyTorch model inference using ONNX Runtime.
 
 It is available via the torch-ort-infer python package. This preview package enables OpenVINO™ Execution Provider for ONNX Runtime by default for accelerating inference on various Intel® CPUs, Intel® integrated GPUs, and Intel® Movidius™ Vision Processing Units - referred to as VPU.
 
-This repository contains the source code for the package, as well as instructions for running the package.
+## Supported Execution Providers
 
-## Prerequisites
+|Execution Providers|
+|---|
+|OpenVINO  [![openvino](https://img.shields.io/badge/openvino-2022.1-purple)]() |
 
-- Ubuntu 18.04, 20.04
-
-- Python* 3.7, 3.8 or 3.9
-
-## Install in a local Python environment
-
-By default, torch-ort-infer depends on PyTorch 1.12 and ONNX Runtime OpenVINO EP 1.12.
-
-1. Install torch-ort-infer with OpenVINO dependencies.
-
-    - `pip install torch-ort-infer[openvino]`
-<br/><br/>
-2. Run post-installation script
-
-    - `python -m torch_ort.configure`
-
-## Samples
-
-To see OpenVINO™ integration with Torch-ORT in action, see [demos](/torch_ort_inference/demos), which shows you how to run inference on some of the most popular Deep Learning models.
-
-## Add ONNX Runtime for PyTorch to your PyTorch inference script
-
-```python
-from torch_ort import ORTInferenceModule
-model = ORTInferenceModule(model)
-
-# PyTorch inference script follows
-```
-
-### Provider Options
+## Provider Options
 
 Users can configure different options  for a given Execution Provider to run inference. As an example, OpenVINO™ Execution Provider options can be configured as shown below:
 
@@ -193,6 +167,15 @@ model = ORTInferenceModule(model, provider_options = provider_options)
 
 # PyTorch inference script follows
 ```
+### List of Provider Options
+
+Supported backend-precision combinations:
+| Backend | Precision |
+| --------| --------- |  
+|   CPU   |    FP32   |
+|   GPU   |    FP32   |
+|   GPU   |    FP16   |
+|  MYRIAD |    FP16   |
 
 If no provider options are specified by user, OpenVINO™ Execution Provider is enabled with following options by default:
 
@@ -202,10 +185,6 @@ precision = "FP32"
 ```
 
 For more details on APIs, see [usage.md](/torch_ort_inference/docs/usage.md).
-
-### Note
-
-Experimental support on Intel® MyriadX VPU in this preview. 
 
 ## Code Sample
 
@@ -234,6 +213,15 @@ pred = np.argmax(logits, axis=1).flatten()
 print("Grammar correctness label (0=unacceptable, 1=acceptable)")
 print(pred)
 ```
+
+## Samples
+
+To see OpenVINO™ integration with Torch-ORT in action, see [demos](/torch_ort_inference/demos), which shows you how to run inference on some of the most popular Deep Learning models.
+
+
+# 🤝 Contributing
+
+Please refer to our [contributing guide](CONTRIBUTING.md) for more information on how to contribute!
 
 ## License
 
