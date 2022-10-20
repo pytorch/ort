@@ -43,11 +43,9 @@ You can install and run torch-ort in your local environment, or with [Docker](to
 
 ### Install in a local Python environment
 
-By default, torch-ort depends on PyTorch 1.9.0, ONNX Runtime 1.9.0 and CUDA 10.2.
+1. Install CUDA
 
-1. Install CUDA 10.2
-
-2. Install CuDNN 7.6
+2. Install CuDNN
 
 3. Install torch-ort
 
@@ -128,9 +126,9 @@ To see torch-ort in action, see https://github.com/microsoft/onnxruntime-trainin
 
 # Mixture of Experts
 
-To run MoE, add the layer to your model as described in this [ort_moe/docs/tutorials/moe_tutorial.py](tutorial)
+To run MoE, add the layer to your model as described in the tutorial: [ort_moe/docs/tutorials/moe_tutorial.py](tutorial)
 
-For more details, see [ort_moe/docs/moe.md]
+For more details, see [ort_moe/docs/moe.md](moe.md)
 
 Note: ONNX Runtime is not required to run the MoE layer. It is integrated in standalone PyTorch.
 
