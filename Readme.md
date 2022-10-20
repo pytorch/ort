@@ -124,7 +124,7 @@ The torch-ort library accelerates training of large transformer PyTorch models t
 
 To see torch-ort in action, see https://github.com/microsoft/onnxruntime-training-examples, which shows you how to train the most popular HuggingFace models.
 
-# Mixture of Experts
+# 🤓 Mixture of Experts
 
 To run MoE, add the layer to your model as described in the tutorial: [ort_moe/docs/tutorials/moe_tutorial.py](tutorial)
 
