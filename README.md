@@ -6,9 +6,9 @@
 
 ---
 
-[Installation](#Installation) •
-[Training](#Training) •
-[Inference](#Inference) •
+[Installation](#installation) •
+[Training](#training) •
+[Inference](#inference) •
 [Docs](https://www.onnxruntime.ai/) •
 [License](https://github.com/pytorch/ort/blob/main/LICENSE)
 
