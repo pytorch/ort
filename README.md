@@ -6,10 +6,9 @@
 
 ---
 
-[Key Features](#key-features) •
-[Installation](#Installation) •
-[Training](#Training) •
-[Inference](#Inference) •
+[Installation](#-installation) •
+[Training](#-training) •
+[Inference](#-inference) •
 [Docs](https://www.onnxruntime.ai/) •
 [License](https://github.com/pytorch/ort/blob/main/LICENSE)
 
@@ -33,7 +32,7 @@ A library for accelerating PyTorch models using ONNX Runtime:
 
 # 🚀 Installation
 
-## Training
+## Install for training
 
 ### Pre-requisites
 
@@ -71,10 +70,9 @@ Get install instructions for other combinations in the `Get Started Easily` sect
 
     - `python ./ort/tests/bert_for_sequence_classification.py`
 
-## Mixture Of Experts
+## Install Mixture Of Experts
 
 Mixture of Experts layer implementation is available in the ort_moe folder.
-
 
 Clone this repo
 
@@ -90,7 +88,7 @@ pip install build # Install PyPA build
 python -m build
 ```
 
-## Inference
+## Install for Inference
 
 ### Prerequisites
 
