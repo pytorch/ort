@@ -26,9 +26,9 @@
 
 A library for accelerating PyTorch models using ONNX Runtime:
 
-- torch-ort to train PyTorch models faster with ONNX Runtime
-- moe to scale large models and improve their quality
-- torch-ort-infer to perform inference on PyTorch models with ONNX Runtime and Intel OpenVINO
+- [torch-ort](#-training) to train PyTorch models faster with ONNX Runtime
+- [moe](#-moe) to scale large models and improve their quality
+- [torch-ort-infer](#-inference) to perform inference on PyTorch models with ONNX Runtime and Intel® OpenVINO™
 
 # 🚀 Installation
 
@@ -148,7 +148,7 @@ It is available via the torch-ort-infer python package. This preview package ena
 
 |Execution Providers|
 |---|
-|OpenVINO  [![openvino](https://img.shields.io/badge/openvino-2022.1-purple)]() |
+|OpenVINO  [![openvino](https://img.shields.io/badge/openvino-2022.2-purple)]() |
 
 ## Provider Options
 
