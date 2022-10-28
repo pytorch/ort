@@ -207,3 +207,8 @@ This document provides a list of all validated models that are supported by **Op
 | [yolov2](https://github.com/yjh0410/yolov2-yolov3_PyTorch)  | CPU, iGPU |
 | [yolov3](https://github.com/eriklindernoren/PyTorch-YOLOv3)  | CPU, iGPU |
 | [yolov3-tiny](https://github.com/eriklindernoren/PyTorch-YOLOv3)  | CPU, iGPU |
+
+## Quantization Support (Experimental)
+OpenVINO™ integration with Torch-ORT now supports INT8 models quantized using Post-Training Quantization (PTQ) through OpenVINO™ Neural Network Compression Framework (NNCF). This support is currently in an experimental state and performance optimizations are in progress.
+
+Some examples of NNCF usage to produce quantized models can be found here: <https://github.com/openvinotoolkit/nncf/tree/develop/examples/experimental/torch>.
