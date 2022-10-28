@@ -27,7 +27,7 @@
 A library for accelerating PyTorch models using ONNX Runtime:
 
 - [torch-ort](#-training) to train PyTorch models faster with ONNX Runtime
-- [moe](#-moe) to scale large models and improve their quality
+- [moe](#-mixture-of-experts) to scale large models and improve their quality
 - [torch-ort-infer](#-inference) to perform inference on PyTorch models with ONNX Runtime and Intel® OpenVINO™
 
 # 🚀 Installation
