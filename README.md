@@ -140,9 +140,9 @@ Note: ONNX Runtime is not required to run the MoE layer. It is integrated in sta
 
 </div>
 
-ONNX Runtime for PyTorch supports PyTorch model inference using ONNX Runtime.
+ONNX Runtime for PyTorch supports PyTorch model inference using ONNX Runtime and Intel® OpenVINO™.
 
-It is available via the torch-ort-infer python package. This preview package enables OpenVINO™ Execution Provider for ONNX Runtime by default for accelerating inference on various Intel® CPUs, Intel® integrated GPUs, and Intel® Movidius™ Vision Processing Units - referred to as VPU.
+It is available via the torch-ort-infer python package. This package enables OpenVINO™ Execution Provider for ONNX Runtime by default for accelerating inference on various Intel® CPUs, Intel® integrated GPUs, and Intel® Movidius™ Vision Processing Units - referred to as VPU.
 
 ## Supported Execution Providers
 
