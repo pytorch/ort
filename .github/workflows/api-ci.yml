@@ -17,6 +17,7 @@ jobs:
         cd torch_ort
         python3 -m pip install --upgrade protobuf==3.20.1
         python3 -m pip install --pre onnxruntime-training --no-cache-dir -f https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
+        python3 -m pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
         python3 setup.py install --prefix=/tmp
         python3 -m torch_ort.configure
         python3 -m pip install pytest
