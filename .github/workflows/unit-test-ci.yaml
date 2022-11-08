@@ -2,7 +2,7 @@ name: Run Unit Test (CI)
 on:
   pull_request:
     branches:
-    - ov_torchort_integration_ga
+    - main
 jobs:
   Pre-Checks:
     runs-on: ubuntu-latest
