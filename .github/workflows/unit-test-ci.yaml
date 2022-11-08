@@ -1,4 +1,4 @@
-name: Continuous Integration - External Collaborator
+name: Pull Request (CI)
 on:
   pull_request:
     branches:
