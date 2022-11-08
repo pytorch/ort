@@ -1,8 +1,8 @@
-name: Pull Request (CI)
+name: Run Unit Test (CI)
 on:
   pull_request:
     branches:
-    - main
+    - ov_torchort_integration_ga
 jobs:
   Pre-Checks:
     runs-on: ubuntu-latest
@@ -12,10 +12,10 @@ jobs:
     - name: Build Packages
       run: |
         python3 --version
-        pip install onnxruntime-openvino
         pip install pytest
         python torch_ort_inference/build.py
         pip install torch_ort_inference/dist/torch_ort_infer*
+        python -m torch_ort.configure
         pip install pandas
         pip install transformers
         pip install torchvision
