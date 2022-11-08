@@ -75,7 +75,7 @@ steps:
         --volume $(Build.SourcesDirectory)/torch_ort:/torch_ort_src \
         -w /torch_ort_src \
         torchortpackagingtest \
-          /usr/bin/python3 build.py --wheel_file /torch_ort_src/dist/$whlfilename
+          python build.py --wheel_file /torch_ort_src/dist/$whlfilename
     workingDirectory: $(Build.SourcesDirectory)
   displayName: "docker run build.py --wheel_file /torch_ort_src/dist/$whlfilename"
 
