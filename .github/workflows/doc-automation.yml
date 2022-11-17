@@ -35,12 +35,12 @@ jobs:
         python3 -m pip install torch-ort
         python3 -m torch_ort.configure
     - name: Build the docset
-      run: cd ./torch_ort/docs/sphinx ; export PATH=$PATH:$(python3 -m site --user-base)/bin/ ; make html
+      run: cd ./docs/sphinx ; export PATH=$PATH:$(python3 -m site --user-base)/bin/ ; make html
       id: build
     - name: Deploy
       uses: JamesIves/github-pages-deploy-action@releases/v3
       with:
           ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: torch_ort/docs/sphinx/build/html
+          FOLDER: docs/sphinx/build/html
           CLEAN_EXCLUDE: '["_config.yml"]'
