@@ -1,5 +1,5 @@
 pandas
-sklearn
+scikit-learn
 numpy==1.19.5
 transformers==v4.3.2
 tensorboard
