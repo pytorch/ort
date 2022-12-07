@@ -2,7 +2,7 @@ name: Run Unit Test (CI)
 on:
   pull_request:
     branches:
-    - torch_ort_inference_github_actions
+    - main
 jobs:
   Pre-Checks:
     runs-on: ubuntu-20.04
