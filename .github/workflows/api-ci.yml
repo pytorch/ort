@@ -3,13 +3,6 @@ on:
   [push, pull_request]
 jobs:
   run-tests:
-    runs-on: ubuntu-latest
-    env:
-      PYTHONPATH: ${PYTHONPATH}:/tmp/lib/python3.8/site-packages
-    steps:
-    - name: Setup
-      run:
-        mkdir -p /tmp/lib/python3.8/site-packages
     - name: Checkout
       uses: actions/checkout@v2
     - uses: actions/setup-python@v4
