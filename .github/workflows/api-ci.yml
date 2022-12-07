@@ -12,11 +12,10 @@ jobs:
         mkdir -p /tmp/lib/python3.8/site-packages
     - name: Checkout
       uses: actions/checkout@v2
-    - name: install
-      uses: actions/checkout@v3
-      uses: actions/setup-python@v4
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.9' 
+    - name: install
       run: |
         echo `python3 --version`
         cd torch_ort
