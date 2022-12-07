@@ -13,6 +13,8 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: install
+      with:
+      python-version: '3.9' 
       run: |
         echo `python3 --version`
         cd torch_ort
