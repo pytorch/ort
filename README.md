@@ -26,9 +26,9 @@
 
 A library for accelerating PyTorch models using ONNX Runtime:
 
-- torch-ort to train PyTorch models faster with ONNX Runtime
-- moe to scale large models and improve their quality
-- torch-ort-infer to perform inference on PyTorch models with ONNX Runtime and Intel OpenVINO
+- [torch-ort](#-training) to train PyTorch models faster with ONNX Runtime
+- [moe](#-mixture-of-experts) to scale large models and improve their quality
+- [torch-ort-infer](#-inference) to perform inference on PyTorch models with ONNX Runtime and Intel® OpenVINO™
 
 # 🚀 Installation
 
@@ -140,15 +140,15 @@ Note: ONNX Runtime is not required to run the MoE layer. It is integrated in sta
 
 </div>
 
-ONNX Runtime for PyTorch supports PyTorch model inference using ONNX Runtime.
+ONNX Runtime for PyTorch supports PyTorch model inference using ONNX Runtime and Intel® OpenVINO™.
 
-It is available via the torch-ort-infer python package. This preview package enables OpenVINO™ Execution Provider for ONNX Runtime by default for accelerating inference on various Intel® CPUs, Intel® integrated GPUs, and Intel® Movidius™ Vision Processing Units - referred to as VPU.
+It is available via the torch-ort-infer python package. This package enables OpenVINO™ Execution Provider for ONNX Runtime by default for accelerating inference on various Intel® CPUs, Intel® integrated GPUs, and Intel® Movidius™ Vision Processing Units - referred to as VPU.
 
 ## Supported Execution Providers
 
 |Execution Providers|
 |---|
-|OpenVINO  [![openvino](https://img.shields.io/badge/openvino-2022.1-purple)]() |
+|OpenVINO  [![openvino](https://img.shields.io/badge/openvino-2022.2-purple)]() |
 
 ## Provider Options
 
