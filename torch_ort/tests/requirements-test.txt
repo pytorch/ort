@@ -1,6 +1,7 @@
 pandas
 scikit-learn
 numpy==1.19.5
+packaging==21.3
 transformers==v4.3.2
 tensorboard
 h5py
