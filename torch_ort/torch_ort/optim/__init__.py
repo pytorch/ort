@@ -8,3 +8,4 @@
 """
 
 from onnxruntime.training.optim import FusedAdam
+from onnxruntime.training.optim.fp16_optimizer import FP16_Optimizer
