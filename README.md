@@ -117,6 +117,77 @@ python -m build
 # 📈 Training
 
 The torch-ort library accelerates training of large transformer PyTorch models to reduce the training time and GPU cost with a few lines of code change. It is built on top of highly successful and proven technologies of ONNX Runtime and ONNX format and includes the ONNX Runtime Optimizer and Data Sampler.
+## Add ONNX Runtime for PyTorch to your PyTorch training script
+
+```python
+from torch_ort import ORTModule
+model = ORTModule(model)
+# PyTorch training script follows
+```
+
+## Usage of FusedAdam and FP16 Optimizer (Optional)
+
+```python
+import torch
+from torch_ort.optim import FusedAdam
+class NeuralNet(torch.nn.Module):
+    ...
+# Only supports GPU Currently.
+device = "cuda"
+model = NeuralNet(...).to(device)
+ort_fused_adam_optimizer = FusedAdam(
+    model.parameters(), lr=1e-3, betas=(0.9, 0.999), weight_decay=0.01, eps=1e-8
+)
+
+# To use FP16_Optimizer, Add these lines : 
+from torch_ort.optim import FP16_Optimizer
+ort_fused_adam_optimizer = FP16_Optimizer(ort_fused_adam_optimizer)
+
+
+loss = model(...).sum()
+loss.backward()
+ort_fused_adam_optimizer.step()
+ort_fused_adam_optimizer.zero_grad()
+```
+For detailed documentation see [FusedAdam](https://github.com/microsoft/onnxruntime/blob/master/orttraining/orttraining/python/training/optim/fused_adam.py#L25)
+
+For a full working example see [FusedAdam Test Example](https://github.com/pytorch/ort/blob/main/torch_ort/tests/torch-ort_test_api.py) 
+
+
+FP16_Optimizer is a simple wrapper to replace inefficient FP16_Optimizer function calls implemented by libraries for example
+        Apex, DeepSpeed, Megatron-LM.
+
+For detailed documentation see [FP16 Optimizer](https://github.com/microsoft/onnxruntime/blob/main/orttraining/orttraining/python/training/optim/fp16_optimizer.py)
+
+## Usage of LoadBalancingDistributedSampler
+
+```python
+import torch
+from torch.utils.data import DataLoader 
+from torch_ort.utils.data import LoadBalancingDistributedSampler
+class MyDataset(torch.utils.data.Dataset):
+   ...
+   
+def collate_fn(data): 
+    ...
+    return samples, label_list 
+samples = [...] 
+labels = [...] 
+dataset = MyDataset(samples, labels) 
+data_sampler = sampler.LoadBalancingDistributedSampler( 
+    dataset, complexity_fn=complexity_fn, world_size=2, rank=0, shuffle=False 
+) 
+train_dataloader = DataLoader(dataset, batch_size=2, sampler=data_sampler, collate_fn=collate_fn) 
+for batched_data, batched_label in train_dataloader: 
+    optimizer.zero_grad() 
+    loss = loss_fn(model(batched_data) , batched_labels) 
+    loss.backward() 
+    optimizer.step() 
+    
+```
+For detailed documentation see [LoadBalancingDistributedSampler](https://github.com/microsoft/onnxruntime/blob/master/orttraining/orttraining/python/training/utils/data/sampler.py#L37)
+
+For a full working example see [LoadBalancingDistributedSampler Test Example](https://github.com/microsoft/onnxruntime/blob/master/orttraining/orttraining/python/training/utils/data/sampler.py#L37)
 
 ## Samples
 
