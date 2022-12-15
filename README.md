@@ -153,6 +153,12 @@ For detailed documentation see [FusedAdam](https://github.com/microsoft/onnxrunt
 
 For a full working example see [FusedAdam Test Example](https://github.com/pytorch/ort/blob/main/torch_ort/tests/torch-ort_test_api.py) 
 
+
+FP16_Optimizer is a simple wrapper to replace inefficient FP16_Optimizer function calls implemented by libraries for example
+        Apex, DeepSpeed, Megatron-LM.
+
+For detailed documentation see [FP16 Optimizer](https://github.com/microsoft/onnxruntime/blob/main/orttraining/orttraining/python/training/optim/fp16_optimizer.py)
+
 ## Usage of LoadBalancingDistributedSampler
 
 ```python
