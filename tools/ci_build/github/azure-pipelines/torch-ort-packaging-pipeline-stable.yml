@@ -11,7 +11,7 @@ stages:
         matrix:
           Python38 Default onxruntime190 Cuda11.6:
             PythonVersion: '3.8'
-            PublicDockerFile: 'torch_ort/docker/Dockerfile.ort-default-stable-torch1.12.1-onnxruntime190-cu116-cudnn8-devel-ubuntu18.04'
+            PublicDockerFile: 'torch_ort/docker/Dockerfile.ort-default-stable-torch1.13.1-onnxruntime190-cu116-cudnn8-devel-ubuntu18.04'
             UploadWheel: 'yes'
       variables:
         BuildType: 'stable'

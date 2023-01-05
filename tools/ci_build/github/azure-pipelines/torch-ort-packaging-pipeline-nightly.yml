@@ -19,7 +19,7 @@ stages:
           #   PublicDockerFile: 'docker/Dockerfile.ort-torch-and-onnxruntime-nightly-cu111-cudnn8-devel-ubuntu18.04'
           Python38 Torch1121 onnxruntimeNightly Cuda11.6:
             PythonVersion: '3.8'
-            PublicDockerFile: 'torch_ort/docker/Dockerfile.ort-torch1.12.1-onnxruntime-nightly-cu116-cudnn8-devel-ubuntu18.04'
+            PublicDockerFile: 'torch_ort/docker/Dockerfile.ort-torch1.13.1-onnxruntime-nightly-cu116-cudnn8-devel-ubuntu18.04'
             UploadWheel: 'yes'
 
       variables:
