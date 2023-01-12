@@ -7,7 +7,7 @@ FROM nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04 as builder
 
 ARG TORCH_CUDA_VERSION=cu116
 ARG TORCH_VERSION=1.13.1
-ARG TORCHVISION_VERSION=0.13.1
+ARG TORCHVISION_VERSION=0.14.1
 
 # Install and update tools to minimize security vulnerabilities
 RUN apt-get update
