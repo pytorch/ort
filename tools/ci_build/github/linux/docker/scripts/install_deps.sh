@@ -4,7 +4,7 @@ set -e -x
 SCRIPT_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 INSTALL_DEPS_TRAINING=false
 INSTALL_DEPS_DISTRIBUTED_SETUP=false
-CU_VER="11.1"
+CU_VER="11.6"
 
 while getopts p:d:v:m parameter_Option
 do case "${parameter_Option}"
@@ -128,7 +128,6 @@ ${PYTHON_EXE} -m pip install --upgrade pip
 
 export ONNX_ML=1
 export CMAKE_ARGS="-DONNX_GEN_PB_TYPE_STUBS=OFF -DONNX_WERROR=OFF"
-${PYTHON_EXE} -m pip install -r ${0/%install_deps\.sh/requirements\.txt}
 if [ $BUILD_TYPE = "stable" ]; then
   ${PYTHON_EXE} -m pip install -r ${0/%install_deps.sh/training\/ortmodule\/stage1\/requirements_torch_cu${CU_VER}_stable.txt}
 elif [ $BUILD_TYPE = "nightly" ]; then
