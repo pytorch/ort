@@ -1,14 +1,8 @@
-
 parameters:
-- name: python_version
-  displayName: 'Python version to use for build'
-  type: object
-  default: ['"3.8"']
-
 - name: test_dockerfile
   displayName: 'Dockerfile to use for testing once package is built.'
   type: string
-  default: 'torch_ort/docker/Dockerfile.ort-torch2.0.0-onnxruntime-nightly-cu118-cudnn8-devel-ubuntu20.04'
+  default: 'torch_ort/docker/Dockerfile.onnxruntime-nightly-torch2.0.0-cu118-cudnn8-devel-ubuntu20.04'
 
 - name: upload_wheel
   displayName: 'Whether the wheel should be uploaded to Azure Storage'

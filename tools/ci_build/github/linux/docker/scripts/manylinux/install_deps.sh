@@ -35,10 +35,10 @@ function GetFile {
   return $?
 }
 
-if [ ! -d "/opt/python/cp35-cp35m" ]; then
+if [ ! -d "/opt/python/cp38-cp38m" ]; then
   PYTHON_EXES=("/usr/bin/python3")
 else
-  PYTHON_EXES=("/opt/python/cp35-cp35m/bin/python3.5" "/opt/python/cp36-cp36m/bin/python3.6" "/opt/python/cp37-cp37m/bin/python3.7" "/opt/python/cp38-cp38/bin/python3.8" "/opt/python/cp39-cp39/bin/python3.9")
+  PYTHON_EXES=("/opt/python/cp38-cp38/bin/python3.8" "/opt/python/cp39-cp39/bin/python3.9" "/opt/python/cp310-cp310/bin/python3.10" "/opt/python/cp311-cp311/bin/python3.11")
 fi
 
 os_major_version=$(cat /etc/redhat-release | tr -dc '0-9.'|cut -d \. -f1)

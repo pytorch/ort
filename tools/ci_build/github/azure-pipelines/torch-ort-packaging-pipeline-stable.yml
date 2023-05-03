@@ -1,9 +1,4 @@
 parameters:
-- name: python_version
-  displayName: 'Python version used for build'
-  type: object
-  default: ['3.8', '3.9', '3.10', '3.11']
-
 - name: test_dockerfile
   displayName: 'Dockerfile to use for testing once package is built.'
   type: string
@@ -33,7 +28,7 @@ stages:
               PythonVersion: '3.10'
           Python311:
               PythonVersion: '3.11'
-              
+
       variables:
         BuildType: 'stable'
 
