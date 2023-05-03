@@ -18,8 +18,8 @@ steps:
 
 - template: get-docker-image-steps.yml
   parameters:
-    # torch-ort is device neutral, we just pick randomly cuda11.6
-    Dockerfile: tools/ci_build/github/linux/docker/Dockerfile.manylinux2014_cuda11_6
+    # torch-ort is device neutral, we just pick randomly cuda11.8
+    Dockerfile: tools/ci_build/github/linux/docker/Dockerfile.manylinux2014_cuda11_8
     Context: tools/ci_build/github/linux/docker
     DockerBuildArgs: >-
       --build-arg PYTHON_VERSION="${{ parameters.PythonVersion }}"

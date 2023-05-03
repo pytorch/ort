@@ -1,3 +1,18 @@
+- name: python_version
+  displayName: 'Python version used for build'
+  type: object
+  default: ['3.8', '3.9', '3.10', '3.11']
+
+- name: test_dockerfile
+  displayName: 'Dockerfile to use for testing once package is built.'
+  type: string
+  default: 'torch_ort/docker/Dockerfile.ort-torch2.0.0-onnxruntime-nightly-cu118-cudnn8-devel-ubuntu20.04'
+
+- name: upload_wheel
+  displayName: 'Whether the wheel should be uploaded to Azure Storage'
+  type: string
+  default: 'yes'
+
 stages:
 - stage: Python_Packaging
 
@@ -9,18 +24,11 @@ stages:
       pool: Onnxruntime-Linux-GPU
       strategy:
         matrix:
-          # TODO: Readd these two nightly pipelines after finding a solution that works for
-          # both torch stable and torch nightly when torch API changes.
-          # Python38 TorchAndOrtNightly Cuda10.2:
-          #   PythonVersion: '3.8'
-          #   PublicDockerFile: 'docker/Dockerfile.ort-torch-and-onnxruntime-nightly-cu102-cudnn7-devel-ubuntu18.04'
-          # Python38 TorchAndOrtNightly Cuda11.1:
-          #   PythonVersion: '3.8'
-          #   PublicDockerFile: 'docker/Dockerfile.ort-torch-and-onnxruntime-nightly-cu111-cudnn8-devel-ubuntu18.04'
-          Python38 Torch1121 onnxruntimeNightly Cuda11.6:
-            PythonVersion: '3.8'
-            PublicDockerFile: 'torch_ort/docker/Dockerfile.ort-torch1.13.1-onnxruntime-nightly-cu116-cudnn8-devel-ubuntu18.04'
-            UploadWheel: 'yes'
+        ${{ each PythonVersion in parameters.python_version }}:
+            'Python${{ PythonVersion }}':
+              PythonVersion: ${{ PythonVersion }}
+              PublicDockerFile: ${{ parameters.test_dockerfile }}
+              UploadWheel: ${{ parameters.upload_wheel }}
 
       variables:
         BuildType: 'nightly'
