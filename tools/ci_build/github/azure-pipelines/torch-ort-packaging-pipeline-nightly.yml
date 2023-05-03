@@ -3,7 +3,7 @@ parameters:
 - name: python_version
   displayName: 'Python version used for build'
   type: object
-  default: ['3.8', '3.9', '3.10', '3.11']
+  default: ["'3.8'"]
 
 - name: test_dockerfile
   displayName: 'Dockerfile to use for testing once package is built.'
