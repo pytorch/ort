@@ -25,11 +25,15 @@ stages:
       pool: Onnxruntime-Linux-GPU
       strategy:
         matrix:
-          ${{ each PythonVersion in parameters.python_version }}:
-            'Python${{ PythonVersion }}':
-              PythonVersion: ${{ PythonVersion }}
-              PublicDockerFile: ${{ parameters.test_dockerfile }}
-              UploadWheel: ${{ parameters.upload_wheel }}
+          Python38:
+              PythonVersion: '3.8'
+          Python39:
+              PythonVersion: '3.9'
+          Python310:
+              PythonVersion: '3.10'
+          Python311:
+              PythonVersion: '3.11'
+              
       variables:
         BuildType: 'stable'
 
@@ -41,8 +45,8 @@ stages:
       - template: templates/packaging-pipeline-steps.yml
         parameters:
           PythonVersion: $(PythonVersion)
-          PublicDockerFile: $(PublicDockerFile)
-          UploadWheel: $(UploadWheel)
+          PublicDockerFile: ${{ parameters.test_dockerfile }}
+          UploadWheel: ${{ parameters.upload_wheel }}
           BuildType: $(BuildType)
 
       - template: templates/component-governance-component-detection-steps.yml
