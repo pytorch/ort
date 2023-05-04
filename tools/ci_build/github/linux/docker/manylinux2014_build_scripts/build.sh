@@ -143,7 +143,7 @@ build_cpythons $CPYTHON_VERSIONS
 
 # Create venv for auditwheel & certifi
 TOOLS_PATH=/opt/_internal/tools
-/opt/python/cp38-cp38m/bin/python -m venv $TOOLS_PATH
+/opt/python/cp38-cp38/bin/python -m venv $TOOLS_PATH
 source $TOOLS_PATH/bin/activate
 
 # Install default packages
