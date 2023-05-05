@@ -1,8 +1,10 @@
 # pip requirements for all cpythons
 # NOTE: pip has GPG signatures; could download and verify independently.
-pip==21.2.2 \
-    --hash=sha256:38e9250dfb0d7fa842492bede9259d4b3289a936ce454f7c58f059f28a94c01d \
-    --hash=sha256:b02a9d345f913e03fde2ed41896687cc1a2053c6adbe142ec03cff6b0827233d
+# The following packages are considered to be unsafe in a requirements file:
+pip==23.1.2 \
+    --hash=sha256:0e7c86f486935893c708287b30bd050a36ac827ec7fe5e43fe7cb198dd835fba \
+    --hash=sha256:3ef6ac33239e4027d9a5598a381b9d30880a1477e50039db2eac6e8a8f6d1b18
+    # via -r requirements.in
 wheel==0.36.2 \
     --hash=sha256:78b5b185f0e5763c26ca1e324373aadd49182ca90e825f7853f4b2509215dc0e \
     --hash=sha256:e11eefd162658ea59a60a0f6c7d493a7190ea4b9a85e335b33489d9f17e0245e
