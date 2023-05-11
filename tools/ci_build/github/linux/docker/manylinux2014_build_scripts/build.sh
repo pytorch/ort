@@ -10,7 +10,7 @@ MY_DIR=$(dirname "${BASH_SOURCE[0]}")
 
 # Dependencies for compiling Python that we want to remove from
 # the final image after compiling Python
-PYTHON_COMPILE_DEPS="zlib-devel bzip2-devel expat-devel ncurses-devel readline-devel tk-devel gdbm-devel libdb-devel libpcap-devel xz-devel openssl-devel keyutils-libs-devel krb5-devel libcom_err-devel libidn-devel curl-devel perl-devel"
+PYTHON_COMPILE_DEPS="zlib-devel bzip2-devel expat-devel ncurses-devel readline-devel tk-devel gdbm-devel libdb-devel libpcap-devel xz-devel openssl openssl-devel keyutils-libs-devel krb5-devel libcom_err-devel libidn-devel curl-devel perl-devel"
 
 # Libraries that are allowed as part of the manylinux2014 profile
 # Extract from PEP: https://www.python.org/dev/peps/pep-0599/#the-manylinux2014-policy
@@ -30,7 +30,7 @@ PYTHON_COMPILE_DEPS="zlib-devel bzip2-devel expat-devel ncurses-devel readline-d
 # Install development packages (except for libgcc which is provided by gcc install)
 MANYLINUX_DEPS="glibc-devel libstdc++-devel glib2-devel libX11-devel libXext-devel libXrender-devel mesa-libGL-devel libICE-devel libSM-devel"
 
-CMAKE_DEPS="openssl-devel zlib-devel libcurl-devel"
+CMAKE_DEPS="openssl openssl-devel zlib-devel libcurl-devel"
 
 # Get build utilities
 source $MY_DIR/build_utils.sh
@@ -134,6 +134,11 @@ rm -rf cmake-${CMAKE_VERSION}
 # Install libcrypt.so.1 and libcrypt.so.2
 build_libxcrypt "$LIBXCRYPT_DOWNLOAD_URL" "$LIBXCRYPT_VERSION" "$LIBXCRYPT_HASH"
 
+export OPENSSL_ROOT=openssl-1.1.1q && \
+export OPENSSL_HASH=d7939ce614029cdff0b6c20f0e2e5703158a489a72b2507b8bd51bf8c8fd10ca && \
+export OPENSSL_DOWNLOAD_URL=https://www.openssl.org/source && \
+. $MY_DIR/build_openssl.sh
+
 # Compile the latest Python releases.
 # (In order to have a proper SSL module, Python is compiled
 # against a recent openssl [see env vars above], which is linked
@@ -217,11 +222,26 @@ if [ "${DEVTOOLSET_ROOTPATH:-}" != "" ]; then
     rm -rf $DEVTOOLSET_ROOTPATH/usr/share/man
     find $DEVTOOLSET_ROOTPATH/usr/share/locale -mindepth 1 -maxdepth 1 -not \( -name 'en*' -or -name 'locale.alias' \) | xargs rm -rf
 fi
-rm -rf /usr/share/backgrounds
+
+if [ -d /usr/share/backgrounds ]; then
+	rm -rf /usr/share/backgrounds
+fi
+
 # if we updated glibc, we need to strip locales again...
 localedef --list-archive | grep -v -i ^en_US.utf8 | xargs localedef --delete-from-archive
 mv -f /usr/lib/locale/locale-archive /usr/lib/locale/locale-archive.tmpl
 build-locale-archive
-find /usr/share/locale -mindepth 1 -maxdepth 1 -not \( -name 'en*' -or -name 'locale.alias' \) | xargs rm -rf
-find /usr/local/share/locale -mindepth 1 -maxdepth 1 -not \( -name 'en*' -or -name 'locale.alias' \) | xargs rm -rf
-rm -rf /usr/local/share/man
+
+if [ -d /usr/share/locale ]; then
+	find /usr/share/locale -mindepth 1 -maxdepth 1 -not \( -name 'en*' -or -name 'locale.alias' \) | xargs rm -rf
+fi
+if [ -d /usr/local/share/locale ]; then
+	find /usr/local/share/locale -mindepth 1 -maxdepth 1 -not \( -name 'en*' -or -name 'locale.alias' \) | xargs rm -rf
+fi
+
+if [ -d /usr/local/share/man ]; then
+	# https://github.com/pypa/manylinux/issues/1060
+	# wrong /usr/local/man symlink
+	# only delete the content
+	rm -rf /usr/local/share/man/*
+fi
