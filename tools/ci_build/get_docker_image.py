@@ -163,7 +163,7 @@ def main():
     else:
         # log.info("Building image...")
         run(args.docker_path, "build",
-            "--pull",
+            #"--pull",
             *shlex.split(args.docker_build_args),
             *shlex.split(args.docker_build_args_not_affecting_image_content),
             "--tag", full_image_name,

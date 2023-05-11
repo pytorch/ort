@@ -60,8 +60,8 @@ steps:
 - task: CmdLine@2
   inputs:
     script: |
-      docker build -f ${{ parameters.PublicDockerFile }} -t torchortpackagingtest . && \
-      --build-arg PYTHON_VERSION="${{ parameters.PythonVersion }}" && \
+      docker build -f ${{ parameters.PublicDockerFile }} -t torchortpackagingtest . \
+      --build-arg PYTHON_VERSION="${{ parameters.PythonVersion }}" \
       --build-arg ORT_BUILD_TYPE="${{ parameters.BuildType}}"
   displayName: "docker build -f ${{ parameters.PublicDockerFile }} -t torchortpackagingtest"
 
