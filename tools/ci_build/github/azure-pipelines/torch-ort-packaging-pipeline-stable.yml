@@ -20,14 +20,8 @@ stages:
       pool: Onnxruntime-Linux-GPU
       strategy:
         matrix:
-          Python38:
-              PythonVersion: '3.8'
-          Python39:
+          Python3:
               PythonVersion: '3.9'
-          Python310:
-              PythonVersion: '3.10'
-          Python311:
-              PythonVersion: '3.11'
 
       variables:
         BuildType: 'stable'

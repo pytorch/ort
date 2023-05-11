@@ -26,10 +26,10 @@ RUN apt-get autoremove -y
 ARG BUILD_USER=onnxruntimedev
 ARG MINICONDA_PREFIX=/home/$BUILD_USER/miniconda3
 RUN apt-get install curl
-ARG CONDA_VERSION=4.7.10
-ARG CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh
-RUN curl -fSsL --insecure ${CONDA_URL} -o install-conda.sh &&\
-    /bin/bash ./install-conda.sh -b -p $MINICONDA_PREFIX &&\
+
+ARG CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh
+RUN curl -fSsL --insecure ${CONDA_URL} -o install-conda.sh && \
+    /bin/bash ./install-conda.sh -b -p $MINICONDA_PREFIX && \
     $MINICONDA_PREFIX/bin/conda clean -ya && \
     $MINICONDA_PREFIX/bin/conda install -y python=${PYTHON_VERSION}
 
