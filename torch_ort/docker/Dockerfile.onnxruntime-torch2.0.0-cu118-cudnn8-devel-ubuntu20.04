@@ -35,25 +35,21 @@ RUN curl -fSsL --insecure ${CONDA_URL} -o install-conda.sh && \
 
 ENV PATH=$MINICONDA_PREFIX/bin:${PATH}
 
-# Python and pip
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
-RUN apt-get install -y python3-pip
-RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
-RUN pip install --upgrade pip
+ARG PYTHON_EXE=$MINICONDA_PREFIX/bin/python
 
 # PyTorch
-RUN pip install onnx ninja
-RUN pip install torch==${TORCH_VERSION} torchvision==${TORCHVISION_VERSION} -f https://download.pytorch.org/whl/${TORCH_CUDA_VERSION}
+RUN $PYTHON_EXE -m pip install onnx ninja
+RUN $PYTHON_EXE -m pip install torch==${TORCH_VERSION} torchvision==${TORCHVISION_VERSION} -f https://download.pytorch.org/whl/${TORCH_CUDA_VERSION}
 
 # ORT Module
 RUN if [ "$ORT_BUILD_TYPE" = "nightly" ] ; \
-         then pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cu118.html; \
-         else pip install onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_stable_cu118.html; \
+         then $PYTHON_EXE -m pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cu118.html; \
+         else $PYTHON_EXE -m pip install onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_stable_cu118.html; \
     fi
 
-RUN pip install torch-ort
+RUN $PYTHON_EXE -m pip install torch-ort
 ENV TORCH_CUDA_ARCH_LIST="5.2 6.0 6.1 7.0 7.5 8.0 8.6+PTX"
-RUN python -m torch_ort.configure
+RUN $PYTHON_EXE -m torch_ort.configure
 
 WORKDIR /workspace
 
