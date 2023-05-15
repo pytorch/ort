@@ -1,6 +1,6 @@
 --pre
 -f https://download.pytorch.org/whl/torch_stable.html
-torch==1.13.1+cu116
+torch==2.0.0+cu118
 torchvision
 torchtext
 --pre

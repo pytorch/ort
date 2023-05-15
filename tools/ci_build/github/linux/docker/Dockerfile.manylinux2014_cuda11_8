@@ -1,6 +1,6 @@
 # TODO unify this with Dockerfile.manylinux2014_cuda10_2
 
-FROM nvcr.io/nvidia/cuda:11.6.2-cudnn8-devel-centos7
+FROM nvcr.io/nvidia/cuda:11.8.0-cudnn8-devel-centos7
 
 #We need both CUDA and manylinux. But the CUDA Toolkit End User License Agreement says NVIDIA CUDA Driver Libraries(libcuda.so, libnvidia-ptxjitcompiler.so) are only distributable in applications that meet this criteria:
 #1. The application was developed starting from a NVIDIA CUDA container obtained from Docker Hub or the NVIDIA GPU Cloud, and
@@ -30,15 +30,18 @@ ENV SSL_CERT_FILE=/opt/_internal/certs.pem
 
 # Build manylinux2014 docker image end
 
-ARG PYTHON_VERSION=3.6
+ARG PYTHON_VERSION
 ARG INSTALL_DEPS_EXTRA_ARGS
 ARG BUILD_TYPE
 
 # Add our own dependencies
 ADD scripts /tmp/scripts
 RUN cd /tmp/scripts && \
-    /tmp/scripts/install_centos.sh && \
-    /tmp/scripts/install_deps.sh -d gpu -p $PYTHON_VERSION -b BUILD_TYPE $INSTALL_DEPS_EXTRA_ARGS && \
+    /tmp/scripts/install_centos.sh
+
+ENV PATH="/root/.cargo/bin/:$PATH"
+
+RUN /tmp/scripts/install_deps.sh -d gpu -p $PYTHON_VERSION -b BUILD_TYPE $INSTALL_DEPS_EXTRA_ARGS && \
     rm -rf /tmp/scripts
 
 # Make /opt/python symlink (/opt/_internal/cpython-*) folders wriatable for onnxruntimedev user

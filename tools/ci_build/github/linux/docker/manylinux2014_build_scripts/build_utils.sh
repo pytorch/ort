@@ -77,6 +77,8 @@ function build_cpythons {
     gpg --import ${MY_DIR}/cpython-pubkeys.txt
     # Add version 3.8, 3.9 release manager's key
     gpg --import ${MY_DIR}/ambv-pubkey.txt
+    # Add version 3.10, 3,11 release manager's key
+    gpg --import ${MY_DIR}/cpython-pubkey-310-311.txt
     for py_ver in $@; do
         build_cpython $py_ver
     done

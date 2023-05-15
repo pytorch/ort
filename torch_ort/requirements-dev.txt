@@ -1,12 +1,13 @@
 # required for CI test
 pandas
-sklearn
-numpy==1.19.5
-transformers==v4.3.2
+scikit-learn
+numpy==1.21.6 ; python_version < '3.11'
+numpy==1.24.2 ; python_version >= '3.11'
+transformers==v4.4.2
 torch
 torchvision
 torchtext
-tensorboard==v2.0.0
+tensorboard>=2.2.0,<2.5.0
 h5py
 wget
 --pre onnxruntime-gpu==ort-gpu-nightly-training

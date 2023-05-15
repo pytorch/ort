@@ -1,8 +1,8 @@
 --pre
 -f https://download.pytorch.org/whl/torch_stable.html
-torch==1.13.1+cu116
+torch==2.0.0+cu118
 torchvision
 torchtext
 --pre
--f https://download.onnxruntime.ai/onnxruntime_nightly.html
+-f https://download.onnxruntime.ai/onnxruntime_nightly_cu118.html
 onnxruntime-training

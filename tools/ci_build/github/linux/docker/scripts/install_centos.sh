@@ -1,4 +1,5 @@
 #!/bin/bash
+# Called from manylinux Dockerfile
 set -e
 
 os_major_version=$(cat /etc/redhat-release | tr -dc '0-9.'|cut -d \. -f1)
@@ -17,3 +18,5 @@ yum install -y lttng-ust openssl-libs krb5-libs libicu libuuid
 yum install -y https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
 yum install -y dotnet-sdk-2.2 java-1.8.0-openjdk-devel ccache gcc gcc-c++ python3 python3-devel python3-pip
 
+echo "installed rust compiler"
+curl https://sh.rustup.rs -sSf | sh -s -- -y
