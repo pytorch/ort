@@ -81,7 +81,7 @@ steps:
   displayName: "docker run build.py --wheel_file /torch_ort_src/dist/$whlfilename"
 
 
-- ${{ if and(eq(parameters.UploadWheel, 'true'), eq(parameters.BuildType, 'nightly') }}:
+- ${{ if and(eq(parameters.UploadWheel, 'true'), eq(parameters.BuildType, 'nightly')) }}:
   - task: AzureCLI@2
     inputs:
       azureSubscription: 'AIInfraBuildOnnxRuntimeOSS'
