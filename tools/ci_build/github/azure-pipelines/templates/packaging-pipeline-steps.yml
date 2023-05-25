@@ -6,7 +6,7 @@ parameters:
 - name: PublicDockerFile
   type: string
 - name: UploadWheel
-  type: string
+  type: boolean
   default: ""
 - name: BuildType
   type: string
@@ -43,13 +43,13 @@ steps:
           $(PythonManylinuxDir)/bin/python3 build.py
     workingDirectory: $(Build.SourcesDirectory)
 
-- task: CopyFiles@2
-  condition: and(succeeded(), eq(variables.UploadWheel, 'yes'))
-  displayName: 'Copy Python Wheel to: $(Build.ArtifactStagingDirectory)'
-  inputs:
-    SourceFolder: '$(Build.SourcesDirectory)'
-    Contents: 'torch_ort/dist/*.whl'
-    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+- ${{ if eq(parameters.UploadWheel, 'true') }}:
+  - task: CopyFiles@2
+    displayName: 'Copy Python Wheel to: $(Build.ArtifactStagingDirectory)'
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)'
+      Contents: 'torch_ort/dist/*.whl'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: torch-ort python wheel'
@@ -80,19 +80,20 @@ steps:
     workingDirectory: $(Build.SourcesDirectory)
   displayName: "docker run build.py --wheel_file /torch_ort_src/dist/$whlfilename"
 
-- task: AzureCLI@2
-  condition: and(succeeded(), eq(variables.UploadWheel, 'yes'), eq(variables.BuildType, 'nightly'))
-  inputs:
-    azureSubscription: 'AIInfraBuildOnnxRuntimeOSS'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      python3 -m pip install azure-storage-blob && \
-      files=($(Build.SourcesDirectory)/torch_ort/dist/*.whl) && \
-      echo ${files[0]} && \
-      python3 tools/python/upload_python_package_to_azure_storage.py \
+
+- ${{ if and(eq(parameters.UploadWheel, 'true'), eq(parameters.BuildType, 'nightly') }}:
+  - task: AzureCLI@2
+    inputs:
+      azureSubscription: 'AIInfraBuildOnnxRuntimeOSS'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        python3 -m pip install azure-storage-blob && \
+        files=($(Build.SourcesDirectory)/torch_ort/dist/*.whl) && \
+        echo ${files[0]} && \
+        python3 tools/python/upload_python_package_to_azure_storage.py \
           --python_wheel_path ${files[0]} \
           --account_name onnxruntimepackages \
           --account_key $(orttrainingpackagestorageaccountkey) \
           --container_name '$web'
-    displayName: "upload to nightly package channel"
+      displayName: "upload to nightly package channel"

@@ -6,8 +6,8 @@ parameters:
 
 - name: upload_wheel
   displayName: 'Whether the wheel should be uploaded to Azure Storage'
-  type: string
-  default: 'yes'
+  type: boolean
+  default: true
 
 stages:
 - stage: Python_Packaging
