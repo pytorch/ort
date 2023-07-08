@@ -1,0 +1,59 @@
+# ONNX Runtime Training Module for PyTorch
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+# CUDA development image for building sources
+FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu20.04 as builder
+
+# available options 3.8, 3.9, 3.10, 3.11
+ARG PYTHON_VERSION=3.9
+ARG TORCH_CUDA_VERSION=cu118
+ARG TORCH_VERSION=2.0.0
+ARG TORCHVISION_VERSION=0.15.1
+
+# set this to nightly for picking the nightly version of ONNXRuntime-Training
+ARG ORT_BUILD_TYPE=stable
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install and update tools to minimize security vulnerabilities
+RUN apt-get update
+RUN apt-get install -y software-properties-common wget apt-utils patchelf git libprotobuf-dev protobuf-compiler cmake
+RUN unattended-upgrade
+RUN apt-get autoremove -y
+
+# install miniconda (comes with python 3.9 default)
+ARG BUILD_USER=onnxruntimedev
+ARG MINICONDA_PREFIX=/home/$BUILD_USER/miniconda3
+RUN apt-get install curl
+
+ARG CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh
+RUN curl -fSsL --insecure ${CONDA_URL} -o install-conda.sh && \
+    /bin/bash ./install-conda.sh -b -p $MINICONDA_PREFIX && \
+    $MINICONDA_PREFIX/bin/conda clean -ya && \
+    $MINICONDA_PREFIX/bin/conda install -y python=${PYTHON_VERSION}
+
+ENV PATH=$MINICONDA_PREFIX/bin:${PATH}
+
+ARG PYTHON_EXE=$MINICONDA_PREFIX/bin/python
+
+# PyTorch
+RUN $PYTHON_EXE -m pip install onnx ninja
+RUN $PYTHON_EXE -m pip install torch==${TORCH_VERSION} torchvision==${TORCHVISION_VERSION} -f https://download.pytorch.org/whl/${TORCH_CUDA_VERSION}
+
+# ORT Module
+RUN if [ "$ORT_BUILD_TYPE" = "nightly" ] ; \
+         then $PYTHON_EXE -m pip install --pre onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_nightly_cu118.html; \
+         else $PYTHON_EXE -m pip install onnxruntime-training -f https://download.onnxruntime.ai/onnxruntime_stable_cu118.html; \
+    fi
+
+RUN $PYTHON_EXE -m pip install torch-ort
+ENV TORCH_CUDA_ARCH_LIST="5.2 6.0 6.1 7.0 7.5 8.0 8.6+PTX"
+RUN $PYTHON_EXE -m torch_ort.configure
+
+WORKDIR /workspace
+
+# Basic testing
+#   git clone https://github.com/pytorch/ort.git
+#   pip install wget pandas transformers sklearn
+#   python ./ort/tests/bert_for_sequence_classification.py

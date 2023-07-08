@@ -1,8 +1,9 @@
 pandas
 scikit-learn
-numpy==1.19.5
+numpy==1.21.6 ; python_version < '3.11'
+numpy==1.24.2 ; python_version >= '3.11'
 packaging==21.3
-transformers==v4.3.2
+transformers==v4.4.2
 tensorboard
 h5py
 wget

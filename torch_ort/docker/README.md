@@ -4,26 +4,15 @@ Run torch_ort.ORTModule within a Docker environment.
 
 The instructions below assume you are entering commands from the `docker` folder in this repository. Docker files available for CUDA and ROCm configurations.
 
-## NVIDIA CUDA 10.2
-
-This is the default dependency for torch-ort.
+## NVIDIA CUDA 11.8
 
 1. Build the docker image
 
-    `docker build -f Dockerfile.ort-torch190-onnxruntime181-cu102-cudnn7-devel-ubuntu18.04 -t ort.cu102 .`
-
-2. Run the container using the image you have just built
-
-    `docker run -it --gpus all --name my-experiments ort.cu102:latest /bin/bash`
-## NVIDIA CUDA 11.1
-
-1. Build the docker image
-
-    `docker build -f Dockerfile.ort-torch190-onnxruntime181-cu111-cudnn8-devel-ubuntu18.04 -t ort.cu111 .`
+    `docker build -f Dockerfile.onnxruntime-torch2.0.0-cu118-cudnn8-devel-ubuntu20.04 -t ort.cu118 .`
 
 2. Run the docker container using the image you have just built
 
-    `docker run -it --gpus all --name my-experiments ort.cu111:latest /bin/bash`
+    `docker run -it --gpus all --name my-experiments ort.cu118:latest /bin/bash`
 
 ## AMD ROCm 4.2 (preview)
 

@@ -4,7 +4,7 @@ set -e -x
 SCRIPT_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 INSTALL_DEPS_TRAINING=false
 INSTALL_DEPS_DISTRIBUTED_SETUP=false
-CU_VER="11.1"
+CU_VER="11.8"
 
 while getopts p:d:v:m parameter_Option
 do case "${parameter_Option}"
@@ -56,16 +56,14 @@ function GetFile {
   return $?
 }
 
-if [[ "$PYTHON_VER" = "3.5" && -d "/opt/python/cp35-cp35m"  ]]; then
-   PYTHON_EXE="/opt/python/cp35-cp35m/bin/python3.5"
-elif [[ "$PYTHON_VER" = "3.6" && -d "/opt/python/cp36-cp36m"  ]]; then
-   PYTHON_EXE="/opt/python/cp36-cp36m/bin/python3.6"
-elif [[ "$PYTHON_VER" = "3.7" && -d "/opt/python/cp37-cp37m"  ]]; then
-   PYTHON_EXE="/opt/python/cp37-cp37m/bin/python3.7"
-elif [[ "$PYTHON_VER" = "3.8" && -d "/opt/python/cp38-cp38"  ]]; then
+if [[ "$PYTHON_VER" = "3.8" && -d "/opt/python/cp38-cp38"  ]]; then
    PYTHON_EXE="/opt/python/cp38-cp38/bin/python3.8"
 elif [[ "$PYTHON_VER" = "3.9" && -d "/opt/python/cp39-cp39"  ]]; then
    PYTHON_EXE="/opt/python/cp39-cp39/bin/python3.9"
+elif [[ "$PYTHON_VER" = "3.10" && -d "/opt/python/cp310-cp310"  ]]; then
+   PYTHON_EXE="/opt/python/cp310-cp310/bin/python3.10"
+elif [[ "$PYTHON_VER" = "3.11" && -d "/opt/python/cp311-cp311"  ]]; then
+   PYTHON_EXE="/opt/python/cp311-cp311/bin/python3.11"
 else
    PYTHON_EXE="/usr/bin/python${PYTHON_VER}"
 fi
@@ -128,7 +126,6 @@ ${PYTHON_EXE} -m pip install --upgrade pip
 
 export ONNX_ML=1
 export CMAKE_ARGS="-DONNX_GEN_PB_TYPE_STUBS=OFF -DONNX_WERROR=OFF"
-${PYTHON_EXE} -m pip install -r ${0/%install_deps\.sh/requirements\.txt}
 if [ $BUILD_TYPE = "stable" ]; then
   ${PYTHON_EXE} -m pip install -r ${0/%install_deps.sh/training\/ortmodule\/stage1\/requirements_torch_cu${CU_VER}_stable.txt}
 elif [ $BUILD_TYPE = "nightly" ]; then
