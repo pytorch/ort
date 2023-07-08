@@ -211,12 +211,12 @@ Note: ONNX Runtime is not required to run the MoE layer. It is integrated in sta
 
 </div>
 
-**OpenVINO™ integration with Torch-ORT will no longer be supported as of OpenVINO™ 2023.0 release.**
+**EOL NOTICE : OpenVINO™ integration with Torch-ORT will no longer be supported as of OpenVINO™ 2023.0 release.**
 
 If you are looking to deploy your PyTorch models on Intel based devices, you have a few options.
 If you prefer the native PyTorch framework APIs, consider using the Intel Extension for PyTorch (IPEX). Another option is to utilize [OpenVINO Model Conversion API](https://docs.openvino.ai/2023.0/openvino_docs_MO_DG_Deep_Learning_Model_Optimizer_DevGuide.html),which enables the automatic importation and conversion of standard PyTorch models during runtime. It is not necessary to convert your PyTorch models offline now.
 
-
+**END OF EOL NOTICE**
 
 ONNX Runtime for PyTorch supports PyTorch model inference using ONNX Runtime and Intel® OpenVINO™.
 
