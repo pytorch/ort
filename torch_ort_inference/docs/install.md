@@ -24,7 +24,7 @@ Once you have created your environment, using Python, execute the following step
 
 1. Download a inference script
 
-    `wget https://raw.githubusercontent.com/pytorch/ort/main/torch_ort_inference/tests/bert_for_sequence_classification.py`
+    `wget https://raw.githubusercontent.com/pytorch/ort/main/torch_ort_inference/demos/bert_for_sequence_classification.py`
 
 2. Install extra dependencies
 
