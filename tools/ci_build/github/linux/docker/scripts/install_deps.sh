@@ -113,7 +113,7 @@ else
   popd
 fi
 
-GetFile https://downloads.gradle-dn.com/distributions/gradle-6.3-bin.zip /tmp/src/gradle-6.3-bin.zip
+GetFile https://downloads.gradle.org/distributions/gradle-6.3-bin.zip /tmp/src/gradle-6.3-bin.zip
 cd /tmp/src
 unzip gradle-6.3-bin.zip
 mv /tmp/src/gradle-6.3 /usr/local/gradle

@@ -86,7 +86,7 @@ else
   tar --strip 1 -xf /tmp/src/node-v12.16.3-linux-x64.tar.gz -C /usr
 fi
 cd /tmp/src
-GetFile https://downloads.gradle-dn.com/distributions/gradle-6.3-bin.zip /tmp/src/gradle-6.3-bin.zip
+GetFile https://downloads.gradle.org/distributions/gradle-6.3-bin.zip /tmp/src/gradle-6.3-bin.zip
 unzip /tmp/src/gradle-6.3-bin.zip
 mv /tmp/src/gradle-6.3 /usr/local/gradle
 
