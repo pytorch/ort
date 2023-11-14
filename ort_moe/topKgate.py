@@ -23,7 +23,9 @@ import math
 
 from .loss_functions import loss_functions
 from .gate_logs import gate_logs
-from .custom_ops import einsum
+from .custom_ops import om_einsum, om_cumsum
+from torch.cuda.amp import autocast
+from .moe_config import moe_config as moe_config
 
 uniform_map: Dict[torch.device, Callable] = {}
 gumbel_map: Dict[torch.device, Callable] = {}
@@ -65,13 +67,19 @@ def gumbel_rsample(shape: Tuple, device: torch.device) -> Tensor:
         gumbel_map[device] = gumbel
     return gumbel(shape)
 
-def top2gating(logits: torch.Tensor, capacity_factor: float, fp16_mode: bool=False, nonpadding: torch.Tensor=None,
+def top2gating(logits: torch.Tensor, capacity_factor: float, nonpadding: torch.Tensor=None,
                 logits_gumbel: float=0.0, token_drop_type: str='cut', second_place_loss_ratio: float=0.0,
                 straight_through: bool=False, straight_through_temperature: float=1.0,
                 balance_ratio={'load_balance': 0.01}, gate_log_req: dict={}, lid: int=-1,
-                tutel_cumsum_sub_one: callable=None)-> Tuple[Tensor, Tensor, Tensor, Tensor, float]:
+                options={})-> Tuple[Tensor, Tensor, Tensor, Tensor, float]:
     """Implements Top2Gating on logits."""
-    if fp16_mode is True:
+    moe_options = None
+    if isinstance(options, moe_config):
+        moe_options = options
+    else:
+        moe_options = moe_config(options)
+
+    if moe_options.fp16_mode() is True:
         logits = logits.to(torch.float32)
     gates = F.softmax(logits, dim=1) #dim: [bs, num_experts]
     if straight_through:
@@ -95,10 +103,10 @@ def top2gating(logits: torch.Tensor, capacity_factor: float, fp16_mode: bool=Fal
     if straight_through:
         gates_st_nonpadding = gates_st
     if nonpadding is not None:
-        mask1 = einsum("s,se->se", nonpadding, mask1)
-        gates_nonpadding = einsum("s,se->se", nonpadding, gates_nonpadding)
+        mask1 = om_einsum("s,se->se", nonpadding, mask1)
+        gates_nonpadding = om_einsum("s,se->se", nonpadding, gates_nonpadding)
         if straight_through:
-            gates_st_nonpadding = einsum("s,se->se", nonpadding, gates_st_nonpadding) if straight_through_temperature != 1.0 else gates_nonpadding
+            gates_st_nonpadding = om_einsum("s,se->se", nonpadding, gates_st_nonpadding) if straight_through_temperature != 1.0 else gates_nonpadding
 
     gates_st_equals_gates = True
     if logits_gumbel > 0:
@@ -123,10 +131,10 @@ def top2gating(logits: torch.Tensor, capacity_factor: float, fp16_mode: bool=Fal
     if straight_through:
         gates_st_without1_nonpadding = gates_st_without1
     if nonpadding is not None:
-        mask2 = einsum("s,se->se", nonpadding, mask2)
-        gates_without1_nonpadding = einsum("s,se->se", nonpadding, gates_without1)
+        mask2 = om_einsum("s,se->se", nonpadding, mask2)
+        gates_without1_nonpadding = om_einsum("s,se->se", nonpadding, gates_without1)
         if straight_through:
-            gates_st_without1_nonpadding = einsum("s,se->se", nonpadding, gates_st_without1) if not gates_st_equals_gates else gates_without1_nonpadding
+            gates_st_without1_nonpadding = om_einsum("s,se->se", nonpadding, gates_st_without1) if not gates_st_equals_gates else gates_without1_nonpadding
 
     # Compute l_aux
     # the fraction of the router probability allocated for each expert
@@ -160,12 +168,9 @@ def top2gating(logits: torch.Tensor, capacity_factor: float, fp16_mode: bool=Fal
         mask2 *= priority_mask
 
     # Compute locations in capacity buffer
-    if mask1.device.type == 'cpu' or tutel_cumsum_sub_one is None:
-        locations1 = torch.cumsum(mask1, dim=0) - 1
-        locations2 = torch.cumsum(mask2, dim=0) - 1
-    else:
-        locations1 = tutel_cumsum_sub_one(mask1, dim=0)
-        locations2 = tutel_cumsum_sub_one(mask2, dim=0)
+    locations1 = om_cumsum(mask1, dim=0, options=moe_options) 
+    locations2 = om_cumsum(mask2, dim=0, options=moe_options)
+
     # Update 2nd's location by accounting for locations of 1st
     locations2 += torch.sum(mask1, dim=0, keepdim=True)
     if token_drop_type == 'cut':
@@ -218,7 +223,7 @@ def top2gating(logits: torch.Tensor, capacity_factor: float, fp16_mode: bool=Fal
     dispatch_mask[dispatch_indices2] = indices + num_tokens #indice + num_tokens* kth top, to make sure each element in the dispatch mask is unique
     dispatch_mask = dispatch_mask[0:-1].reshape(num_experts, -1) #discard the fake tokens
 
-    if fp16_mode is True:
+    if moe_options.fp16_mode() is True:
         gates12_s.to(torch.float16)
     return loss, gate_log, gates12_s, dispatch_mask, capacity_fp
 
@@ -240,9 +245,6 @@ class TopKGate(torch.nn.Module):
             a scalar variable to control the cacacity of each expert in evaluation: capacity = num_tokens / number_of_experts * capacity factor
         k (int): 
             TopK gating function. Currently only supports k = 1 or k = 2
-        fp16_mode (bool):
-            a boolean variable to control whether fp16_mode is used in moe layer (e.g., by turning on AMP), 
-            if so, we cast the inputs and weights in gating function to fp32 for model quality requirement
         switch_jitter (float):
             a small variable to controls the multiplicative jitter to the gate input: x *= uniform(1-epsilon, 1+epsilon)
             only applicable for top1gating
@@ -260,8 +262,6 @@ class TopKGate(torch.nn.Module):
             whether to use Straight Through method to make the load_balance loss fully differentiable
         straight_through_temperature (float):
             temperature of softmax for straight_through
-        use_tutel_cumsum_sub_one (callable):
-            whether to use fast_cumsum_sub_one from tutel or not
     """
     def __init__(self,
                 model_dim: int,
@@ -272,7 +272,6 @@ class TopKGate(torch.nn.Module):
                 capacity_factor: float=1.0,
                 eval_capacity_factor: float=1.0,
                 k: int=2,
-                fp16_mode: bool=False,
                 switch_jitter: float=0.0,
                 switch_dropout: float=0.0,
                 logits_gumbel: float=0.0,
@@ -281,9 +280,10 @@ class TopKGate(torch.nn.Module):
                 second_place_loss_ratio: float=0.0,
                 straight_through: bool=False,
                 straight_through_temperature: float=1.0,
-                use_tutel_cumsum_sub_one: bool=True,
+                options: dict={}
             ) -> None:
         super().__init__()
+        self.options = moe_config(options)
         self.is_expert_slicing = dgrid.get_expert_slicing_group() is not None
         self.dgrid = dgrid
         self.wg = torch.nn.Linear(model_dim, num_experts, bias=False)
@@ -292,7 +292,6 @@ class TopKGate(torch.nn.Module):
         self.capacity_factor = capacity_factor
         self.eval_capacity_factor = eval_capacity_factor
         self.k = k
-        self.fp16_mode = fp16_mode
         self.switch_jitter = switch_jitter
         self.switch_dropout = switch_dropout
         self.logits_gumbel = logits_gumbel
@@ -307,15 +306,9 @@ class TopKGate(torch.nn.Module):
         self.second_place_loss_ratio = second_place_loss_ratio
         self.straight_through = straight_through
         self.straight_through_temperature = straight_through_temperature
+        assert k == 1 or (k > 1 and not self.options.enable_dynamic_capacity()), "dynamic_capacity is only supported for k = 1"
         self.loss = None
         self.gate_log = None
-        if use_tutel_cumsum_sub_one:
-            # from https://github.com/microsoft/tutel (commit e51df1ca64be59eae3691bc1c64b20a201de1009)
-            # Please 'run pip install -r ./ requirements.txt' to install tutel
-            from tutel.jit_kernels.gating import fast_cumsum_sub_one
-            self.tutel_cumsum_sub_one = fast_cumsum_sub_one
-        else:
-            self.tutel_cumsum_sub_one = None
 
     def forward(self, input: torch.Tensor, nonpadding: torch.Tensor = None, lid: int=-1) -> Tuple[Tensor, Tensor, float]:  # type: ignore
         """
@@ -330,49 +323,55 @@ class TopKGate(torch.nn.Module):
         """
         
         assert self.k ==1 or self.k == 2, "k can only be 1 or 2"
-        if self.fp16_mode is True:
-            input = input.to(torch.float32)
-            self.wg = self.wg.to(torch.float32)
-        if self.training and self.k == 1:
-            if self.switch_jitter > 0:
-                input = multiplicative_jitter(input, device=input.device, epsilon=self.switch_jitter)
-            elif self.switch_dropout > 0:
-                input = F.dropout(input, p=self.switch_dropout, training=self.training)
-        logits = self.wg(input) #dim: [bxs, num_experts]
-        if self.k == 1:
-            self.loss, self.gate_log, gates1_s, dispatch_mask, retval = top1gating(
-                    logits,
-                    self.capacity_factor if self.training else self.eval_capacity_factor,
-                    is_expert_slicing=self.is_expert_slicing,
-                    fp16_mode=self.fp16_mode,
-                    nonpadding=nonpadding,
-                    logits_gumbel=self.logits_gumbel if self.training else 0,
-                    token_drop_type=self.token_drop_type,
-                    straight_through=self.straight_through,
-                    straight_through_temperature=self.straight_through_temperature,
-                    balance_ratio=self.balance_ratio,
-                    gate_log_req=self.gate_log_req,
-                    lid=lid,
-                    tutel_cumsum_sub_one=self.tutel_cumsum_sub_one,
-                )
-            return gates1_s, dispatch_mask, retval
-        else:
-            self.loss, self.gate_log, gates12_s, dispatch_mask, capacity_fp = top2gating(
-                    logits,
-                    self.capacity_factor if self.training else self.eval_capacity_factor,
-                    fp16_mode=self.fp16_mode,
-                    nonpadding=nonpadding,
-                    logits_gumbel=self.logits_gumbel if self.training else 0,
-                    token_drop_type=self.token_drop_type,
-                    second_place_loss_ratio=self.second_place_loss_ratio,
-                    straight_through=self.straight_through,
-                    straight_through_temperature=self.straight_through_temperature,
-                    balance_ratio=self.balance_ratio,
-                    gate_log_req=self.gate_log_req,
-                    lid=lid,
-                    tutel_cumsum_sub_one=self.tutel_cumsum_sub_one,
-                )
-            return gates12_s, dispatch_mask, capacity_fp
+        """
+        In topokgate, we cast several tensors to float32 to ensure better quality.
+        However, if a module' forward (which contain topkgate) is wrapped by autocast(),
+        tensors may be casted to other types automatically for some computation.
+        For the quality reason, we disable autocast() for the topkgate
+        """
+        with autocast(enabled=False):
+            if self.options.fp16_mode() is True:
+                input = input.to(torch.float32)
+                self.wg = self.wg.to(torch.float32)
+            if self.training and self.k == 1:
+                if self.switch_jitter > 0:
+                    input = multiplicative_jitter(input, device=input.device, epsilon=self.switch_jitter)
+                elif self.switch_dropout > 0:
+                    input = F.dropout(input, p=self.switch_dropout, training=self.training)
+            logits = self.wg(input) #dim: [bxs, num_experts]
+            if self.k == 1:
+                self.loss, self.gate_log, gates1_s, dispatch_mask, retval = top1gating(
+                        logits,
+                        self.capacity_factor if self.training else self.eval_capacity_factor,
+                        is_expert_slicing=self.is_expert_slicing,
+                        nonpadding=nonpadding,
+                        logits_gumbel=self.logits_gumbel if self.training else 0,
+                        token_drop_type=self.token_drop_type,
+                        straight_through=self.straight_through,
+                        straight_through_temperature=self.straight_through_temperature,
+                        balance_ratio=self.balance_ratio,
+                        gate_log_req=self.gate_log_req,
+                        lid=lid,
+                        options=self.options,
+                        dgrid = self.dgrid
+                    )
+                return gates1_s, dispatch_mask, retval
+            else:
+                self.loss, self.gate_log, gates12_s, dispatch_mask, capacity_fp = top2gating(
+                        logits,
+                        self.capacity_factor if self.training else self.eval_capacity_factor,
+                        nonpadding=nonpadding,
+                        logits_gumbel=self.logits_gumbel if self.training else 0,
+                        token_drop_type=self.token_drop_type,
+                        second_place_loss_ratio=self.second_place_loss_ratio,
+                        straight_through=self.straight_through,
+                        straight_through_temperature=self.straight_through_temperature,
+                        balance_ratio=self.balance_ratio,
+                        gate_log_req=self.gate_log_req,
+                        lid=lid,
+                        options=self.options
+                    )
+                return gates12_s, dispatch_mask, capacity_fp
 
     def set_gate_metrics(self, balance_ratio=None, gate_log_req=None):
         if balance_ratio is not None:
@@ -387,11 +386,36 @@ def fast_one_hot(indices: torch.Tensor, num_classes : int):
     ret = ret.scatter(-1, indices.unsqueeze(-1), 1)
     return ret
 
-def top1gating(logits: torch.Tensor, capacity_factor: float, is_expert_slicing=False, fp16_mode: bool=False, nonpadding: torch.Tensor=None,
+def update_mask_for_relocated_experts(dgrid, mask, options):
+    '''
+        If experts are relocated then update the mask. Only works for top1 for now.
+    '''
+    if dgrid is None:
+        return mask
+
+    # mask dim is: [bs, num_experts]
+    for b in mask:
+        expert_index = torch.max(b, dim=0).indices
+        old_index = expert_index.item()
+        new_index = dgrid.get_get_relocation_id(old_index)
+        if new_index is not None:
+            # Set the mask at new index and reset the mask for the old index
+            if options.enable_verbose():
+                print(f'Mask updated for Expert {old_index} relocated to {new_index}')
+            b[new_index] = 1
+            b[old_index] = 0
+    return mask
+
+def top1gating(logits: torch.Tensor, capacity_factor: float, is_expert_slicing=False, nonpadding: torch.Tensor=None,
                 logits_gumbel: float=0.0, token_drop_type: str='cut', straight_through: bool=False, straight_through_temperature: float=1.0,
                 balance_ratio={'load_balance': 0.01}, gate_log_req: dict={}, lid: int=-1,
-                tutel_cumsum_sub_one: callable=None)-> Tuple[Tensor, Tensor, Tensor, Tensor, float]:
-    if fp16_mode is True:
+                options={}, dgrid = None)-> Tuple[Tensor, Tensor, Tensor, Tensor, float]:
+    moe_options = None
+    if isinstance(options, moe_config):
+        moe_options = options
+    else:
+        moe_options = moe_config(options)
+    if moe_options.fp16_mode() is True:
         logits = logits.to(torch.float32)
 
     if logits_gumbel > 0:
@@ -419,16 +443,20 @@ def top1gating(logits: torch.Tensor, capacity_factor: float, is_expert_slicing=F
     #create mask for 1st's expert per token
     indices_s = torch.argmax(logits_w_noise if logits_gumbel > 0 else gates, dim = 1) #dim: [bs], the index of the expert with highest softmax value
     mask1 = fast_one_hot(indices_s, num_classes = num_experts) #dim: [bs, num_experts]. 1 for the expert with highest softmax value
+
+    # If experts are relocated then update the mask
+    mask1 = update_mask_for_relocated_experts(dgrid, mask1, moe_options)
+
     if lid >= 0 and (torch.sum(mask1.float(), dim=0).int() == 0).any():
         print(f"WARNING: top1gating: expert got too few examples in layer {lid}: {torch.sum(mask1.float(), dim=0).int().tolist()}")
 
     # mask using nonpadding (https://github.com/tensorflow/mesh/blob/a54f5cf75ef44d8a97190b3e5aaec176c138b3c0/mesh_tensorflow/transformer/moe.py#L1224)
     gates_nonpadding = gates
     if nonpadding is not None:
-        mask1 = einsum("s,se->se", nonpadding, mask1)
-        gates_nonpadding = einsum("s,se->se", nonpadding, gates_nonpadding)
+        mask1 = om_einsum("s,se->se", nonpadding, mask1)
+        gates_nonpadding = om_einsum("s,se->se", nonpadding, gates_nonpadding)
         if straight_through:
-            gates_st = einsum("s,se->se", nonpadding, gates_st) if not gates_st_equals_gates else gates_nonpadding
+            gates_st = om_einsum("s,se->se", nonpadding, gates_st) if not gates_st_equals_gates else gates_nonpadding
         #TODO: Need to add a unit test
         if is_expert_slicing:
             indices_s = torch.where(nonpadding > 0, indices_s, num_experts) # Assign token_i to "expert num_experts" (fake expert) when nonpadding[i] == 0
@@ -439,6 +467,11 @@ def top1gating(logits: torch.Tensor, capacity_factor: float, is_expert_slicing=F
     ce = torch.sum((mask1.float()-gates_st).detach()+gates_st if straight_through else mask1.float(), dim=0) / num_nonpadding
 
     raw_mask1 = mask1.clone().detach()
+
+    if moe_options.enable_dynamic_capacity() and not is_expert_slicing:
+        expert_usage = torch.max(torch.sum(mask1, dim=0))
+        capacity = min((expert_usage // 32+1) * 32, capacity) # padding for | 32
+        capacity_fp = float(capacity)
 
     if not is_expert_slicing and token_drop_type in ['random', 'routing_weight']:
         if token_drop_type == 'random':
@@ -462,7 +495,7 @@ def top1gating(logits: torch.Tensor, capacity_factor: float, is_expert_slicing=F
 
         #TODO: 1. Need more tests for this functionality. Leave it as-is now to unblock CLIP training
         #      2. Need to add a unit test
-        if ((not is_expert_slicing) and token_drop_type != 'cut') or nonpadding is not None: # Could be remove in the next version
+        if nonpadding is not None: # Could be remove in the next version
             discard_tmp = num_tokens - expert_count.sum()
             count_discard = torch.tensor([discard_tmp], device=logits.device)
             expert_count = torch.cat((expert_count, count_discard))
@@ -482,10 +515,7 @@ def top1gating(logits: torch.Tensor, capacity_factor: float, is_expert_slicing=F
         indices_in_expert = torch.min(indices_repeat, dim=1).values
     else:
         #Compute locations in capacity buffer
-        if mask1.device.type == 'cpu' or tutel_cumsum_sub_one is None:
-            locations1 = torch.cumsum(mask1, dim=0) - 1
-        else:
-            locations1 = tutel_cumsum_sub_one(mask1, dim=0)
+        locations1 = om_cumsum(mask1, dim=0, options=moe_options)
 
     if not is_expert_slicing and token_drop_type == 'cut':
         #Remove locations outside capacity from mask
@@ -509,7 +539,7 @@ def top1gating(logits: torch.Tensor, capacity_factor: float, is_expert_slicing=F
     #Normalize gate probabilities/ep
     mask1_float = mask1.float()
     gates_nonpadding = gates_nonpadding.float()
-    gates1_s = einsum("se,se->s", gates_nonpadding, mask1_float).reshape(1, -1) #[topK, S]
+    gates1_s = om_einsum("se,se->s", gates_nonpadding, mask1_float).reshape(1, -1) #[topK, S]
 
     loss, gate_log = compute_gate_loss(balance_ratio, gate_log_req,
                                         logits=logits, gates=gates_nonpadding, gates_max=gates1_s,
@@ -517,7 +547,7 @@ def top1gating(logits: torch.Tensor, capacity_factor: float, is_expert_slicing=F
                                         router_prob_fraction=me, token_dispatch_fraction=ce, nonpadding=nonpadding,
                                         num_experts=num_experts, num_nonpadding=num_nonpadding)
 
-    if fp16_mode is True:
+    if moe_options.fp16_mode() is True:
         gates1_s = gates1_s.to(torch.float16)
     if not is_expert_slicing:
         # Loss: loss_aux
