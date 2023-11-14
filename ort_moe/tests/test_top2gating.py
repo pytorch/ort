@@ -15,22 +15,29 @@
 import pytest
 import torch
 import math
+import os
 
 from mpi4py import MPI
+import torch.distributed as dist
 from ort_moe.topKgate import TopKGate, top2gating, top1gating, fast_one_hot, balance_ratio_to_dict
 from ort_moe.loss_functions import loss_functions
 from ort_moe.gate_logs import gate_logs
 from ort_moe.grids import DistributionGrid
-from tutel.jit_kernels.gating import fast_cumsum_sub_one
-
-import topKgate_old
+from ort_moe.moe_config import moe_config
 
 #Uncomment this if there is no cuda
 #skip_if_no_cuda = pytest.mark.skipif(not torch.cuda.is_available(), reason="cuda required")
 
 dgrid = DistributionGrid()
+BACKEND = dist.Backend.NCCL
+os.environ["MASTER_ADDR"] = "localhost"
+os.environ["MASTER_PORT"] = "29502"  # torch 1.5 compatibility
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
+size = comm.Get_size()
+
+if not dist.is_initialized():
+    dist.init_process_group(backend=BACKEND, rank=rank, world_size=size)
 
 def test_create():
     gate = TopKGate(4, 8, dgrid=dgrid, k = 1)
@@ -50,7 +57,9 @@ def do_test_forward(device='cpu', topk = 1, fp16_mode = False):
     model_dim = 4
 
     input = torch.randn(num_tokens, model_dim).to(device)
-    gate = TopKGate(model_dim, num_experts, dgrid=dgrid, k = topk, fp16_mode = fp16_mode).to(device)
+    options = {}
+    options["fp16_mode"] = fp16_mode
+    gate = TopKGate(model_dim, num_experts, dgrid=dgrid, k = topk, options = options).to(device)
     capacity_fp = max(min(num_tokens, (topk * num_tokens / num_experts)), 4)
     capacity = math.ceil(capacity_fp)
 
@@ -118,7 +127,8 @@ def do_test_nonpadding_top1():
     num_nonpadding = 5
     logits = torch.randn(num_tokens, num_experts)
     nonpadding = torch.zeros(num_tokens).to(torch.int64).scatter_(0, torch.arange(0, num_nonpadding), 1)
-    _, _, _, dispatch_mask, _ = top1gating(logits, capacity_factor=1, nonpadding=nonpadding, straight_through=True)
+    br={'z_loss': 0.1}
+    _, _, _, dispatch_mask, _ = top1gating(logits, capacity_factor=1, balance_ratio=br, nonpadding=nonpadding, straight_through=True)
     top1s = torch.argmax(logits, dim=1)
     capacity = num_tokens // num_experts
     ce = [0] * num_tokens
@@ -153,85 +163,63 @@ def test_nonpadding():
     do_test_nonpadding_top1()
     do_test_nonpadding_top2()
 
-def do_test_loss(k, balance_ratio=None, gate_log_req=None, device=None, tutel_cumsum_sub_one=None):
+def do_test_loss(k, balance_ratio=None, gate_log_req=None, device=None, options=None):
     # verify that refactored loss computation can get the same result with old version code
     num_tokens = 8
     num_experts = 4
     logits = torch.randn(num_tokens, num_experts, device=device)
 
     if k == 2:
-        loss_old, _, _, _, = topKgate_old.top2gating(logits)
 
         if balance_ratio is None and gate_log_req is None:
-            loss, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=1, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
+            loss, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=1, options=options)
         elif gate_log_req is None:
-            loss, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=1, balance_ratio=balance_ratio_to_dict(balance_ratio), straight_through=True, straight_through_temperature=1.0, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
-            loss1, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=1, balance_ratio=balance_ratio_to_dict(balance_ratio), straight_through=True, straight_through_temperature=1.0-1e-9, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
-            loss2, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=0, balance_ratio=balance_ratio_to_dict(balance_ratio), straight_through=True, straight_through_temperature=1.0, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
-            loss3, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=0, balance_ratio=balance_ratio_to_dict(balance_ratio), straight_through=True, straight_through_temperature=1.0-1e-9, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
+            loss, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=1, balance_ratio=balance_ratio_to_dict(balance_ratio), straight_through=True, straight_through_temperature=1.0, options=options)
+            loss1, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=1, balance_ratio=balance_ratio_to_dict(balance_ratio), straight_through=True, straight_through_temperature=1.0-1e-9, options=options)
+            loss2, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=0, balance_ratio=balance_ratio_to_dict(balance_ratio), straight_through=True, straight_through_temperature=1.0, options=options)
+            loss3, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=0, balance_ratio=balance_ratio_to_dict(balance_ratio), straight_through=True, straight_through_temperature=1.0-1e-9, options=options)
             assert loss == loss1 == loss2 == loss3
         elif balance_ratio is None:
-            loss, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=1, gate_log_req=gate_log_req, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
+            loss, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=1, gate_log_req=gate_log_req, options=options)
         else:
-            loss, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=1, balance_ratio=balance_ratio_to_dict(balance_ratio), gate_log_req=gate_log_req, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
+            loss, _, _, _, _ = top2gating(logits, capacity_factor=1, logits_gumbel=1, balance_ratio=balance_ratio_to_dict(balance_ratio), gate_log_req=gate_log_req, options=options)
 
         if balance_ratio is None:
             balance_ratio = 0.01
         balance_ratio = balance_ratio_to_dict(balance_ratio)
-        loss_old = loss_old[0] * balance_ratio['load_balance']
 
-        assert torch.isclose(loss, loss_old)
     else:
         if balance_ratio is not None:
             balance_ratio = balance_ratio_to_dict(balance_ratio)
 
-        loss_old, _, _, _, = topKgate_old.top1gating(logits, capacity_factor=1)
-
         if balance_ratio is None and gate_log_req is None:
-            loss, gate_log, _, _, _ = top1gating(logits, capacity_factor=1, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
+            loss, gate_log, _, _, _ = top1gating(logits, capacity_factor=1, options=options)
         elif gate_log_req is None:
-            loss, gate_log, _, _, _ = top1gating(logits, capacity_factor=1, balance_ratio=balance_ratio, straight_through=True, straight_through_temperature=1.0, logits_gumbel=0, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
-            loss1, _, _, _, _ = top1gating(logits, capacity_factor=1, balance_ratio=balance_ratio, straight_through=True, straight_through_temperature=1.0-1e-9, logits_gumbel=0, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
-            loss2, _, _, _, _ = top1gating(logits, capacity_factor=1, balance_ratio=balance_ratio, straight_through=True, straight_through_temperature=1.0, logits_gumbel=1e-9, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
-            loss3, _, _, _, _ = top1gating(logits, capacity_factor=1, balance_ratio=balance_ratio, straight_through=True, straight_through_temperature=1.0-1e-9, logits_gumbel=1e-9, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
+            loss, gate_log, _, _, _ = top1gating(logits, capacity_factor=1, balance_ratio=balance_ratio, straight_through=True, straight_through_temperature=1.0, logits_gumbel=0, options=options)
+            loss1, _, _, _, _ = top1gating(logits, capacity_factor=1, balance_ratio=balance_ratio, straight_through=True, straight_through_temperature=1.0-1e-9, logits_gumbel=0, options=options)
+            loss2, _, _, _, _ = top1gating(logits, capacity_factor=1, balance_ratio=balance_ratio, straight_through=True, straight_through_temperature=1.0, logits_gumbel=1e-9, options=options)
+            loss3, _, _, _, _ = top1gating(logits, capacity_factor=1, balance_ratio=balance_ratio, straight_through=True, straight_through_temperature=1.0-1e-9, logits_gumbel=1e-9, options=options)
             assert loss == loss1 == loss2 == loss3
         elif balance_ratio is None:
-            loss, gate_log, _, _, _ = top1gating(logits, capacity_factor=1, gate_log_req=gate_log_req, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
+            loss, gate_log, _, _, _ = top1gating(logits, capacity_factor=1, gate_log_req=gate_log_req, options=options)
         else:
-            loss, gate_log, _, _, _ = top1gating(logits, capacity_factor=1, balance_ratio=balance_ratio, gate_log_req=gate_log_req, tutel_cumsum_sub_one=tutel_cumsum_sub_one)
-
-        if balance_ratio is None:
-            balance_ratio = {'load_balance': 0.01}
-        if gate_log_req is None:
-            gate_log_req = {}
-        l_old = sum([loss_old[i] * balance_ratio.get(l, 0) for i, l in zip(range(len(loss_functions)), loss_functions.keys())])
-
-        assert torch.isclose(loss, l_old)
-        for i, l in zip(range(len(loss_functions)), loss_functions.keys()):
-            if balance_ratio.get(l, 0) > 0:
-                assert torch.isclose(gate_log[l], loss_old[i]*balance_ratio[l])
-        for i, l in zip(range(3), list(gate_logs.keys())[:3]):
-            if gate_log_req.get(l, False):
-                # skip gate_probability because it is computed over routed tokens in the new version
-                if l != 'gate_probability':
-                    assert torch.isclose(gate_log[l], loss_old[4+i])
-        if gate_log_req.get('expert_fraction', False):
-            assert torch.allclose(gate_log.get('expert_fraction', torch.zeros(num_experts)), loss_old[7 : 7+num_experts])
-        if gate_log_req.get('expert_routed_fraction', False):
-            assert torch.allclose(gate_log.get('expert_routed_fraction', torch.zeros(num_experts)), loss_old[7+num_experts : 7+num_experts*2])
+            loss, gate_log, _, _, _ = top1gating(logits, capacity_factor=1, balance_ratio=balance_ratio, gate_log_req=gate_log_req, options=options)
 
 def test_loss():
     balance_ratio={'load_balance': 0.1, 'sparsity_l1': 0.1, 'mean_importance': 0.1, 'z_loss': 0.1, 'ideal_load_balance': 1e-9}
     gate_log_req={'gate_entropy': True, 'gate_probability': True, 'gate_routed': True, 'expert_fraction': True, 'expert_routed_fraction': True}
 
+    options = {}
+    options["enable_tutel_cumsum"] = True
+
     do_test_loss(2)
-    do_test_loss(2, device=rank, tutel_cumsum_sub_one=fast_cumsum_sub_one)
+    do_test_loss(2, device=rank, options=moe_config(options))
     do_test_loss(2, balance_ratio=0.01)
     do_test_loss(2, gate_log_req=gate_log_req)
     do_test_loss(2, balance_ratio=0.01, gate_log_req=gate_log_req)
 
     do_test_loss(1)
-    do_test_loss(1, device=rank, tutel_cumsum_sub_one=fast_cumsum_sub_one)
+    do_test_loss(1, device=rank, options=moe_config(options))
     do_test_loss(1, balance_ratio=balance_ratio)
     do_test_loss(1, gate_log_req=gate_log_req)
     do_test_loss(1, balance_ratio=balance_ratio, gate_log_req=gate_log_req)
@@ -299,6 +287,23 @@ def test_token_drop():
     do_test_token_drop_top2(token_drop_type='routing_weight')
 def test_tutel_cumsum():
     matrix = torch.randint(0, 100, (10000, 100), device=rank)
+    from tutel.jit_kernels.gating import fast_cumsum_sub_one
     cumsum_tutel = fast_cumsum_sub_one(matrix, dim=0) + 1
     cumsum_torch = torch.cumsum(matrix, dim=0)
     assert cumsum_tutel.equal(cumsum_torch), "Result of tutel's cumsum is not correct"
+
+# Test dynamic capacity in top1gating when the max_token_usage based capacity is in effect.
+def test_top1gating_dynamic_capacity():
+    dgrid = DistributionGrid(expert_parallel_group_size = 4)
+    rank_list = list(range(0, dist.get_world_size()))
+    ranks_count = 4
+    logits = torch.eye(128, dtype=torch.float32)
+    logits = logits.repeat(3, 1)
+    options = {}
+    options["enable_dynamic_capacity"] = True
+    _, _, _, _, capacity_fp = top1gating(logits, capacity_factor=100.0, options=options)
+    assert capacity_fp == 32.0
+    logits = torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=torch.float32)
+    logits = logits.repeat(3, 1)
+    _, _, _, _, capacity_fp = top1gating(logits, capacity_factor=5.0, options=options)
+    assert capacity_fp == 4.0

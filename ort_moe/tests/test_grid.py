@@ -133,6 +133,41 @@ def test_expert_mapping_3(device = rank):
     elif rank == 3:
         assert grank == 46 and replica_id == 1
 
+def test_expert_mapping_4(device = rank):
+    if dist.get_world_size() != 4:
+        return
+
+    dgrid = DistributionGrid(expert_parallel_group_size = 4)
+
+    grank = dgrid.map_expert_id_local_to_global(64, 14)
+    if rank == 0:
+        assert grank == 14
+    elif rank == 1:
+        assert grank == 30
+    elif rank == 2:
+        assert grank == 46
+    elif rank == 3:
+        assert grank == 62
+
+    dgrid.exchange_expert_location(30, 30)
+    dgrid.exchange_expert_location(30, 46)    
+
+    nrank, nid = dgrid.map_expert_id_global_to_local(64, 30)
+    assert nrank == 2 and nid == 14
+
+    grank2 = dgrid.map_expert_id_local_to_global(64, 14)
+    if rank == 0:
+        assert grank2 == 14
+    elif rank == 1:
+        assert grank2 == 46
+    elif rank == 2:
+        assert grank2 == 30
+    elif rank == 3:
+        assert grank2 == 62
+
+    dgrid.set_expert_relocation_map(dgrid.get_expert_relocation_map())
+    dgrid.remove_expert_relocation(30)
+
 def test_rank_schedule(device = rank):
     if dist.get_world_size() != 4:
         return
@@ -152,7 +187,7 @@ def test_rank_schedule(device = rank):
     else:
         assert dgrid.get_expert_parallel_replica_rank() == 1
 
-    options = {"rank_schedule" : "row_major" }
+    options = {"rank_schedule": "row_major"}
     dgridr = DistributionGrid(expert_parallel_group_size = 2, expert_parallel_replica_group_size = 2,
                              options = options)
     # EP 0 -> [0,1]
@@ -168,10 +203,10 @@ def test_rank_schedule(device = rank):
     else:
         assert dgridr.get_expert_parallel_replica_rank() == 1
 
-    options ={ "rank_schedule" : "column_major" }
+    options = {"rank_schedule": "column_major"}
     dgridc = DistributionGrid(expert_parallel_group_size = 2, expert_parallel_replica_group_size = 2,
                               options = options)
-    # EP 0 -> [0,2
+    # EP 0 -> [0,2]
     # EP 1 -> [1,3]
     # ER 0 -> [0,1]
     # ER 1 -> [2,3]
@@ -183,3 +218,19 @@ def test_rank_schedule(device = rank):
         assert dgridc.get_expert_parallel_replica_rank() == 0
     else:
         assert dgridc.get_expert_parallel_replica_rank() == 1
+
+    options = {"rank_schedule": "row_major", "is_replica_in_same_node": True}
+    dgridr = DistributionGrid(expert_parallel_group_size = 2, expert_parallel_replica_group_size = 2,
+                              options = options)
+    # EP 0 -> [0,2]
+    # EP 1 -> [1,3]
+    # ER 0 -> [0,1]
+    # ER 1 -> [2,3]
+    if rank < 2:
+        assert dgridr.get_expert_replica_src_rank() == 0
+    else:
+        assert dgridr.get_expert_replica_src_rank() == 2
+    if (rank % 2) == 0:
+        assert dgridr.get_expert_parallel_replica_rank() == 0
+    else:
+        assert dgridr.get_expert_parallel_replica_rank() == 1
