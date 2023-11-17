@@ -84,8 +84,7 @@ Build MoE
 
 ```bash
 cd ort_moe
-pip install build # Install PyPA build
-python -m build
+python setup.py install
 ```
 
 ## Install for Inference
