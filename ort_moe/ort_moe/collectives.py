@@ -3,6 +3,7 @@
 # Licensed under the MIT License.
 # --------------------------------------------------------------------------
 
+import os
 import torch
 import torch.distributed as dist
 
@@ -44,6 +45,21 @@ class AllGather(torch.autograd.Function):
         output = (grad_output_chunks[ctx.rank]).contiguous() 
         return None, output, None
 
+def compressed_all_to_all(output, input, group=None):
+
+    world_size = dist.get_world_size(group)
+    rank = torch.distributed.get_rank(group)
+
+    ts_in = torch.tensor_split(input, world_size)
+    compressed_a2a_input, _ = dg_compress(ts_in)
+    ts_out = torch.tensor_split(output, world_size)
+
+    for i in range(world_size):
+        if i != rank:
+            torch.distributed.send(compressed_a2a_input[i], i)
+            torch.distributed.recv(compressed_a2a_input[i], i)
+    dg_decompress(compressed_a2a_input, ts_out)
+
 # Based on https://github.com/pytorch/pytorch/pull/40762
 class AllToAll(torch.autograd.Function):
     @staticmethod
@@ -65,7 +81,10 @@ class AllToAll(torch.autograd.Function):
             input = torch.nn.functional.pad(input, pad=(0,0,0,max_len_cpu-input.shape[-2]), mode = 'constant', value=0.0)
         input = input.contiguous()
         output = torch.empty_like(input)
-        dist.all_to_all_single(output, input, group=group)
+        if os.environ.get('ORT_MOE_COMPRESS_ALLToALL') is not None:
+            compressed_all_to_all(output, input, group=group)
+        else:
+            dist.all_to_all_single(output, input, group=group)
         return output
 
     @staticmethod
@@ -102,3 +121,46 @@ class AllReduce(torch.autograd.Function):
         dist.all_reduce(grad_output[0], group = ctx.group)
         ret_val = grad_output[0].contiguous()
         return ret_val, None
+
+_DIETGPU_SCRATCH_PAD = None
+_DIETGPU_LIBRARY_LOADED = False
+def dg_load_library():
+    global _DIETGPU_LIBRARY_LOADED
+    if _DIETGPU_LIBRARY_LOADED is True:
+        return
+
+    dg_lib = os.environ.get('DIETGPU_LIB_PATH')
+    torch.ops.load_library(dg_lib)
+    _DIETGPU_LIBRARY_LOADED = True
+    return
+
+def get_tensor_list_device(the_list):
+    if isinstance(the_list, torch.Tensor):
+        return the_list.device
+
+    for l in the_list:
+        if isinstance(l, torch.Tensor):
+            return l.device
+
+    return None
+
+def dg_get_scratch_pad(device):
+    global _DIETGPU_SCRATCH_PAD
+    if _DIETGPU_SCRATCH_PAD is None:
+        _DIETGPU_SCRATCH_PAD = torch.empty([64*1024*1024], dtype=torch.uint8, device=device)
+    return _DIETGPU_SCRATCH_PAD
+
+def dg_compress(input_list):
+    dg_load_library()
+
+    output, output_size, _ = torch.ops.dietgpu.compress_data(True, input_list, dg_get_scratch_pad(get_tensor_list_device(input_list)))
+    compressed_output_list = []
+    for size, t in zip(output_size, [*output]):
+        truncated_t = t.narrow(0, 0, size.item()).clone()
+        compressed_output_list.append(truncated_t)
+
+    return compressed_output_list, output_size
+
+def dg_decompress(input_list, output_list):
+    dg_load_library()
+    torch.ops.dietgpu.decompress_data(True, input_list, output_list, dg_get_scratch_pad(get_tensor_list_device(input_list)))

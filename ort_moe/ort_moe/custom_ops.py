@@ -4,12 +4,13 @@
 # --------------------------------------------------------------------------
 
 import torch
+from .moe_config import moe_config
 
 # The switch to decided whether to use torch.einsum (when this flag is true) or use rewrited-version.
 # switch can be bubbled up in future
 USE_EINSUM = True
 
-def einsum(rule, a, b):
+def om_einsum(rule, a, b):
     """
     The rewrite of torch.einsum for some specific cases.
         The rewrites are on par or more performant upon the benchmark we tested
@@ -44,3 +45,24 @@ def einsum(rule, a, b):
         return torch.bmm(a, b.transpose(1, 2)).reshape(s, m)
     else:
         return torch.einsum(rule, a, b)
+
+def om_cumsum(mask, dim, options = None):
+    """
+    The rewrite of torch.cumsum to use tutel cumsum if desired.
+    Args:
+        tensor (torch.Tensor): the input tensor of cumsum op
+        dim (int): the dimension of cumsum op
+        options (moe_config): the options to decide whether to use tutel cumsum
+    """
+    if mask.device.type == 'cpu' or options is None:
+        return torch.cumsum(mask, dim) - 1
+
+    moe_options = None
+    if isinstance(options, moe_config): moe_options = options
+    else:  moe_options = moe_config(options)
+    
+    if moe_options.enable_tutel_cumsum():
+        from tutel.jit_kernels.gating import fast_cumsum_sub_one
+        return fast_cumsum_sub_one(mask, dim)
+
+    return torch.cumsum(mask, dim) - 1

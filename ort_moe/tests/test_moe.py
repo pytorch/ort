@@ -15,7 +15,7 @@ import random
 
 from torch import nn
 
-from ort_moe.custom_ops import einsum
+from ort_moe.custom_ops import om_einsum
 from ort_moe.experts import FFNExpert, MergedFFNExpert
 from ort_moe.moe import MixtureOfExpertsFunc, MixtureOfExperts, AllToAll, MixtureOfExpertsES
 from ort_moe.utils import broadcast_parameters, moe_module_all_reduce, apex_amp_scale_check_overflow_override, is_moe_parameter
@@ -32,10 +32,8 @@ from ort_moe.layers import TransformerMoEEncoderLayer, TransformerMoEDecoderLaye
 from ort_moe.grids import DistributionGrid
 from ort_moe.loss_functions import loss_functions
 from ort_moe.gate_logs import gate_logs
-from . import topKgate_old, moe_old
 from apex import amp as apex_amp
 
-use_tutel = True
 # if USE_ORT env is set then run tests with ORTModule
 use_ort = os.getenv("USE_ORT", None)
 if use_ort:
@@ -48,7 +46,6 @@ if use_ort:
     enable_custom_autograd_support()
     debug_options = DebugOptions(save_onnx=True, onnx_prefix='moe', log_level=LogLevel.INFO)
     ortmodule.ONNX_OPSET_VERSION=13
-    use_tutel = False
 
 assert torch.cuda.is_available()
 
@@ -99,7 +96,7 @@ def test_MixtureOfExperts():
     num_local_experts = 4
     num_experts = dist.get_world_size(dist.group.WORLD) * num_local_experts
 
-    gating_fn = TopKGate(model_dim, num_experts, k=1, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)  # Top1
+    gating_fn = TopKGate(model_dim, num_experts, k=1, dgrid=dgrid)  # Top1
     experts = torch.nn.ModuleList()
     for i in range(num_local_experts):
         experts.append(FFNExpert(model_dim, ff_dim, dgrid=dgrid))
@@ -249,7 +246,7 @@ def test_MixtureOfExperts_single_forward(device=rank):
     num_experts = dist.get_world_size(dist.group.WORLD) * num_local_experts
     input = torch.rand(4, 16, model_dim).to(device)
     dgrid = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
-    gate = TopKGate(model_dim, num_experts, k=2, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)
+    gate = TopKGate(model_dim, num_experts, k=2, dgrid=dgrid)
     experts = torch.nn.ModuleList()
     for i in range(num_local_experts):
         expert = torch.nn.Linear(model_dim, model_dim, bias=False)
@@ -278,7 +275,7 @@ def test_MixtureOfExperts_multi_forward(device=rank):
     num_experts = dist.get_world_size(dist.group.WORLD) * num_local_experts
     input = torch.rand(4 * num_local_experts, 16, model_dim).to(device)
     dgrid = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
-    gate = TopKGate(model_dim, num_experts, k=2, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)
+    gate = TopKGate(model_dim, num_experts, k=2, dgrid=dgrid)
     experts = torch.nn.ModuleList()
     for i in range(num_local_experts):
         expert = torch.nn.Linear(model_dim, model_dim, bias=False)
@@ -316,7 +313,7 @@ def test_expert_moe_encoder():
     dim_feedforward = 256
     num_local_experts = 4
     nexperts = dist.get_world_size(dist.group.WORLD) * num_local_experts
-    gate = TopKGate(d_model, nexperts, k=1, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)  # top-1
+    gate = TopKGate(d_model, nexperts, k=1, dgrid=dgrid)  # top-1
     encoder = TransformerMoEEncoderLayer(d_model, nhead, dim_feedforward=dim_feedforward,
                                          nexperts=nexperts, gate=gate, distribution_grid = dgrid)
     if use_ort:
@@ -342,7 +339,7 @@ def test_expert_moe_decoder():
     num_local_experts = 4
     nexperts = dist.get_world_size(dist.group.WORLD) * num_local_experts
     dgrid = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
-    gate = TopKGate(d_model, nexperts, k=1, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)  # top-1
+    gate = TopKGate(d_model, nexperts, k=1, dgrid=dgrid)  # top-1
     decoder = TransformerMoEDecoderLayer(d_model, nhead, dim_feedforward=dim_feedforward,
                                          nexperts=nexperts, gate=gate, distribution_grid = dgrid)
     if use_ort:
@@ -428,6 +425,39 @@ def test_forward_routing_multi(device=rank):
 
 
 @pytest.mark.mpi
+def test_forward_routing_shuffle(device=rank):
+    dgrid = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
+    model_dim = 6
+    num_local_experts = 4
+    num_rank = dist.get_world_size(dist.group.WORLD)
+    num_experts = num_rank * num_local_experts
+    input = torch.ones(4 * num_local_experts, 32, model_dim).to(device)
+    gate = RoundRobinGate(model_dim, num_experts, dgrid)
+    experts = torch.nn.ModuleList()
+    for i in range(num_local_experts):
+        expert = torch.nn.Linear(model_dim, model_dim, bias=False)
+        # Use scaling matrix (each rank has a different scale)
+        scale = dist.get_rank() * num_local_experts + i + 1
+        expert.weight = torch.nn.Parameter(torch.eye(model_dim) * scale)
+        experts.append(expert)
+    options = {"enable_base_layer_shuffling" : True}
+    moe = MixtureOfExpertsFunc(gate, experts, distribution_grid=dgrid, options=options).to(device)
+    if use_ort:
+        moe = ORTModule(moe)
+    rand_fixed_idx = num_rank // 2 - 1
+    rank_lists = [list(range(0, rand_fixed_idx)), list(range(rand_fixed_idx, num_rank))]
+    for r in rank_lists:
+        tmp = dist.new_group(r)
+        if rank in r:
+            pg = tmp
+    output = moe(input, shuffle_group=pg)
+    if use_ort:
+        loss = output[0].sum()
+        loss.backward()
+    assert output.shape == input.shape
+
+
+@pytest.mark.mpi
 @pytest.mark.with_ort
 def test_backward(device=rank):
     dgrid = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
@@ -435,7 +465,7 @@ def test_backward(device=rank):
     model_dim = 8
     num_experts = dist.get_world_size(dist.group.WORLD)
     input = torch.randn(4, 16, model_dim).to(device)
-    gate = TopKGate(model_dim, num_experts, k=2, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)
+    gate = TopKGate(model_dim, num_experts, k=2, dgrid=dgrid)
     experts = torch.nn.ModuleList()
     expert = torch.nn.Linear(model_dim, model_dim, bias=False)
     experts.append(expert)
@@ -521,7 +551,7 @@ def test_moe_reset_state2(device=rank):
     dgrid = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
     model_dim = 8
     num_experts = dist.get_world_size(dist.group.WORLD)
-    gate = TopKGate(model_dim, num_experts, k=2, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)
+    gate = TopKGate(model_dim, num_experts, k=2, dgrid=dgrid)
     experts = torch.nn.ModuleList()
     expert = torch.nn.Linear(model_dim, model_dim, bias=False)
     experts.append(expert)
@@ -586,7 +616,7 @@ def test_expert_moez_encoder():
     dim_feedforward = 256
     num_local_experts = 4
     nexperts = dist.get_world_size(dist.group.WORLD) * num_local_experts
-    gate = TopKGate(d_model, nexperts, k=1, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)  # top-1
+    gate = TopKGate(d_model, nexperts, k=1, dgrid=dgrid)  # top-1
     shared_encoder = TransformerMoEEncoderLayer(d_model, nhead, dim_feedforward=dim_feedforward,
                                                 nexperts=nexperts, gate=gate, distribution_grid=dgrid)
     for p in shared_encoder.named_parameters():
@@ -630,7 +660,7 @@ def test_expert_moez_decoder():
     dim_feedforward = 256
     num_local_experts = 4
     nexperts = dist.get_world_size(dist.group.WORLD) * num_local_experts
-    gate = TopKGate(d_model, nexperts, k=1, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)  # top-1
+    gate = TopKGate(d_model, nexperts, k=1, dgrid=dgrid)  # top-1
     shared_decoder = TransformerMoEDecoderLayer(d_model, nhead, dim_feedforward=dim_feedforward,
                                                 nexperts=nexperts, gate=gate, distribution_grid=dgrid)
     if use_ort:
@@ -669,7 +699,7 @@ def test_moe_allreduce(device=rank):
     num_experts = dist.get_world_size(dist.group.WORLD) * num_local_experts
     d_model = 2
     d_ff = 16
-    gating_fn = TopKGate(d_model, num_experts, k=1, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)  # Top1
+    gating_fn = TopKGate(d_model, num_experts, k=1, dgrid=dgrid)  # Top1
     merged_experts = MergedFFNExpert(d_model, d_ff, num_local_experts, dgrid=dgrid)
     model = MixtureOfExpertsFunc(gating_fn, merged_experts, dgrid).to(device)
     if use_ort:
@@ -708,7 +738,7 @@ def test_dp_group_allreduce(device=rank):
 
     d_model = 2
     d_ff = 16
-    gating_fn = TopKGate(d_model, num_experts, k=1, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)  # Top1
+    gating_fn = TopKGate(d_model, num_experts, k=1, dgrid=dgrid)  # Top1
     expert = FFNExpert(d_model, d_ff, dgrid=dgrid)
     experts = torch.nn.ModuleList()
     experts.append(expert)
@@ -767,7 +797,7 @@ def test_dp_group_with_all2all(device = rank):
         d_model = 8
 
         input = torch.randn(4, 16, d_model).to(device)
-        gating_fn = TopKGate(d_model, num_experts, k=2, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)  # Top1
+        gating_fn = TopKGate(d_model, num_experts, k=2, dgrid=dgrid)  # Top1
         experts = torch.nn.ModuleList()
         for _ in range(num_local_experts):
             expert = torch.nn.Linear(d_model, d_model, bias = False)
@@ -837,7 +867,7 @@ def test_ep_group_all2all_forward(device = rank):
         d_model = 8
 
         input = torch.randn(4, 16, d_model).to(device)
-        gating_fn = TopKGate(d_model, num_experts, k=2, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)  # Top1
+        gating_fn = TopKGate(d_model, num_experts, k=2, dgrid=dgrid)  # Top1
         experts = torch.nn.ModuleList()
         for _ in range(num_local_experts):
             expert = torch.nn.Linear(d_model, d_model, bias = False)
@@ -909,7 +939,7 @@ def test_ep_group_all2all_backward(device=rank):
     model_dim = 8
     input = (torch.ones(4, 16, model_dim)*5).to(device)
 
-    gate = TopKGate(model_dim, num_experts, k=2, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)
+    gate = TopKGate(model_dim, num_experts, k=2, dgrid=dgrid)
     # set gate weights always same, so we obtain deterministic mapping
     gate.wg.weight = torch.nn.Parameter(torch.tensor([[ 0.9311,  0.1706,  0.3681,  1.7191,  2.0357,  0.2269, -0.0920, -0.2983],
         [ 1.2228,  0.3268, -0.0645, -0.7305, -1.1829, -0.0968,  1.2634,  1.5229]]))
@@ -961,7 +991,7 @@ def test_max_len_all_reduce(device = rank):
         d_model = 8
 
         input = torch.randn(4, 4, d_model).to(device)
-        gating_fn = TopKGate(d_model, ep_ways*num_local_experts, k=1, capacity_factor=1.25, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)  # Top1
+        gating_fn = TopKGate(d_model, ep_ways*num_local_experts, k=1, capacity_factor=1.25, dgrid=dgrid)  # Top1
         experts = torch.nn.ModuleList()
         for _ in range(num_local_experts):
             expert = torch.nn.Linear(d_model, d_model, bias = False)
@@ -1000,154 +1030,6 @@ def test_max_len_all_reduce(device = rank):
 
         dp_ways *= 2
 
-
-#run 20 tests, each one with randomly generated model config
-#in each test, run 10 iterations of fwd+bwd pass
-def test_moe_memory_fix(device = rank):
-    import random
-    import topKgate_old
-    import moe_old
-    for i in range(20):
-        if dist.get_rank() == 0:
-            print("test ", i)
-        d_model = 768
-        batch = random.randint(10, 15)
-        seq_length = random.randint(100, 200)
-        local_n_experts = 4
-        glboal_n_experts =  local_n_experts * dist.get_world_size()
-        #manually set the seeds so the parameters for old and new models are the same
-        #NOTE: To make above statment true, the parameter initalization order needs to be
-        #identical for old and new models.
-
-        dgrid = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
-
-        use_merged_ffn = i % 2 == 0
-        torch.manual_seed(dist.get_rank())
-        if use_merged_ffn:
-            experts_new = MergedFFNExpert(d_model, 3072, local_n_experts, dgrid=dgrid).to(dist.get_rank())
-        else:
-            experts_new = torch.nn.ModuleList()
-            for i in range(local_n_experts):
-                e = FFNExpert(d_model, 3072, dgrid=dgrid)
-                experts_new.append(e).to(dist.get_rank())
-        gate_new = TopKGate(d_model, glboal_n_experts, k=1, dgrid=dgrid).to(dist.get_rank())
-        m_new = MixtureOfExpertsFunc(gate_new, experts_new, distribution_grid=dgrid)
-
-        torch.manual_seed(dist.get_rank())
-        if use_merged_ffn:
-            experts_old = MergedFFNExpert(d_model, 3072, local_n_experts, dgrid=dgrid).to(dist.get_rank())
-        else:
-            experts_old = torch.nn.ModuleList()
-            for j in range(local_n_experts):
-                e = FFNExpert(d_model, 3072, dgrid=dgrid).to(dist.get_rank())
-                experts_old.append(e)
-        gate_old = topKgate_old.TopKGate(d_model, glboal_n_experts, k=1).to(dist.get_rank())
-        m_old = moe_old.MixtureOfExperts(gate_old, experts_old)
-
-        for step in range(10):
-            input = torch.rand(batch, seq_length, d_model).to(dist.get_rank())
-            output = m_old(input)
-            output_new = m_new(input)
-
-            loss = torch.nn.MSELoss()
-            output = loss(output, input)
-            output_new = loss(output_new, input)
-            output.backward()
-            output_new.backward()
-            moe_module_all_reduce(m_old, dgrid)
-            moe_module_all_reduce(m_new, dgrid)
-            #comparing the results
-            assert torch.allclose(m_old.l_aux[0], m_new.gate.loss)
-            assert torch.allclose(output, output_new, atol=1e-5)
-            assert torch.allclose(m_old.gate.wg.weight.grad, m_new.gate.wg.weight.grad, atol=1e-5)
-            if use_merged_ffn:
-                    assert torch.allclose(m_old.experts.weight1, m_new.moe_experts.weight1)
-                    assert torch.allclose(m_old.experts.weight2, m_new.moe_experts.weight2)
-            else:
-                for i in range(0, local_n_experts):
-                    assert torch.allclose(m_old.experts[i].linear1.weight, m_new.moe_experts[i].linear1.weight)
-                    assert torch.allclose(m_old.experts[i].linear2.weight, m_new.moe_experts[i].linear2.weight)
-
-def test_moe_loss(device=rank):
-    # make sure the refactored loss computation code gets the same loss values and gate log values with the old version.
-    # use two-layer net to also validate utility function get_moe_loss()
-    d_model = 64
-    d_ff = 256
-    n_layers = 2
-    batch = random.randint(10, 15)
-    seq_length = random.randint(100, 200)
-    input = torch.rand(batch, seq_length, d_model).to(device)
-    local_n_experts = 4
-    glboal_n_experts =  local_n_experts * dist.get_world_size()
-    dgrid = DistributionGrid(expert_parallel_group_size=dist.get_world_size())
-
-    balance_ratio=[0.1, 0.1, 0.1, 0.1]
-    torch.manual_seed(device)
-    nonpadding = torch.ones(batch, seq_length).to(int).to(device)  # nonpadding affects loss in new version, so set all 1
-    torch.manual_seed(device)
-    class OldNet(nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.layers = nn.ModuleList()
-            for _ in range(n_layers):
-                experts = nn.ModuleList()
-                for _ in range(local_n_experts):
-                    e = FFNExpert(d_model, d_ff, dgrid)
-                    experts.append(e)
-                gate = topKgate_old.TopKGate(d_model, glboal_n_experts, k=1, switch_jitter=0.1, switch_dropout=0.1, random_token_drop=True)
-                self.layers.append(moe_old.MixtureOfExperts(gate, experts, balance_ratio=balance_ratio))
-        def forward(self, x):
-            for layer in self.layers:
-                x = layer(x, nonpadding=nonpadding)
-            return x
-    m_old = OldNet().to(device)
-    m_old(input)
-    loss_old = None
-    n_layers_old = 0
-    for p in m_old.named_modules():
-        if isinstance(p[1], moe_old.MixtureOfExperts):
-            if loss_old is None:
-                loss_old = p[1].l_aux
-            else:
-                loss_old += p[1].l_aux
-            n_layers_old += 1
-
-    balance_ratio={'load_balance': 0.1, 'sparsity_l1': 0.1, 'mean_importance': 0.1, 'z_loss': 0.1}
-    gate_log_req={'gate_entropy': True, 'gate_probability': True, 'gate_routed': True, 'expert_fraction': True, 'expert_routed_fraction': True}
-    torch.manual_seed(device)
-    class NewNet(nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.layers = nn.ModuleList()
-            for _ in range(n_layers):
-                experts = nn.ModuleList()
-                for _ in range(local_n_experts):
-                    e = FFNExpert(d_model, d_ff, dgrid=dgrid)
-                    experts.append(e)
-                gate = TopKGate(d_model, glboal_n_experts, k=1, balance_ratio=balance_ratio, gate_log_req=gate_log_req, dgrid=dgrid, switch_jitter=0.1, switch_dropout=0.1, token_drop_type='random')
-                gate.set_gate_metrics(balance_ratio, gate_log_req)
-                self.layers.append(MixtureOfExpertsFunc(gate, experts, distribution_grid=dgrid))
-        def forward(self, x):
-            for layer in self.layers:
-                x = layer(x, nonpadding=nonpadding)
-            return x
-    m_new = NewNet().to(device)
-    m_new(input)
-    loss_new, gate_log, n_layers_new = get_moe_loss(m_new)
-
-    assert n_layers_new == n_layers_old
-    assert torch.isclose(loss_new, torch.sum(loss_old[:4]))
-    for i, l in zip(range(len(loss_functions)), loss_functions.keys()):
-        if balance_ratio.get(l, 0) > 0:
-            assert torch.isclose(gate_log[l], loss_old[i])
-    for i, l in zip(range(3), list(gate_logs.keys())[:3]):
-        if gate_log_req.get(l, False) and l != 'gate_probability':  # gate probability changed from pre-capacity to after-capacity
-            assert torch.isclose(gate_log[l], loss_old[4+i])
-    if gate_log_req.get('expert_fraction', False):
-        assert torch.allclose(gate_log.get('expert_fraction', torch.zeros(glboal_n_experts)), loss_old[7 : 7+glboal_n_experts])
-    if gate_log_req.get('expert_routed_fraction', False):
-        assert torch.allclose(gate_log.get('expert_routed_fraction', torch.zeros(glboal_n_experts)), loss_old[7+glboal_n_experts : 7+glboal_n_experts*2])
-
 @pytest.mark.mpi
 def test_mp_gating(device = rank):
     torch.manual_seed(7)
@@ -1159,7 +1041,7 @@ def test_mp_gating(device = rank):
 
     dgrid = DistributionGrid(expert_slicing_group_size = 2, expert_parallel_replica_group_size= dist.get_world_size()//2)
 
-    gate = TopKGate(10, 4, dgrid, k=1, use_tutel_cumsum_sub_one=use_tutel).to(device)
+    gate = TopKGate(10, 4, dgrid, k=1).to(device)
     if use_ort:
         gate = ORTModule(gate)
     gate.wg = wg
@@ -1171,7 +1053,7 @@ def test_mp_gating(device = rank):
     assert torch.equal(outputs[1], dispatch_mask_ref)
     assert(torch.equal(outputs[2], expert_cumsum_ref))
 
-def test_mp_moe_forward(device = rank):
+def do_test_mp_moe_forward(dynamic_capacity, device = rank):
     dgrid = DistributionGrid(expert_slicing_group_size = 2, expert_parallel_replica_group_size=dist.get_world_size()//2)
 
     torch.manual_seed(7)
@@ -1180,7 +1062,9 @@ def test_mp_moe_forward(device = rank):
     d_ff = d_model
     num_expert = 4
     d_token = 6
-    gate = TopKGate(d_model, num_expert, dgrid, k=1).to(device)
+    options = {}
+    options["enable_dynamic_capacity"] = dynamic_capacity
+    gate = TopKGate(d_model, num_expert, dgrid, k=1, options=options).to(device)
 
     experts = torch.nn.ModuleList()
 
@@ -1190,7 +1074,7 @@ def test_mp_moe_forward(device = rank):
         expert.linear2.weight = torch.nn.Parameter(torch.eye(d_model) * (device%2+1))
         experts.append(expert)
 
-    moe = MixtureOfExpertsFunc(gate, experts, distribution_grid=dgrid).to(device)
+    moe = MixtureOfExpertsFunc(gate, experts, distribution_grid=dgrid, options=options).to(device)
     if use_ort:
         moe = ORTModule(moe)
 
@@ -1201,6 +1085,8 @@ def test_mp_moe_forward(device = rank):
         loss.backward()
 
     assert dgrid.get_expert_slicing_world_size() == 2
+    if dynamic_capacity:
+        return
 
     #compute the reference gate_s by rerun the gate function with the same input
     reshaped_input_ref = torch.cat((input, input), 0).reshape(-1, d_model)
@@ -1208,6 +1094,10 @@ def test_mp_moe_forward(device = rank):
 
     output_ref = torch.einsum("ks, ksm->sm", combine_weights_ref[:, device%2*d_token: (device%2+1)*d_token], input * 5.0)
     assert torch.allclose(output_ref, output, atol = 1e-03)
+
+def test_mp_moe_forward_pass():
+    do_test_mp_moe_forward(dynamic_capacity=True)
+    do_test_mp_moe_forward(dynamic_capacity=False)
 
 #Compare the MP forward and backward pass by: (1) ref model: running the entire model on one GPU,
 # (2) testing_model: running the same model on multiple GPUs, the forward and backward output should be the same (allclose)
@@ -1282,7 +1172,7 @@ def test_mp_moe_forward_backward(device = rank):
 
 #NOTE: We need to put all apex tests at the bottom, otherwise all tests after the apex tests are all casted to fp16.
 #Test the manually casting alltoall input to fp16 is the same as not casting, when apex O1 is applied
-@pytest.mark.with_ort
+#@pytest.mark.with_ort # opened an exporter issue for investigation
 def test_moe_fp16(device = rank):
     model_dim = 256
     ff_dim = 64
@@ -1291,7 +1181,8 @@ def test_moe_fp16(device = rank):
     num_experts = dist.get_world_size(dist.group.WORLD) * num_local_experts
 
     dgrid_ref = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
-    gating_fn = TopKGate(model_dim, num_experts, k=1, fp16_mode=True, switch_jitter=0.0, dgrid=dgrid_ref, use_tutel_cumsum_sub_one=use_tutel)  # Top1
+    options = { "fp16_mode" : True}
+    gating_fn = TopKGate(model_dim, num_experts, k=1, switch_jitter=0.0, dgrid=dgrid_ref, options = options)  # Top1
     merged_experts = MergedFFNExpert(model_dim, ff_dim, num_local_experts, dgrid=dgrid_ref)
 
     model_ref = MixtureOfExpertsFunc(gating_fn, merged_experts, distribution_grid=dgrid_ref).to(device)
@@ -1300,7 +1191,8 @@ def test_moe_fp16(device = rank):
     optimizer_ref = torch.optim.SGD(model_ref.parameters(), lr=1e-3)
 
     dgrid = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
-    model = MixtureOfExpertsFunc(gating_fn, merged_experts, fp16_mode = True, distribution_grid = dgrid).to(device)
+    options = { "fp16_mode" : True}
+    model = MixtureOfExpertsFunc(gating_fn, merged_experts, distribution_grid = dgrid, options = options).to(device)
     if use_ort:
         model = ORTModule(model)
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
@@ -1308,9 +1200,6 @@ def test_moe_fp16(device = rank):
     input = torch.rand(4, 16, model_dim).to(device)
     model_ref, optimizer_ref = apex_amp.initialize(model_ref, optimizer_ref, opt_level="O1")
     output_ref = model_ref(input)
-    if use_ort:
-        loss = output_ref[0].sum()
-        loss.backward()
 
     model, optimizer = apex_amp.initialize(model, optimizer, opt_level="O1")
     output = model(input)
@@ -1320,7 +1209,7 @@ def test_moe_fp16(device = rank):
 
     assert torch.equal(output_ref, output)
 
-@pytest.mark.with_ort
+#@pytest.mark.with_ort # opened an exporter issue for investigation
 def test_moe_loss_scale(device = rank):
     model_dim = 256
     ff_dim = 64
@@ -1328,8 +1217,9 @@ def test_moe_loss_scale(device = rank):
     dgrid = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
     merged_experts = MergedFFNExpert(model_dim, ff_dim, num_local_experts, dgrid=dgrid)
     num_experts = dist.get_world_size(dist.group.WORLD) * num_local_experts
-    gating_fn = TopKGate(model_dim, num_experts, k=1, fp16_mode=True, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)  # Top1
-    model = MixtureOfExpertsFunc(gating_fn, merged_experts, fp16_mode = True, distribution_grid = dgrid).to(device)
+    options = { "fp16_mode" : True}
+    gating_fn = TopKGate(model_dim, num_experts, k=1, dgrid=dgrid, options = options)  # Top1
+    model = MixtureOfExpertsFunc(gating_fn, merged_experts, distribution_grid = dgrid, options = options).to(device)
     if use_ort:
         model = ORTModule(model)
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
@@ -1376,7 +1266,7 @@ def test_parameter_synchronization(device = rank):
         d_model = 8
 
         input = torch.randn(4, 16, d_model).to(device)
-        gating_fn = TopKGate(d_model, num_experts, k=2, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)  # Top2
+        gating_fn = TopKGate(d_model, num_experts, k=2, dgrid=dgrid)  # Top2
         experts = torch.nn.ModuleList()
         for _ in range(num_local_experts):
             expert = torch.nn.Linear(d_model, d_model, bias = False)
@@ -1431,7 +1321,7 @@ def test_pipeline_parallelism_single_node(device=rank):
 
     # ep model
     ep_dgrid = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
-    ep_gating_fn = TopKGate(d_model, num_experts, k=1, dgrid=ep_dgrid, use_tutel_cumsum_sub_one=use_tutel)
+    ep_gating_fn = TopKGate(d_model, num_experts, k=1, dgrid=ep_dgrid)
     ep_expert = FFNExpert(d_model, d_ff, dgrid=ep_dgrid)
     ep_experts = torch.nn.ModuleList()
     ep_experts.append(ep_expert)
@@ -1446,7 +1336,7 @@ def test_pipeline_parallelism_single_node(device=rank):
 
     # pp model
     pp_dgrid = DistributionGrid(num_of_nodes_in_pipeline = 1, num_of_pipeline_stage = dist.get_world_size())
-    pp_gating_fn = TopKGate(d_model, num_experts, k=1, dgrid=pp_dgrid, use_tutel_cumsum_sub_one=use_tutel)
+    pp_gating_fn = TopKGate(d_model, num_experts, k=1, dgrid=pp_dgrid)
     pp_expert = FFNExpert(d_model, d_ff, dgrid=pp_dgrid)
     pp_experts = torch.nn.ModuleList()
     pp_experts.append(pp_expert)
@@ -1481,7 +1371,7 @@ def test_assertion():
     num_local_experts = 4
     num_experts = dist.get_world_size(dist.group.WORLD) * num_local_experts
 
-    gating_fn = TopKGate(model_dim, num_experts, k=1, dgrid=dgrid, use_tutel_cumsum_sub_one=use_tutel)  # Top1
+    gating_fn = TopKGate(model_dim, num_experts, k=1, dgrid=dgrid)  # Top1
     experts = torch.nn.ModuleList()
     for i in range(num_local_experts):
         experts.append(FFNExpert(model_dim, ff_dim, dgrid=dgrid)).to("cuda")
@@ -1519,12 +1409,16 @@ def test_fsdp_ep():
     num_local_experts = 4
     nexperts = dist.get_world_size(dist.group.WORLD) * num_local_experts
 
+    options = { "fsdp_zero_optimization" : {"stage": 1, "flatten_parameters" : False},
+                "imbalanced_input_support" : {"enabled" : False}}
+    orig_options = {"imbalanced_input_support" : {"enabled" : False}}
+
     # Original model
     orig_dg = DistributionGrid()
-    orig_gate = TopKGate(d_model, nexperts, k=1, dgrid=orig_dg, use_tutel_cumsum_sub_one=use_tutel)
+    orig_gate = TopKGate(d_model, nexperts, k=1, dgrid=orig_dg)
     orig_enc = TransformerMoEEncoderLayer(d_model, nhead, dim_feedforward=dim_feedforward,
                                          nexperts=nexperts, gate=orig_gate, distribution_grid = orig_dg,
-                                         use_mpi4py = False)
+                                         options = orig_options)
     if use_ort:
         orig_enc = ORTModule(orig_enc)
 
@@ -1536,10 +1430,10 @@ def test_fsdp_ep():
 
     # Standard EP distribution
     ep_dg = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
-    ep_gate = TopKGate(d_model, nexperts, k=1, dgrid=ep_dg, use_tutel_cumsum_sub_one=use_tutel)
+    ep_gate = TopKGate(d_model, nexperts, k=1, dgrid=ep_dg)
     ep_enc = TransformerMoEEncoderLayer(d_model, nhead, dim_feedforward=dim_feedforward,
                                          nexperts=nexperts, gate=ep_gate, distribution_grid = ep_dg,
-                                         use_mpi4py = False)
+                                         options = orig_options)
     if use_ort:
         ep_enc = ORTModule(ep_enc)
 
@@ -1551,10 +1445,10 @@ def test_fsdp_ep():
 
     # FSDP distribution
     fsdp_dg = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
-    fsdp_gate = TopKGate(d_model, nexperts, k=1, dgrid=fsdp_dg, use_tutel_cumsum_sub_one=use_tutel)
+    fsdp_gate = TopKGate(d_model, nexperts, k=1, dgrid=fsdp_dg)
     fsdp_enc = TransformerMoEEncoderLayer(d_model, nhead, dim_feedforward=dim_feedforward,
                                          nexperts=nexperts, gate=fsdp_gate, distribution_grid = fsdp_dg,
-                                         use_mpi4py = False, use_fsdp = True, flatten_parameters = False)
+                                         options = options)
     if use_ort:
         fsdp_enc = ORTModule(fsdp_enc)
     fsdp_params = dict(flatten_parameters=False)
@@ -1578,6 +1472,7 @@ def test_fsdp_ep():
 
     assert fsdp_moe_params == expert_parameters
     assert fsdp_params == ((non_expert_parameters / size) + gate_parameters + expert_parameters)
+    
 
 @pytest.mark.with_ort
 def test_einsum():
@@ -1586,12 +1481,209 @@ def test_einsum():
     a = torch.rand(M)
     b = torch.rand(M, N)
     rule = 's,se->se'
-    assert torch.allclose(einsum(rule, a, b), torch.einsum(rule, a, b))
+    assert torch.allclose(om_einsum(rule, a, b), torch.einsum(rule, a, b))
     a = torch.rand(M, N)
     rule = 'se,sc->sec'
-    assert torch.allclose(einsum(rule, a, b), torch.einsum(rule, a, b))
+    assert torch.allclose(om_einsum(rule, a, b), torch.einsum(rule, a, b))
     rule = 'se,sc->sc'
-    assert torch.allclose(einsum(rule, a, b), torch.einsum(rule, a, b))
+    assert torch.allclose(om_einsum(rule, a, b), torch.einsum(rule, a, b))
     a = torch.rand(M, N, D)
     rule = 'sec,sm->ecm'
-    assert torch.allclose(einsum(rule, a, b), torch.einsum(rule, a, b))
+    assert torch.allclose(om_einsum(rule, a, b), torch.einsum(rule, a, b))
+
+def test_enable_zero_optimization_z0():
+    options_z0 = { "deepspeed_zero_optimization" : {"stage": 0}}
+
+    dgrid = DistributionGrid()
+    model_dim = 8
+    ff_dim = 12
+    num_experts = 4
+    gating_fn = TopKGate(model_dim, num_experts, k=1, dgrid=dgrid)
+    experts = torch.nn.ModuleList()
+    experts.append(FFNExpert(model_dim, ff_dim, dgrid=dgrid))
+
+    m_z0 = MixtureOfExpertsFunc(gating_fn, experts, distribution_grid=dgrid, options = options_z0)
+    for param in m_z0.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is False
+            assert hasattr(param, "group_name") is False
+
+    enc = TransformerMoEEncoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z0)
+    for param in enc.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is False
+            assert hasattr(param, "group_name") is False
+
+    dec = TransformerMoEDecoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z0)
+    for param in dec.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is False
+            assert hasattr(param, "group_name") is False
+
+    lenc = LanguageExpertMoEEncoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z0)
+    for param in lenc.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is False
+            assert hasattr(param, "group_name") is False
+
+    ldec = LanguageExpertMoEDecoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z0)
+    for param in ldec.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is False
+            assert hasattr(param, "group_name") is False
+
+def test_enable_zero_optimization_z1():
+    options_z1 = { "deepspeed_zero_optimization" : {"stage": 1}}
+
+    dgrid = DistributionGrid()
+    model_dim = 8
+    ff_dim = 12
+    num_experts = 4
+    gating_fn = TopKGate(model_dim, num_experts, k=1, dgrid=dgrid)
+    experts = torch.nn.ModuleList()
+    experts.append(FFNExpert(model_dim, ff_dim, dgrid=dgrid))
+
+    m_z1 = MixtureOfExpertsFunc(gating_fn, experts, distribution_grid=dgrid, options = options_z1)
+    for param in m_z1.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+    enc = TransformerMoEEncoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z1)
+    for param in enc.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+    dec = TransformerMoEDecoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z1)
+    for param in dec.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+    lenc = LanguageExpertMoEEncoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z1)
+    for param in lenc.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+    ldec = LanguageExpertMoEDecoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z1)
+    for param in ldec.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+def test_enable_zero_optimization_z2():
+    options_z2 = { "deepspeed_zero_optimization" : {"stage": 2}}
+
+    dgrid = DistributionGrid()
+    model_dim = 8
+    ff_dim = 12
+    num_experts = 4
+    gating_fn = TopKGate(model_dim, num_experts, k=1, dgrid=dgrid)
+    experts = torch.nn.ModuleList()
+    experts.append(FFNExpert(model_dim, ff_dim, dgrid=dgrid))
+
+    m_z2 = MixtureOfExpertsFunc(gating_fn, experts, distribution_grid=dgrid, options = options_z2)
+    for param in m_z2.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+    enc = TransformerMoEEncoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z2)
+    for param in enc.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+    dec = TransformerMoEDecoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z2)
+    for param in dec.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+    lenc = LanguageExpertMoEEncoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z2)
+    for param in lenc.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+    ldec = LanguageExpertMoEDecoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z2)
+    for param in ldec.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+def test_enable_zero_optimization_z3():
+    options_z3 = { "deepspeed_zero_optimization" : {"stage": 3}}
+
+    dgrid = DistributionGrid()
+    model_dim = 8
+    ff_dim = 12
+    num_experts = 4
+    gating_fn = TopKGate(model_dim, num_experts, k=1, dgrid=dgrid)
+    experts = torch.nn.ModuleList()
+    experts.append(FFNExpert(model_dim, ff_dim, dgrid=dgrid))
+
+    m_z3 = MixtureOfExpertsFunc(gating_fn, experts, distribution_grid=dgrid, options = options_z3)
+    for param in m_z3.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+    enc = TransformerMoEEncoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z3)
+    for param in enc.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+    dec = TransformerMoEDecoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z3)
+    for param in dec.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+    lenc = LanguageExpertMoEEncoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z3)
+    for param in lenc.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+    ldec = LanguageExpertMoEDecoderLayer(256, 4, nexperts=8, distribution_grid = dgrid, options = options_z3)
+    for param in ldec.parameters():
+        if is_moe_parameter(param):
+            assert hasattr(param, "allreduce") is True
+            assert param.allreduce == False
+            assert hasattr(param, "group_name") is True
+
+def test_enable_expert_weight_calculation_optimization(device=rank):
+    model_dim = 8
+    num_local_experts = 4
+    num_experts = dist.get_world_size(dist.group.WORLD) * num_local_experts
+    input = torch.rand(8, 16, model_dim).to(device)
+    dgrid = DistributionGrid(expert_parallel_group_size = dist.get_world_size())
+    gate = TopKGate(model_dim, num_experts, k=2, dgrid=dgrid)
+    experts = torch.nn.ModuleList()
+    for i in range(num_local_experts):
+        expert = torch.nn.Linear(model_dim, model_dim, bias=False)
+        # use identify matrix
+        expert.weight = torch.nn.Parameter(torch.eye(model_dim))
+        experts.append(expert)
+    options = {"enable_expert_weight_calculation_optimization" : True}
+    moe = MixtureOfExpertsFunc(gate, experts, distribution_grid = dgrid, options = options).to(device)
+    output = moe(input)
+    assert output.shape == input.shape

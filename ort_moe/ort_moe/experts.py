@@ -22,18 +22,20 @@ class FFNExpert(nn.Module):
     """
     def __init__(self, d_model, dim_feedforward, dgrid, activation_fn = nn.functional.relu, expert_dropout = 0.0):
         super().__init__()
-        self.mp_size = dgrid.get_expert_slicing_world_size()
+        self.mp_size = 1
+        if dgrid is not None:
+            self.mp_size = dgrid.get_expert_slicing_world_size()
         self.linear1 = nn.Linear(d_model, dim_feedforward//self.mp_size, bias=False)
         self.linear2 = nn.Linear(dim_feedforward//self.mp_size, d_model, bias=False)
         self.activation_fn = activation_fn
         self.expert_dropout_rate = expert_dropout
 
     def forward(self, x: torch.tensor):
-        x = self.linear1(x)
+        x = self.linear1(x.float())
         x = self.activation_fn(x)
         if self.expert_dropout_rate > 0:
             x = F.dropout(x, p=self.expert_dropout_rate, training=self.training)
-        x = self.linear2(x)
+        x = self.linear2(x.float())
         return x
 
 class MergedFFNExpert(nn.Module):
@@ -73,11 +75,11 @@ class MergedFFNExpert(nn.Module):
         x = x.transpose(0, 1) #gecm --> egcm
         input_shape = x.shape
         reshaped_x = x.reshape(input_shape[0], -1, input_shape[-1]) #egcm --> e,gxc,m
-        out1 = torch.bmm(reshaped_x, self.weight1) #e, gxc, f
+        out1 = torch.bmm(reshaped_x.float(), self.weight1) #e, gxc, f
         out1 = self.activation_fn(out1)
         if self.expert_dropout_rate > 0:
             out1 = F.dropout(out1, p=self.expert_dropout_rate, training=self.training)
-        out2 = torch.bmm(out1, self.weight2) #e, gxc, m
+        out2 = torch.bmm(out1.float(), self.weight2) #e, gxc, m
         out2 = out2.reshape(input_shape)
         out2 = out2.transpose(0, 1) #egcm --> gecm
         return out2

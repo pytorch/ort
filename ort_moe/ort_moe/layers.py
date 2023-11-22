@@ -12,6 +12,7 @@ from ort_moe.experts import FFNExpert, MergedFFNExpert
 from ort_moe.topKgate import TopKGate
 from ort_moe.moe import MixtureOfExpertsFunc
 from ort_moe.utils import fsdp_wrap
+from ort_moe.moe_config import moe_config
 
 class TransformerMoEEncoderLayer(nn.Module):
     r"""TransformerMoEEncoderLayer is made up of muti headded attention, and gated collection
@@ -26,27 +27,23 @@ class TransformerMoEEncoderLayer(nn.Module):
         nexprts: the number of experts(default=64).
         balance_ratio: The scaling ratio for the loss_aux
         gate: the gating function (default=top2k).
-        fp16_mode : True if FP16 mode is enabled. Default is 'False'
         expertslist: List of experts of type nn.ModuleList.
-        merged_expert: Whether the experts are mergedFFN experts
         distribution_grid: DistributionGrid object providing interface to query torch.distributed process groups
-        use_fsdp : Use FullyShardedDataParallel to shard the layer. Default is 'False'
-        flatten_parameters : Flatten sharded paratmers when use_fsdp is True. Default is 'True'
-        apex_opt_level : Default 'None'
-
+        options: See moe_config.py
     Examples::
         >>> moe_layer = nn.TransformerMoEEncoderLayer(d_model=512, nhead=8)
         >>> src = torch.rand(10, 32, 512)
         >>> out = moe_layer(src)
     """
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1, activation="relu",
-                 nexperts=64, balance_ratio = 0.01, gate=None, fp16_mode=False,
-                 expertslist=None, merged_expert=True, use_mpi4py=False, distribution_grid=None,
-                 use_fsdp=False, flatten_parameters=True, apex_opt_level=None):
+                 nexperts=64, balance_ratio = 0.01, gate=None,
+                 expertslist=None, distribution_grid=None,
+                 options={}):
         super(TransformerMoEEncoderLayer, self).__init__()
+        self.options = moe_config(options)
 
         if not gate: #default is top1
-            gate = TopKGate(d_model, nexperts, balance_ratio=balance_ratio, fp16_mode = fp16_mode, k = 1, dgrid=distribution_grid)
+            gate = TopKGate(d_model, nexperts, balance_ratio=balance_ratio, k = 1, dgrid=distribution_grid, options = options)
         # attention
         self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
 
@@ -56,7 +53,7 @@ class TransformerMoEEncoderLayer(nn.Module):
         else:
             self.n_local_experts = nexperts
 
-        if not merged_expert:
+        if not self.options.enable_merged_experts():
             if expertslist is None:
                 experts = nn.ModuleList()
 
@@ -71,14 +68,14 @@ class TransformerMoEEncoderLayer(nn.Module):
 
         # mixer of experts
         self.moe = MixtureOfExpertsFunc(gate, experts, is_encoder=True,
-                                    fp16_mode=fp16_mode, use_mpi4py=use_mpi4py, distribution_grid=distribution_grid)
+                                    distribution_grid=distribution_grid, options=options)
 
-        if use_fsdp is True:
+        if self.options.enable_fsdp_zero_optimization() is True:
             mp = False
-            if apex_opt_level == "O2":
+            if self.options.nvidia_apex_opt_level() == "O2":
                 mp = True 
             fsdp_config = dict(mixed_precision=mp, process_group=distribution_grid.get_moe_group())
-            if flatten_parameters is False:
+            if self.options.fsdp_flatten_parameters() is False:
                 fsdp_config['flatten_parameters'] = False
             self.moe = fsdp_wrap(self.moe, **fsdp_config)
 
@@ -120,15 +117,10 @@ class LanguageExpertMoEEncoderLayer(nn.Module):
         nexprts: the number of experts(default=64).
         balance_ratio: The scaling ratio for the loss_aux
         gate: the gating function (default=top2k).
-        fp16_mode : True if FP16 mode is enabled. Default is 'False'
         expertslist: List of experts of type nn.ModuleList.
         nlang_experts: number of language experts
-        use_mpi4py: Whether use mpi4py library or nccl package
         distribution_grid: DistributionGrid object providing interface to query torch.distributed process groups
-        merged_expert: whether the MoE experts is MergedFFNExpert
-        use_fsdp : Use FullyShardedDataParallel to shard the layer
-        flatten_parameters : Flatten sharded paratmers when use_fsdp is True. Default is 'True'
-        apex_opt_level : Default 'None'
+        options: See moe_config.py
 
     Examples::
         >>> moe_layer = nn.LanguageExpertMoEEncoderLayer(d_model=512, nhead=8, nlang_experts=4)
@@ -136,18 +128,18 @@ class LanguageExpertMoEEncoderLayer(nn.Module):
         >>> out = moe_layer(src)
     """
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1, activation="relu",
-                 nexperts=64, balance_ratio = 0.01, gate=None, fp16_mode=False,
-                 expertslist=None, nlang_experts=4, use_mpi4py=False, distribution_grid=None, merged_expert=True,
-                 use_fsdp=False, flatten_parameters=True, apex_opt_level=None):
+                 nexperts=64, balance_ratio = 0.01, gate=None,
+                 expertslist=None, nlang_experts=4, distribution_grid=None,
+                 options={}):
         super(LanguageExpertMoEEncoderLayer, self).__init__()
         self.experts = nn.ModuleDict()
         for i in range(nlang_experts):
             le = TransformerMoEEncoderLayer(d_model, nhead, dim_feedforward, dropout,
                                                         nexperts = nexperts, balance_ratio = balance_ratio,
-                                                        gate = gate, fp16_mode = fp16_mode,
-                                                        expertslist = expertslist, use_mpi4py=use_mpi4py,
+                                                        gate = gate,
+                                                        expertslist = expertslist,
                                                         distribution_grid=distribution_grid, 
-                                                        merged_expert=merged_expert, use_fsdp=use_fsdp
+                                                        options = options
                                                         )
             self.experts[f"seq2seq{i}"] = le
 
@@ -168,14 +160,9 @@ class TransformerMoEDecoderLayer(nn.Module):
         nexprts: the number of experts(default=64).
         balance_ratio: The scaling ratio for the loss_aux
         gate: the gating function (default=None. If none then top2 gating is used).
-        fp16_mode : True if FP16 mode is enabled. Default is 'False'
         expertslist: List of experts of type nn.ModuleList.
-        merged_expert: whether the MoE experts is MergedFFNExpert
-        use_mpi4py: Whether use mpi4py library or nccl package
         distribution_grid: DistributionGrid object providing interface to query torch.distributed process groups
-        use_fsdp : Use FullyShardedDataParallel to shard the layer
-        flatten_parameters : Flatten sharded paratmers when use_fsdp is True. Default is 'True'
-        apex_opt_level : Default 'None'
+        options: See moe_config.py
 
     Examples::
         >>> moe_layer = nn.TransformerMoEDecoderLayer(d_model=512, nhead=8)
@@ -184,10 +171,11 @@ class TransformerMoEDecoderLayer(nn.Module):
         >>> out = moe_layer(src, memory)
     """
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1, activation="relu",
-                 nexperts=64, balance_ratio = 0.01, gate=None, fp16_mode=False,
-                 expertslist=None, merged_expert = True, use_mpi4py=False, distribution_grid=None,
-                 use_fsdp=False, flatten_parameters=True, apex_opt_level=None):
+                 nexperts=64, balance_ratio = 0.01, gate=None,
+                 expertslist=None, distribution_grid=None,
+                 options = {}):
         super(TransformerMoEDecoderLayer, self).__init__()
+        self.options = moe_config(options)
 
         # attention
         self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
@@ -199,7 +187,7 @@ class TransformerMoEDecoderLayer(nn.Module):
         else:
             self.n_local_experts = nexperts
 
-        if not merged_expert:
+        if not self.options.enable_merged_experts():
             if expertslist is None:
                 experts = nn.ModuleList()
                 for i in range(self.n_local_experts):
@@ -213,18 +201,19 @@ class TransformerMoEDecoderLayer(nn.Module):
 
         # gate
         if not gate: #default is top2
-            gate = TopKGate(d_model, nexperts, balance_ratio=balance_ratio, fp16_mode = fp16_mode, dgrid=distribution_grid)
+            gate = TopKGate(d_model, nexperts, balance_ratio=balance_ratio, dgrid=distribution_grid, options = options)
 
         # mixer of experts
         self.moe = MixtureOfExpertsFunc(gate, experts, is_encoder=False,
-                                        fp16_mode = fp16_mode, use_mpi4py = use_mpi4py, distribution_grid = distribution_grid)
+                                        distribution_grid = distribution_grid,
+                                        options = options)
 
-        if use_fsdp is True:
+        if self.options.enable_fsdp_zero_optimization() is True:
             mp = False
-            if apex_opt_level == "O2":
+            if self.options.nvidia_apex_opt_level() == "O2":
                 mp = True 
             fsdp_config = dict(mixed_precision=mp, process_group=distribution_grid.get_moe_group())
-            if flatten_parameters is False:
+            if self.options.fsdp_flatten_parameters() is False:
                 fsdp_config['flatten_parameters'] = False
             self.moe = fsdp_wrap(self.moe, **fsdp_config)
 
@@ -276,15 +265,10 @@ class LanguageExpertMoEDecoderLayer(nn.Module):
         nexprts: the number of experts(default=64).
         balance_ratio: The scaling ratio for the loss_aux
         gate: the gating function (default=top2k).
-        fp16_mode : True if FP16 mode is enabled. Default is 'False'
         expertslist: List of experts of type nn.ModuleList
         nlang_experts: number of language experts
-        use_mpi4py: Whether use mpi4py library or nccl package
         distribution_grid: DistributionGrid object providing interface to query torch.distributed process groups
-        merged_expert: whether the MoE experts is MergedFFNExpert
-        use_fsdp : Use FullyShardedDataParallel to shard the layer
-        flatten_parameters : Flatten sharded paratmers when use_fsdp is True. Default is 'True'
-        apex_opt_level : Default 'None'
+        options: See moe_config.py
 
 
     Examples::
@@ -293,17 +277,18 @@ class LanguageExpertMoEDecoderLayer(nn.Module):
         >>> out = moe_layer(src)
     """
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1, activation="relu",
-                 nexperts=64, balance_ratio = 0.01, gate=None, fp16_mode=False,
-                 expertslist=None, nlang_experts=4, use_mpi4py=False, distribution_grid=None, merged_expert=True,
-                 use_fsdp=False, flatten_parameters=True, apex_opt_level=None):
+                 nexperts=64, balance_ratio = 0.01, gate=None,
+                 expertslist=None, nlang_experts=4, distribution_grid=None, 
+                 options = {}):
         super(LanguageExpertMoEDecoderLayer, self).__init__()
         self.experts = nn.ModuleDict()
         for i in range(nlang_experts):
             le = TransformerMoEDecoderLayer(d_model, nhead, dim_feedforward, dropout,
                                             nexperts = nexperts, balance_ratio = balance_ratio,
-                                            gate = gate, fp16_mode = fp16_mode,
-                                            expertslist = expertslist, use_mpi4py=use_mpi4py,
-                                            distribution_grid=distribution_grid, merged_expert=merged_expert, use_fsdp=use_fsdp)
+                                            gate = gate,
+                                            expertslist = expertslist,
+                                            distribution_grid=distribution_grid, 
+                                            options = options)
             self.experts[f"seq2seq{i}"] = le
 
     def forward(self, tgt, memory, lang_id=None):

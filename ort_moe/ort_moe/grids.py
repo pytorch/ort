@@ -8,7 +8,75 @@ import math
 import torch
 import torch.distributed as dist
 
-class DistributionGrid:
+
+class BaseGrid:
+    '''BaseGrid class provides an abstract class in the case that no distributed backend is available.
+    '''
+    def __init__(self):
+        self._EXPERT_REPLICA_GROUP = None
+        self._EXPERT_PARALLEL_GROUP = None
+        self._EXPERT_SLICING_GROUP = None
+        self._export_relocation_map = {}
+
+    def get_expert_replica_group(self):
+        return self._EXPERT_REPLICA_GROUP
+
+    '''
+    Interface to support Expert Parallelism.
+
+    In this distribution technique, experts in each layer are evenly distributed among available ranks
+    while non-expert parameters are replicated on each rank.
+    '''
+    def get_expert_parallel_group(self):
+        return self._EXPERT_PARALLEL_GROUP
+
+    def get_expert_parallel_world_size(self):
+        if self.get_expert_parallel_group() is not None:
+            return dist.get_world_size(group=self.get_expert_parallel_group())
+        return 1
+
+    def get_expert_parallel_rank(self):
+        if self.get_expert_parallel_group() is not None:
+            return dist.get_rank(group=self.get_expert_parallel_group())
+        return 0
+
+    '''
+    Interface to support Expert Slicing.
+
+    In this distribution technique, experts in each layer are sliced on hidden dimension and
+    sharded across available ranks. The non-expert parameters are replicated on each rank.
+    '''
+    def get_expert_slicing_group(self):
+        return self._EXPERT_SLICING_GROUP
+
+    '''
+    Simplified common interface for Expert Parallel and Expert Slicing
+    '''
+    def get_expert_group(self):
+        if self._EXPERT_PARALLEL_GROUP is None:
+            return self._EXPERT_SLICING_GROUP
+        else:
+            return self._EXPERT_PARALLEL_GROUP
+
+    def get_expert_world_size(self):
+        if self.get_expert_slicing_group() is not None:
+            return dist.get_world_size(group=self.get_expert_slicing_group())
+        elif self.get_expert_parallel_group() is not None:
+            return dist.get_world_size(group=self.get_expert_parallel_group())
+        return 1
+
+    def get_expert_rank(self):
+        if self.get_expert_parallel_group() is not None:
+            return dist.get_rank(group=self.get_expert_parallel_group())
+        elif self.get_expert_slicing_group() is not None:
+            return dist.get_rank(group=self.get_expert_slicing_group())
+        return 0
+
+    def get_mpi_group_for_expert_group(self):
+        return None
+
+
+class DistributionGrid(BaseGrid):
     '''DistributionGrid provides simple interface to create and manage process groups
     for various distributed training configurations.
 
@@ -17,11 +85,11 @@ class DistributionGrid:
 
     [2] Create expert parallel grid where experts are evenly distributed among available ranks.
         dgrid = DistributionGrid(expert_parallel_group_size = <no_of_ranks_available>)
-    
+
     [3] Create expert slicing grid where each expert are evenly sharded among avaiable ranks.
         dgrid = DistributionGrid(expert_slicing_group_size = <no_of_ranks_available>)
 
-    [4] Create replicas of expert parallel or expert slicing distributions 
+    [4] Create replicas of expert parallel or expert slicing distributions
         dgrid = DistributionGrid(expert_parallel_group_size (or expert_slicing_group_size) = <no_of_ranks_used_in_single_expert_parallel_copy>),
             expert_parallel_replica_group_size = <no_of_expert_replicas>)
 
@@ -32,23 +100,22 @@ class DistributionGrid:
         data_parallel_group_size: number of data parallel copies of the model
         expert_parallel_group_size: number of GPUs sharing experts of single layer
         expert_slicing_group_size: number of GPUs experts are sharded onto of single layer
-        expert_parallel_replica_group_size: number of data parallel copies of experts 
+        expert_parallel_replica_group_size: number of data parallel copies of experts
         num_of_nodes_in_pipeline: number of nodes used in pipeline parallel mode
         num_of_pipeline_stage: number of pipeline stages
         options: Various grid options
     '''
-    def __init__(self, data_parallel_group_size = None, expert_parallel_group_size = None, 
+    def __init__(self, data_parallel_group_size = None, expert_parallel_group_size = None,
                  expert_parallel_replica_group_size = None, expert_slicing_group_size = None,
-                 num_of_nodes_in_pipeline = None, num_of_pipeline_stage = None, options = None):
+                 num_of_nodes_in_pipeline = None, num_of_pipeline_stage = None, options = {}):
         #print("==> initialize dgrid")
+        super().__init__()
         self._DATA_PARALLEL_GROUP = None
-        self._EXPERT_PARALLEL_GROUP = None
-        self._EXPERT_REPLICA_GROUP = None
-        self._EXPERT_SLICING_GROUP = None
         # base rank for broadcasting initialized weights
         self._EXPERT_REPLICA_GROUP_BCAST_SRC_RANK = None
         self._ep_rank_list = None
         self._es_rank_list = None
+        self._dp_rank_list = None
         self._MPI_EP_GROUP = None
         self._MPI_ES_GROUP = None
         # Used to wrap MoE layer by FullyShardedDataParallel for the experts, which are not sharded
@@ -70,13 +137,13 @@ class DistributionGrid:
 
         self._options = options
         assert not(expert_slicing_group_size is not None and expert_parallel_group_size is not None), \
-            "Cannot have both expert slicing and expert parallel"            
+            "Cannot have both expert slicing and expert parallel"
         is_expert_slicing = expert_slicing_group_size is not None
         expert_group_size = expert_slicing_group_size if is_expert_slicing else expert_parallel_group_size
 
         # Standard data parallel distribution without any separate distribution for experts
         if data_parallel_group_size is not None:
-            
+
             assert expert_parallel_group_size is None, \
                 "Standard Data Parallelism with Expert Parallelism is not supported"
             assert expert_slicing_group_size is None, \
@@ -98,7 +165,7 @@ class DistributionGrid:
                 "Expert Parallelism/Slicing  with Expert Replicas is not supported"
             assert expert_replica_group_size is None, \
                 "Pipeline Parallelism with Expert Repliacs is not supported"
-           
+
             self._initialize_pipeline_parallel(num_of_nodes_in_pipeline, num_of_pipeline_stage)
             return
 
@@ -197,16 +264,16 @@ class DistributionGrid:
     def _initialize_expert_parallel_or_expert_slicing_replica_groups(self, expert_ranks, dp_ranks, is_expert_slicing = False):
         '''
         Initialize new process groups for exper parallel replicas.
-        Let's say we have a total of 16 GPUs denoted by g0 ... g15 and we 
-        want 2-data parallel copies of each experts. 
-            
+        Let's say we have a total of 16 GPUs denoted by g0 ... g15 and we
+        want 2-data parallel copies of each experts.
+
         This function will create 8 expert replica groups, 2 expert parallel groups as:
         8 expert replica groups:
         [g0, g8], [g1, g9], [g2, g10], [g3, g11], [g4, g12], [g5, g13], [g6, g14], [g7, g15]
         2  expert parallel groups or expert slicing group:
         [g0, g1, g2, g3, g4, g5, g6, g7], [g8, g9, g10, g11, g12, g13, g14, g15]
 
-        Note that for efficiency of all2all, the caller should make sure adjacent ranks 
+        Note that for efficiency of all2all, the caller should make sure adjacent ranks
         are on the same expert parallel group.
 
         Args:
@@ -219,15 +286,16 @@ class DistributionGrid:
 
         assert dist.get_world_size() % dp_ranks == 0, "Only support the n-way expert parallel replicas when world size is dividable by n"
         assert dp_ranks > 1, "There should be at least 2 replicas"
-        row_major_list = True
-        if self._options is not None:
-            rank_schedule = self._options.get("rank_schedule")
-            if rank_schedule == "row_major":
-                row_major_list = True
-            elif rank_schedule == "column_major":
-                row_major_list = False
-            else:
-                assert False, "Selected grid rank schedule is not supported"
+
+        rank_schedule = self._options.get("rank_schedule", "row_major")
+        if rank_schedule == "row_major":
+            row_major_list = True
+        elif rank_schedule == "column_major":
+            row_major_list = False
+        else:
+            assert False, "Selected grid rank schedule is not supported"
+        is_replica_in_same_node = self._options.get("is_replica_in_same_node", False)
+        assert row_major_list or not is_replica_in_same_node, "column_major with is_replica_in_same_node == True is not supported"
 
         def rearrange(rlist, eranks):
             rearranged =[]
@@ -240,24 +308,28 @@ class DistributionGrid:
 
         expert_rank_list = []
         if row_major_list is True:
-            expert_rank_list = [rank_list[i:i+expert_ranks] for i in range(0, len(rank_list), expert_ranks)]
-            dp_rank_list = [rank_list[i::expert_ranks] for i in range(0, expert_ranks)]
+            if is_replica_in_same_node:
+                expert_rank_list = [rank_list[i::dp_ranks] for i in range(0, dp_ranks)]
+                self._dp_rank_list = [rank_list[i:i+dp_ranks] for i in range(0, len(rank_list), dp_ranks)]
+            else:
+                expert_rank_list = [rank_list[i:i+expert_ranks] for i in range(0, len(rank_list), expert_ranks)]
+                self._dp_rank_list = [rank_list[i::expert_ranks] for i in range(0, expert_ranks)]
         else:
             expert_rank_list = [rearranged_list[i:i+expert_ranks] for i in range(0, len(rearranged_list), expert_ranks)]
-            dp_rank_list = [rearranged_list[i::expert_ranks] for i in range(0, expert_ranks)]
+            self._dp_rank_list = [rearranged_list[i::expert_ranks] for i in range(0, expert_ranks)]
 
         # [1] Setup process group for expert parallel distribution
         local_rank = dist.get_rank()
         exp_group,_ = self._build_process_group(expert_rank_list, local_rank)
         if is_expert_slicing:
-            self._es_rank_list = expert_rank_list 
+            self._es_rank_list = expert_rank_list
             self._EXPERT_SLICING_GROUP = exp_group
         else:
-            self._ep_rank_list = expert_rank_list 
+            self._ep_rank_list = expert_rank_list
             self._EXPERT_PARALLEL_GROUP = exp_group
-        
+
         # [2] Setup process group for expert parallel replicas
-        self._EXPERT_REPLICA_GROUP, self._EXPERT_REPLICA_GROUP_BCAST_SRC_RANK = self._build_process_group(dp_rank_list, local_rank)
+        self._EXPERT_REPLICA_GROUP, self._EXPERT_REPLICA_GROUP_BCAST_SRC_RANK = self._build_process_group(self._dp_rank_list, local_rank)
 
         self._DATA_PARALLEL_GROUP = dist.group.WORLD
 
@@ -303,7 +375,7 @@ class DistributionGrid:
         pg = None
         min_rank = None
         # Each rank in main group need to go through each new_group() function even if it doesn't belong to that group
-        # https://pytorch.org/docs/stable/_modules/torch/distributed/distributed_c10d.html#new_group 
+        # https://pytorch.org/docs/stable/_modules/torch/distributed/distributed_c10d.html#new_group
         for r in rank_lists:
             tmp = dist.new_group(r)
             if rank in r:
@@ -311,26 +383,6 @@ class DistributionGrid:
                 min_rank = min(r)
         return pg, min_rank
 
-
-    '''
-    Interface to support Expert Parallelism. 
-    
-    In this distribution technique, experts in each layer are evenly distributed among available ranks  
-    while non-expert parameters are replicated on each rank.
-    '''
-    def get_expert_parallel_group(self):
-        return self._EXPERT_PARALLEL_GROUP
-
-    def get_expert_parallel_world_size(self):
-        if self.get_expert_parallel_group() is not None:
-            return dist.get_world_size(group=self.get_expert_parallel_group())
-        return 1
-
-    def get_expert_parallel_rank(self):
-        if self.get_expert_parallel_group() is not None:
-            return dist.get_rank(group=self.get_expert_parallel_group())
-        return 0
-        
     def get_moe_group(self):
         '''
         This group is used by FullyShardedDataParallel (FSDP) to wrap MoE layers.
@@ -347,15 +399,6 @@ class DistributionGrid:
         local_rank = dist.get_rank()
         self._MOE_GROUP,_ = self._build_process_group(moe_groups, local_rank)
         return self._MOE_GROUP
-
-    '''
-    Interface to support Expert Slicing. 
-    
-    In this distribution technique, experts in each layer are sliced on hidden dimension and 
-    sharded across available ranks. The non-expert parameters are replicated on each rank.
-    '''
-    def get_expert_slicing_group(self):
-        return self._EXPERT_SLICING_GROUP
 
     def get_expert_slicing_world_size(self):
         if self.get_expert_slicing_group() is not None:
@@ -374,21 +417,21 @@ class DistributionGrid:
     '''
     def get_expert_parallel_replica_group(self):
         return None if self.get_expert_parallel_group() is None else self.get_expert_replica_group()
-    
+
     def get_expert_parallel_replica_world_size(self):
         return 1 if self.get_expert_parallel_group() is None else self.get_expert_replica_world_size()
-    
+
+    def expert_parallel_replica_group_member_rank_lists(self):
+        return self._dp_rank_list
+
     def get_expert_parallel_replica_rank(self):
         return 0 if self.get_expert_parallel_group() is None else self.get_expert_replica_rank()
-    
+
     def get_expert_parallel_replica_src_rank(self):
         return None if self.get_expert_parallel_group() is None else self.get_expert_replica_src_rank()
-    
+
     def get_mpi_group_for_expert_parallel_group(self):
         return None if self.get_expert_parallel_group() is None else self.get_mpi_group_for_expert_group()
-
-    def get_expert_replica_group(self):
-        return self._EXPERT_REPLICA_GROUP
 
     def get_expert_replica_world_size(self):
         if self.get_expert_replica_group() is not None:
@@ -403,30 +446,7 @@ class DistributionGrid:
     def get_expert_replica_src_rank(self):
         return self._EXPERT_REPLICA_GROUP_BCAST_SRC_RANK
 
-    '''
-    Simplified common interface for Expert Parallel and Expert Slicing
-    '''
-    def get_expert_group(self):
-        if self._EXPERT_PARALLEL_GROUP is None:
-            return self._EXPERT_SLICING_GROUP
-        else:
-            return self._EXPERT_PARALLEL_GROUP
-
-    def get_expert_world_size(self):
-        if self.get_expert_slicing_group() is not None:
-            return dist.get_world_size(group=self.get_expert_slicing_group())
-        elif self.get_expert_parallel_group() is not None:
-            return dist.get_world_size(group=self.get_expert_parallel_group())
-        return 1
-
-    def get_expert_rank(self):
-        if self.get_expert_parallel_group() is not None:
-            return dist.get_rank(group=self.get_expert_parallel_group())
-        elif self.get_expert_slicing_group() is not None:
-            return dist.get_rank(group=self.get_expert_slicing_group())
-        return 0
-
-    # Create MPI group for correspending expert parallel group or expert slicing gorup. 
+    # Create MPI group for correspending expert parallel group or expert slicing gorup.
     def get_mpi_group_for_expert_group(self):
         is_expert_slicing = self._es_rank_list is not None
         if self._MPI_EP_GROUP is not None:
@@ -437,7 +457,7 @@ class DistributionGrid:
             return None
         expert_group = dist.group.WORLD
         for g in expert_rank_list:
-            tmp = MPI.COMM_WORLD.Create_group(MPI.COMM_WORLD.group.Incl(g)) 
+            tmp = MPI.COMM_WORLD.Create_group(MPI.COMM_WORLD.group.Incl(g))
             if MPI.COMM_WORLD.Get_rank() in g:
                 expert_group = tmp
         if is_expert_slicing:
@@ -485,7 +505,7 @@ class DistributionGrid:
     def get_last_pipeline_stage_device(self):
         # FIXME : Return torch device here ?
         return self._NUM_PIPELINE_STAGES - 1
-    
+
     '''
     Helper routines to help map experts from one distribution scheme to another.
     '''
@@ -510,6 +530,11 @@ class DistributionGrid:
         ep_rank = self.get_expert_parallel_rank()
         # Calculate global id of the expert
         gid = eparm_id + int(total_experts/ep_world_size) * ep_rank
+
+        # If gid was relocated then use the original global id
+        if gid in self._export_relocation_map:
+            gid = self._export_relocation_map[gid]
+
         if self.get_expert_parallel_replica_group() is None:
             return gid
         else:
@@ -523,7 +548,7 @@ class DistributionGrid:
             global_eparam_id : Global ID of the expert parameter that will be mapped to a local ID based
                                on the grid's distribution strategy.
         Return Values:
-            nrank, nid : Local rank and ID of this global expert parameter will be mapped to            
+            nrank, nid : Local rank and ID of this global expert parameter will be mapped to
         '''
         assert self.get_expert_parallel_group() is not None, "Unsupported expert mapping configuration"
         assert self.get_expert_slicing_group() is None, "Unsupported expert mapping configuration"
@@ -531,17 +556,58 @@ class DistributionGrid:
         assert self.get_num_of_pipeline_stages() == 0, "Unsupported expert mapping configuration"
         assert global_eparm_id < total_experts, 'Global expert id out of range'
 
+        # If global param id was relocated then use the original global id
+        if global_eparm_id in self._export_relocation_map:
+            global_eparm_id = self._export_relocation_map[global_eparm_id]
+
         # Map global id to the  grid
-        ep_world_size = self.get_expert_parallel_world_size() 
+        ep_world_size = self.get_expert_parallel_world_size()
         assert total_experts % ep_world_size == 0, 'Experts can not be evenly divided among ranks'
         ep_rank_size = int(total_experts / ep_world_size)
-        nrank =  math.floor(global_eparm_id / ep_rank_size) 
+        nrank =  math.floor(global_eparm_id / ep_rank_size)
         nid = global_eparm_id - ep_rank_size * nrank
         if self.get_expert_parallel_replica_group() is None:
-            return nrank, nid 
+            return nrank, nid
 
         # expert parallel replica
         result = [(nrank, nid)]
         for i in range(1, self.get_expert_parallel_replica_world_size()):
             result += [(nrank + i * self.get_expert_parallel_world_size(), nid)]
         return result
+
+    def exchange_expert_location(self, global_expert_id1, global_expert_id2):
+        '''
+        Exchange expert location across ranks. This can be used to balance token routing.
+        Args:
+            global_expert_id1, global_expert_id2 : Two experts that will be exchanged across ranks.
+        '''
+        if global_expert_id1 == global_expert_id2:
+            return
+        self._export_relocation_map[global_expert_id1] = global_expert_id2
+        self._export_relocation_map[global_expert_id2] = global_expert_id1
+        return
+
+    def remove_expert_relocation(self, id):
+        '''
+        Remove expert relocation entry from the relocation map.
+        Args:
+            id : Expert id that will be removed from the relocation map.
+        '''
+        if id in self._export_relocation_map:
+            id2 = self._export_relocation_map[id]
+            del self._export_relocation_map[id]
+            del self._export_relocation_map[id2]
+
+    def get_get_relocation_id(self, id):
+        '''
+        If the expert is relocated then return its relocated expert id.
+        Args:
+            id : Expert id whose relocated id will be returned.
+        '''
+        return self._export_relocation_map.get(id, None)
+
+    def get_expert_relocation_map(self):
+        return self._export_relocation_map
+
+    def set_expert_relocation_map(self, map):
+        self._export_relocation_map = map

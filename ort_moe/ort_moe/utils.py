@@ -5,6 +5,7 @@
 
 import copy
 import random
+import numpy as np
 import torch
 import torch.distributed as dist
 from torch._C import default_generator
@@ -114,6 +115,8 @@ def get_state_dict_partitions_for_saving(model, dgrid, total_num_experts):
     # global rank 0 saves skeleton (non-expert) parameters
     if dist.get_rank() == 0:
         partitions["skeleton"] = get_non_expert_parameters_state_dict(model)
+        if bool(dgrid.get_expert_relocation_map()):
+            partitions["skeleton"]["expert_relocation_map"] = dgrid.get_expert_relocation_map()
 
     # every node with expert parallel replica rank 0 saves its experts
     if dgrid.get_expert_parallel_replica_rank() == 0:
@@ -464,12 +467,13 @@ class TemporaryRngState:
     the PyTorch RNG state for CPU and GPU (if cuda is initialized).
     It does not currently reset the numpy RNG state.
     '''
-    def __init__(self, add_rank_to_seed=False):
-        self.seed = random.randrange(2**32)
+    def __init__(self, add_rank_to_seed=False, seed=None):
+        self.seed = seed if seed is not None else random.Random().randrange(2**32)
         if add_rank_to_seed:
             assert dist.is_initialized()
             self.seed += dist.get_rank()
         self.python_rng_state = random.getstate()
+        self.numpy_rng_state = np.random.get_state()
         self.torch_rng_state = torch.get_rng_state()
         if torch.cuda.is_initialized():
             self.torch_rng_state_cuda = torch.cuda.get_rng_state()
@@ -483,9 +487,11 @@ class TemporaryRngState:
         default_generator.manual_seed(self.seed + 1)
         if torch.cuda.is_initialized():
             torch.cuda.manual_seed(self.seed + 2)  # only set seed of default cuda device
+        np.random.seed(self.seed + 3)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         random.setstate(self.python_rng_state)
+        np.random.set_state(self.numpy_rng_state)
         torch.set_rng_state(self.torch_rng_state)
         if torch.cuda.is_initialized():
             torch.cuda.set_rng_state(self.torch_rng_state_cuda)
