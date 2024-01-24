@@ -27,6 +27,10 @@ stages:
         BuildType: 'stable'
 
       steps:
+      - task: mspremier.PostBuildCleanup.PostBuildCleanup-task.PostBuildCleanup@3
+        displayName: 'Clean Agent Directories'
+        condition: always()
+
       - checkout: self
         clean: true
         submodules: recursive
@@ -41,5 +45,3 @@ stages:
       - template: templates/component-governance-component-detection-steps.yml
         parameters:
           condition: 'succeeded'
-
-      - template: templates/clean-agent-build-directory-step.yml
