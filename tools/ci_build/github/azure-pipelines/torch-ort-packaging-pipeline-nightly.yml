@@ -25,6 +25,7 @@ stages:
 
       variables:
         BuildType: 'nightly'
+        UploadWheel: ${{ parameters.upload_wheel }}
 
       steps:
       - task: mspremier.PostBuildCleanup.PostBuildCleanup-task.PostBuildCleanup@3
