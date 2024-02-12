@@ -1,0 +1,27 @@
+name: Run Unit Test (CI)
+on:
+  pull_request:
+    branches:
+    - main
+jobs:
+  Pre-Checks:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Build Packages
+      run: |
+        python3 --version
+        pip install pytest
+        python torch_ort_inference/build.py
+        pip install torch_ort_inference/dist/torch_ort_infer*
+        python -m torch_ort.configure
+        pip install pandas
+        pip install transformers
+        pip install torchvision
+    - name: Run program
+      run: python torch_ort_inference/demos/bert_for_sequence_classification.py --input "This is a sample program"
+    - name: Run Unit Test
+      run: |
+        pytest torch_ort_inference/tests/test_openvino_provider_options.py
+        pytest torch_ort_inference/tests/test_ortinferencemodule.py
