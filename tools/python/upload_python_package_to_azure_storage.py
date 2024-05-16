@@ -9,10 +9,10 @@ from azure.storage.blob import BlobServiceClient, ContentSettings
 
 
 def upload_whl(python_wheel_path, account_name, managed_identity_client_id, container_name):
-    managed_id_credential = ManagedIdentityCredential(client_id=managed_identity_client_id)
+    managed_identity_credential = ManagedIdentityCredential(client_id=managed_identity_client_id)
 
     blob_service_client = BlobServiceClient(f"https://{account_name}.blob.core.windows.net",
-                                            credential=managed_id_credential)
+                                            credential=managed_identity_credential)
 
     blob_name = os.path.basename(python_wheel_path)
     blob_client = blob_service_client.get_blob_client(container_name, blob_name)
