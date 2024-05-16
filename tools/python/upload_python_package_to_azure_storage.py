@@ -4,13 +4,15 @@
 
 import os
 import argparse
+from azure.identity import ManagedIdentityCredential
 from azure.storage.blob import BlobServiceClient, ContentSettings
 
 
-def upload_whl(python_wheel_path, account_name, account_key, container_name):
-    blob_service_client = BlobServiceClient(f"https://{account_name}.blob.core.windows.net",
-                                            credential=account_key)
+def upload_whl(python_wheel_path, account_name, managed_identity_client_id, container_name):
+    managed_id_credential = ManagedIdentityCredential(client_id=managed_identity_client_id)
 
+    blob_service_client = BlobServiceClient(f"https://{account_name}.blob.core.windows.net",
+                                            credential=managed_id_credential)
 
     blob_name = os.path.basename(python_wheel_path)
     blob_client = blob_service_client.get_blob_client(container_name, blob_name)
@@ -34,11 +36,9 @@ if __name__ == "__main__":
 
     parser.add_argument("--python_wheel_path", type=str, help="path to python wheel")
     parser.add_argument("--account_name", type=str, help="name of the Azure storage account that is used to store package files")
-    parser.add_argument("--account_key", type=str, help="Azure storage account access key")
+    parser.add_argument("--managed_identity_client_id", type=str, help="Managed Identity client id to use for authentication")
     parser.add_argument("--container_name", type=str, help="the container name within the storage account for the packages")
 
-    # TODO: figure out a way to secure args.account_key to prevent later code changes
-    # that may accidentally print out it to the console.
     args = parser.parse_args()
 
-    upload_whl(args.python_wheel_path, args.account_name, args.account_key, args.container_name)
+    upload_whl(args.python_wheel_path, args.account_name, args.managed_identity_client_id, args.container_name)
