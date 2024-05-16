@@ -95,4 +95,4 @@ steps:
           --account_name onnxruntimepackages \
           --managed_identity_client_id $(managed_identity_client_id) \
           --container_name '$web'
-    displayName: "upload to nightly package channel"
+  displayName: "upload to nightly package channel"
