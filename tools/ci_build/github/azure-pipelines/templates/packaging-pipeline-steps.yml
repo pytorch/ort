@@ -93,6 +93,6 @@ steps:
       python3 tools/python/upload_python_package_to_azure_storage.py \
           --python_wheel_path ${files[0]} \
           --account_name onnxruntimepackages \
-          --account_key $(orttrainingpackagestorageaccountkey) \
+          --managed_identity_client_id $(managed_identity_client_id) \
           --container_name '$web'
-    displayName: "upload to nightly package channel"
+  displayName: "upload to nightly package channel"
