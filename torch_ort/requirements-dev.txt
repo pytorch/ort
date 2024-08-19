@@ -1,8 +1,7 @@
 # required for CI test
 pandas
 scikit-learn
-numpy==1.21.6 ; python_version < '3.11'
-numpy==1.24.2 ; python_version >= '3.11'
+numpy
 transformers==v4.4.2
 torch
 torchvision
